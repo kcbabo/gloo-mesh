@@ -249,6 +249,7 @@ TODO: Fill ConnectionOptions
 | csrf | [csrf.networking.mesh.gloo.solo.io.CsrfPolicy]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.networking.v1.csrf.csrf#csrf.networking.mesh.gloo.solo.io.CsrfPolicy" >}}) |  | Configure Global CSRF options for clients connected to this Gateway. |
   | rateLimit | [ratelimit.networking.mesh.gloo.solo.io.GatewayRateLimit]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.networking.v1.ratelimit.rate_limit#ratelimit.networking.mesh.gloo.solo.io.GatewayRateLimit" >}}) |  | Configure Global Rate limit options for clients connected to this Gateway. Rate limits must be configured on specific routes in order to enable rate limiting for a Gateway. |
   | extauth | [extauth.networking.mesh.gloo.solo.io.GatewayExtauth]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.networking.v1.extauth.extauth#extauth.networking.mesh.gloo.solo.io.GatewayExtauth" >}}) |  | Configure the Global Extauth options for clients connected to this Gateway |
+  | transformations | [transformation.networking.mesh.gloo.solo.io.GatewayTransformations]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.networking.v1.transformation.transformation#transformation.networking.mesh.gloo.solo.io.GatewayTransformations" >}}) |  | Enalbe the use of Transformations of header / body content on request or response data on routes served by this gateway. |
   
 
 

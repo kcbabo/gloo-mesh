@@ -5,14 +5,13 @@ option go_package = "github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.s
 import "extproto/ext.proto";
 option (extproto.equal_all) = true;
 
-import "github.com/solo-io/gloo-mesh/api/networking/v1/request_matchers.proto";
+import "github.com/solo-io/gloo-mesh/api/common/v1/request_matchers.proto";
 
 // GatewayTransformation enables use of the Transformation feature on Gateway.
 message GatewayTransformations {
-    // Apply transformations to all traffic served by this Gateway (HTTP only).
-    // Optional. If strict filter management is enabled on the gateway, a GatewayTransformation must be provided even if no
-    // global transformations are defined in order to enable the transformation filter on that gateway.
-    RouteTransformations global = 1;
+    // Explicitly enable Transformations on a gateway. Only required if strict filter management is set on the gateway.
+    bool enabled = 1;
+
 }
 
 // A RouteTransformation defines a text transformations for the content of an HTTP Request and/or Response on a matched route.
@@ -37,7 +36,7 @@ message RouteTransformations {
 message RequestTransformation {
     // Specify criteria that HTTP requests must satisfy for the RequestTransformation to apply
     // Omit to apply to any HTTP request.
-    repeated .networking.mesh.gloo.solo.io.HttpMatcher matchers = 1;
+    repeated .common.mesh.gloo.solo.io.HttpMatcher matchers = 1;
 
     // the text transformation to apply to to the matched request
     TextTransformation transformation = 2;
@@ -65,7 +64,7 @@ message ResponseTransformation {
     // specifies a set of criteria for matching an HTTP response
     message ResponseMatcher {
         // Specify a set of response headers which must match in entirety (all headers must match).
-        repeated .networking.mesh.gloo.solo.io.HeaderMatcher headers = 1;
+        repeated .common.mesh.gloo.solo.io.HeaderMatcher headers = 1;
 
         // Response code detail to match on. To see the response code details for your usecase,
         // you can use the envoy access log %RESPONSE_CODE_DETAILS% formatter to log it.
