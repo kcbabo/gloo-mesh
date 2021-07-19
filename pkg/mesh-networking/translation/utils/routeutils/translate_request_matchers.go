@@ -2,13 +2,12 @@ package routeutils
 
 import (
 	commonv1 "github.com/solo-io/gloo-mesh/pkg/api/common.mesh.gloo.solo.io/v1"
-	v1 "github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/v1"
 	networkingv1alpha3spec "istio.io/api/networking/v1alpha3"
 )
 
 // TranslateRequestMatchers translates request matchers to Istio. Only provide sourceNamespace and sourceLabels for translation of in-mesh VirtualServices.
 func TranslateRequestMatchers(
-	requestMatchers []*v1.HttpMatcher,
+	requestMatchers []*commonv1.HttpMatcher,
 	sourceSelectors []*commonv1.WorkloadSelector, // should be nil for gateway
 ) []*networkingv1alpha3spec.HTTPMatchRequest {
 	// Generate HttpMatchRequests for SourceSelector, one per namespace.
@@ -70,7 +69,7 @@ func TranslateRequestMatchers(
 	return translatedRequestMatchers
 }
 
-func translateRequestMatcherHeaders(matchers []*v1.HeaderMatcher) (
+func translateRequestMatcherHeaders(matchers []*commonv1.HeaderMatcher) (
 	map[string]*networkingv1alpha3spec.StringMatch, map[string]*networkingv1alpha3spec.StringMatch,
 ) {
 	headerMatchers := map[string]*networkingv1alpha3spec.StringMatch{}
@@ -103,7 +102,7 @@ func translateRequestMatcherHeaders(matchers []*v1.HeaderMatcher) (
 	return headerMatchers, inverseHeaderMatchers
 }
 
-func translateRequestMatcherQueryParams(matchers []*v1.HttpMatcher_QueryParameterMatcher) map[string]*networkingv1alpha3spec.StringMatch {
+func translateRequestMatcherQueryParams(matchers []*commonv1.HttpMatcher_QueryParameterMatcher) map[string]*networkingv1alpha3spec.StringMatch {
 	var translatedQueryParamMatcher map[string]*networkingv1alpha3spec.StringMatch
 	if matchers != nil {
 		translatedQueryParamMatcher = map[string]*networkingv1alpha3spec.StringMatch{}
@@ -122,7 +121,7 @@ func translateRequestMatcherQueryParams(matchers []*v1.HttpMatcher_QueryParamete
 	return translatedQueryParamMatcher
 }
 
-func translateRequestMatcherPathSpecifier(matcher *v1.HttpMatcher) *networkingv1alpha3spec.StringMatch {
+func translateRequestMatcherPathSpecifier(matcher *commonv1.HttpMatcher) *networkingv1alpha3spec.StringMatch {
 	if matcher != nil && matcher.GetUri() != nil {
 		switch pathSpecifierType := matcher.GetUri().GetMatchType().(type) {
 		case *commonv1.StringMatch_Exact:
