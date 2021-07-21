@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/solo-io/skv2/codegen/collector"
+
 	"github.com/rotisserie/eris"
 	externalapis "github.com/solo-io/external-apis/codegen"
 	"github.com/solo-io/gloo-mesh/codegen/anyvendor"
@@ -155,7 +157,13 @@ func makeGlooMeshCrdsCommand() codegen.Command {
 		ManifestRoot:    glooMeshCrdsManifestRoot,
 		Groups:          groups.GlooMeshGroups,
 		RenderProtos:    true,
-		Chart:           helm.CrdsChart,
+		ProtocOptions: collector.ProtocOptions{
+			ProtocExtraFlags: []string{
+				// UPDATE THIS LINE
+				"--jsonschema_out=~/tmp",
+			},
+		},
+		Chart: helm.CrdsChart,
 	}
 }
 
