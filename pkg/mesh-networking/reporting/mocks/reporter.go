@@ -47,6 +47,18 @@ func (mr *MockReporterMockRecorder) ReportAccessPolicyToDestination(destination,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportAccessPolicyToDestination", reflect.TypeOf((*MockReporter)(nil).ReportAccessPolicyToDestination), destination, accessPolicy, err)
 }
 
+// ReportPeerAuthenticationToMesh mocks base method.
+func (m *MockReporter) ReportPeerAuthenticationToMesh(mesh *v1.Mesh, virtualMesh ezkube.ResourceId, err error) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ReportPeerAuthenticationToMesh", mesh, virtualMesh, err)
+}
+
+// ReportPeerAuthenticationToMesh indicates an expected call of ReportPeerAuthenticationToMesh.
+func (mr *MockReporterMockRecorder) ReportPeerAuthenticationToMesh(mesh, virtualMesh, err interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportPeerAuthenticationToMesh", reflect.TypeOf((*MockReporter)(nil).ReportPeerAuthenticationToMesh), mesh, virtualMesh, err)
+}
+
 // ReportTrafficPolicyToDestination mocks base method.
 func (m *MockReporter) ReportTrafficPolicyToDestination(destination *v1.Destination, trafficPolicy ezkube.ResourceId, err error) {
 	m.ctrl.T.Helper()

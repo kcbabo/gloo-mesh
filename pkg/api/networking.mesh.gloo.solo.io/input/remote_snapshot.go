@@ -13,6 +13,7 @@
 // * VirtualServices
 // * Sidecars
 // * AuthorizationPolicies
+// * PeerAuthentications
 // read from a given cluster or set of clusters, across all namespaces.
 //
 // A snapshot can be constructed from either a single Manager (for a single cluster)
@@ -113,6 +114,11 @@ var RemoteSnapshotGVKs = []schema.GroupVersionKind{
 		Version: "v1beta1",
 		Kind:    "AuthorizationPolicy",
 	},
+	schema.GroupVersionKind{
+		Group:   "security.istio.io",
+		Version: "v1beta1",
+		Kind:    "PeerAuthentication",
+	},
 }
 
 // the snapshot of input resources consumed by translation
@@ -141,6 +147,8 @@ type RemoteSnapshot interface {
 
 	// return the set of input AuthorizationPolicies
 	AuthorizationPolicies() security_istio_io_v1beta1_sets.AuthorizationPolicySet
+	// return the set of input PeerAuthentications
+	PeerAuthentications() security_istio_io_v1beta1_sets.PeerAuthenticationSet
 	// update the status of all input objects which support
 	// the Status subresource (across multiple clusters)
 	SyncStatusesMultiCluster(ctx context.Context, mcClient multicluster.Client, opts RemoteSyncStatusOptions) error
@@ -180,6 +188,8 @@ type RemoteSyncStatusOptions struct {
 
 	// sync status of AuthorizationPolicy objects
 	AuthorizationPolicy bool
+	// sync status of PeerAuthentication objects
+	PeerAuthentication bool
 }
 
 type snapshotRemote struct {
@@ -198,6 +208,7 @@ type snapshotRemote struct {
 	sidecars         networking_istio_io_v1alpha3_sets.SidecarSet
 
 	authorizationPolicies security_istio_io_v1beta1_sets.AuthorizationPolicySet
+	peerAuthentications   security_istio_io_v1beta1_sets.PeerAuthenticationSet
 }
 
 func NewRemoteSnapshot(
@@ -216,6 +227,7 @@ func NewRemoteSnapshot(
 	sidecars networking_istio_io_v1alpha3_sets.SidecarSet,
 
 	authorizationPolicies security_istio_io_v1beta1_sets.AuthorizationPolicySet,
+	peerAuthentications security_istio_io_v1beta1_sets.PeerAuthenticationSet,
 
 ) RemoteSnapshot {
 	return &snapshotRemote{
@@ -231,6 +243,7 @@ func NewRemoteSnapshot(
 		virtualServices:       virtualServices,
 		sidecars:              sidecars,
 		authorizationPolicies: authorizationPolicies,
+		peerAuthentications:   peerAuthentications,
 	}
 }
 
@@ -252,6 +265,7 @@ func NewRemoteSnapshotFromGeneric(
 	sidecarSet := networking_istio_io_v1alpha3_sets.NewSidecarSet()
 
 	authorizationPolicySet := security_istio_io_v1beta1_sets.NewAuthorizationPolicySet()
+	peerAuthenticationSet := security_istio_io_v1beta1_sets.NewPeerAuthenticationSet()
 
 	for _, snapshot := range genericSnapshot {
 
@@ -348,6 +362,15 @@ func NewRemoteSnapshotFromGeneric(
 		for _, authorizationPolicy := range authorizationPolicies {
 			authorizationPolicySet.Insert(authorizationPolicy.(*security_istio_io_v1beta1_types.AuthorizationPolicy))
 		}
+		peerAuthentications := snapshot[schema.GroupVersionKind{
+			Group:   "security.istio.io",
+			Version: "v1beta1",
+			Kind:    "PeerAuthentication",
+		}]
+
+		for _, peerAuthentication := range peerAuthentications {
+			peerAuthenticationSet.Insert(peerAuthentication.(*security_istio_io_v1beta1_types.PeerAuthentication))
+		}
 
 	}
 	return NewRemoteSnapshot(
@@ -362,6 +385,7 @@ func NewRemoteSnapshotFromGeneric(
 		virtualServiceSet,
 		sidecarSet,
 		authorizationPolicySet,
+		peerAuthenticationSet,
 	)
 }
 
@@ -403,6 +427,10 @@ func (s snapshotRemote) Sidecars() networking_istio_io_v1alpha3_sets.SidecarSet 
 
 func (s snapshotRemote) AuthorizationPolicies() security_istio_io_v1beta1_sets.AuthorizationPolicySet {
 	return s.authorizationPolicies
+}
+
+func (s snapshotRemote) PeerAuthentications() security_istio_io_v1beta1_sets.PeerAuthenticationSet {
+	return s.peerAuthentications
 }
 
 func (s snapshotRemote) SyncStatusesMultiCluster(ctx context.Context, mcClient multicluster.Client, opts RemoteSyncStatusOptions) error {
@@ -491,6 +519,7 @@ func (s snapshotRemote) MarshalJSON() ([]byte, error) {
 	snapshotMap["virtualServices"] = s.virtualServices.List()
 	snapshotMap["sidecars"] = s.sidecars.List()
 	snapshotMap["authorizationPolicies"] = s.authorizationPolicies.List()
+	snapshotMap["peerAuthentications"] = s.peerAuthentications.List()
 	return json.Marshal(snapshotMap)
 }
 
@@ -508,6 +537,7 @@ func (s snapshotRemote) Clone() RemoteSnapshot {
 		virtualServices:       s.virtualServices.Clone(),
 		sidecars:              s.sidecars.Clone(),
 		authorizationPolicies: s.authorizationPolicies.Clone(),
+		peerAuthentications:   s.peerAuthentications.Clone(),
 	}
 }
 
@@ -542,6 +572,8 @@ type RemoteBuildOptions struct {
 
 	// List options for composing a snapshot from AuthorizationPolicies
 	AuthorizationPolicies ResourceRemoteBuildOptions
+	// List options for composing a snapshot from PeerAuthentications
+	PeerAuthentications ResourceRemoteBuildOptions
 }
 
 // Options for reading resources of a given type
@@ -586,6 +618,7 @@ func (b *multiClusterRemoteBuilder) BuildSnapshot(ctx context.Context, name stri
 	sidecars := networking_istio_io_v1alpha3_sets.NewSidecarSet()
 
 	authorizationPolicies := security_istio_io_v1beta1_sets.NewAuthorizationPolicySet()
+	peerAuthentications := security_istio_io_v1beta1_sets.NewPeerAuthenticationSet()
 
 	var errs error
 
@@ -621,6 +654,9 @@ func (b *multiClusterRemoteBuilder) BuildSnapshot(ctx context.Context, name stri
 		if err := b.insertAuthorizationPoliciesFromCluster(ctx, cluster, authorizationPolicies, opts.AuthorizationPolicies); err != nil {
 			errs = multierror.Append(errs, err)
 		}
+		if err := b.insertPeerAuthenticationsFromCluster(ctx, cluster, peerAuthentications, opts.PeerAuthentications); err != nil {
+			errs = multierror.Append(errs, err)
+		}
 
 	}
 
@@ -637,6 +673,7 @@ func (b *multiClusterRemoteBuilder) BuildSnapshot(ctx context.Context, name stri
 		virtualServices,
 		sidecars,
 		authorizationPolicies,
+		peerAuthentications,
 	)
 
 	return outputSnap, errs
@@ -1065,6 +1102,48 @@ func (b *multiClusterRemoteBuilder) insertAuthorizationPoliciesFromCluster(ctx c
 
 	return nil
 }
+func (b *multiClusterRemoteBuilder) insertPeerAuthenticationsFromCluster(ctx context.Context, cluster string, peerAuthentications security_istio_io_v1beta1_sets.PeerAuthenticationSet, opts ResourceRemoteBuildOptions) error {
+	peerAuthenticationClient, err := security_istio_io_v1beta1.NewMulticlusterPeerAuthenticationClient(b.client).Cluster(cluster)
+	if err != nil {
+		return err
+	}
+
+	if opts.Verifier != nil {
+		mgr, err := b.clusters.Cluster(cluster)
+		if err != nil {
+			return err
+		}
+
+		gvk := schema.GroupVersionKind{
+			Group:   "security.istio.io",
+			Version: "v1beta1",
+			Kind:    "PeerAuthentication",
+		}
+
+		if resourceRegistered, err := opts.Verifier.VerifyServerResource(
+			cluster,
+			mgr.GetConfig(),
+			gvk,
+		); err != nil {
+			return err
+		} else if !resourceRegistered {
+			return nil
+		}
+	}
+
+	peerAuthenticationList, err := peerAuthenticationClient.ListPeerAuthentication(ctx, opts.ListOptions...)
+	if err != nil {
+		return err
+	}
+
+	for _, item := range peerAuthenticationList.Items {
+		item := item.DeepCopy()    // pike + own
+		item.ClusterName = cluster // set cluster for in-memory processing
+		peerAuthentications.Insert(item)
+	}
+
+	return nil
+}
 
 // build a snapshot from resources in a single cluster
 type singleClusterRemoteBuilder struct {
@@ -1106,6 +1185,7 @@ func (b *singleClusterRemoteBuilder) BuildSnapshot(ctx context.Context, name str
 	sidecars := networking_istio_io_v1alpha3_sets.NewSidecarSet()
 
 	authorizationPolicies := security_istio_io_v1beta1_sets.NewAuthorizationPolicySet()
+	peerAuthentications := security_istio_io_v1beta1_sets.NewPeerAuthenticationSet()
 
 	var errs error
 
@@ -1139,6 +1219,9 @@ func (b *singleClusterRemoteBuilder) BuildSnapshot(ctx context.Context, name str
 	if err := b.insertAuthorizationPolicies(ctx, authorizationPolicies, opts.AuthorizationPolicies); err != nil {
 		errs = multierror.Append(errs, err)
 	}
+	if err := b.insertPeerAuthentications(ctx, peerAuthentications, opts.PeerAuthentications); err != nil {
+		errs = multierror.Append(errs, err)
+	}
 
 	outputSnap := NewRemoteSnapshot(
 		name,
@@ -1153,6 +1236,7 @@ func (b *singleClusterRemoteBuilder) BuildSnapshot(ctx context.Context, name str
 		virtualServices,
 		sidecars,
 		authorizationPolicies,
+		peerAuthentications,
 	)
 
 	return outputSnap, errs
@@ -1491,6 +1575,39 @@ func (b *singleClusterRemoteBuilder) insertAuthorizationPolicies(ctx context.Con
 
 	return nil
 }
+func (b *singleClusterRemoteBuilder) insertPeerAuthentications(ctx context.Context, peerAuthentications security_istio_io_v1beta1_sets.PeerAuthenticationSet, opts ResourceRemoteBuildOptions) error {
+
+	if opts.Verifier != nil {
+		gvk := schema.GroupVersionKind{
+			Group:   "security.istio.io",
+			Version: "v1beta1",
+			Kind:    "PeerAuthentication",
+		}
+
+		if resourceRegistered, err := opts.Verifier.VerifyServerResource(
+			"", // verify in the local cluster
+			b.mgr.GetConfig(),
+			gvk,
+		); err != nil {
+			return err
+		} else if !resourceRegistered {
+			return nil
+		}
+	}
+
+	peerAuthenticationList, err := security_istio_io_v1beta1.NewPeerAuthenticationClient(b.mgr.GetClient()).ListPeerAuthentication(ctx, opts.ListOptions...)
+	if err != nil {
+		return err
+	}
+
+	for _, item := range peerAuthenticationList.Items {
+		item := item.DeepCopy() // pike + own the item.
+		item.ClusterName = b.clusterName
+		peerAuthentications.Insert(item)
+	}
+
+	return nil
+}
 
 // build a snapshot from resources in a single cluster
 type inMemoryRemoteBuilder struct {
@@ -1525,6 +1642,7 @@ func (i *inMemoryRemoteBuilder) BuildSnapshot(ctx context.Context, name string, 
 	sidecars := networking_istio_io_v1alpha3_sets.NewSidecarSet()
 
 	authorizationPolicies := security_istio_io_v1beta1_sets.NewAuthorizationPolicySet()
+	peerAuthentications := security_istio_io_v1beta1_sets.NewPeerAuthenticationSet()
 
 	genericSnap.ForEachObject(func(cluster string, gvk schema.GroupVersionKind, obj resource.TypedObject) {
 		switch obj := obj.(type) {
@@ -1558,6 +1676,9 @@ func (i *inMemoryRemoteBuilder) BuildSnapshot(ctx context.Context, name string, 
 		// insert AuthorizationPolicies
 		case *security_istio_io_v1beta1_types.AuthorizationPolicy:
 			i.insertAuthorizationPolicy(ctx, obj, authorizationPolicies, opts)
+		// insert PeerAuthentications
+		case *security_istio_io_v1beta1_types.PeerAuthentication:
+			i.insertPeerAuthentication(ctx, obj, peerAuthentications, opts)
 		}
 	})
 
@@ -1574,6 +1695,7 @@ func (i *inMemoryRemoteBuilder) BuildSnapshot(ctx context.Context, name string, 
 		virtualServices,
 		sidecars,
 		authorizationPolicies,
+		peerAuthentications,
 	), nil
 }
 
@@ -1868,5 +1990,34 @@ func (i *inMemoryRemoteBuilder) insertAuthorizationPolicy(
 
 	if !filteredOut {
 		authorizationPolicySet.Insert(authorizationPolicy)
+	}
+}
+func (i *inMemoryRemoteBuilder) insertPeerAuthentication(
+	ctx context.Context,
+	peerAuthentication *security_istio_io_v1beta1_types.PeerAuthentication,
+	peerAuthenticationSet security_istio_io_v1beta1_sets.PeerAuthenticationSet,
+	buildOpts RemoteBuildOptions,
+) {
+
+	opts := buildOpts.PeerAuthentications.ListOptions
+
+	listOpts := &client.ListOptions{}
+	for _, opt := range opts {
+		opt.ApplyToList(listOpts)
+	}
+
+	filteredOut := false
+	if listOpts.Namespace != "" {
+		filteredOut = peerAuthentication.Namespace != listOpts.Namespace
+	}
+	if listOpts.LabelSelector != nil {
+		filteredOut = !listOpts.LabelSelector.Matches(labels.Set(peerAuthentication.Labels))
+	}
+	if listOpts.FieldSelector != nil {
+		contextutils.LoggerFrom(ctx).DPanicf("field selector is not implemented for in-memory remote snapshot")
+	}
+
+	if !filteredOut {
+		peerAuthenticationSet.Insert(peerAuthentication)
 	}
 }

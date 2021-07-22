@@ -430,18 +430,19 @@ func validateAndReturnVirtualMesh(
 type applyReporter struct {
 	// NOTE(ilackarms): map access should be synchronous (called in a single context),
 	// so locking should not be necessary.
-	unappliedTrafficPolicies map[*discoveryv1.Destination]map[string][]error
-	unappliedAccessPolicies  map[*discoveryv1.Destination]map[string][]error
-	unappliedFederations     map[*discoveryv1.Destination]map[string][]error
-	unappliedVirtualMeshes   map[*discoveryv1.Mesh]map[string][]error
+	unappliedTrafficPolicies     map[*discoveryv1.Destination]map[string][]error
+	unappliedAccessPolicies      map[*discoveryv1.Destination]map[string][]error
+	unappliedFederations         map[*discoveryv1.Destination]map[string][]error
+	unappliedVirtualMeshes       map[*discoveryv1.Mesh]map[string][]error
+	unappliedPeerAuthentications map[*discoveryv1.Mesh]map[string][]error
 }
 
 func newApplyReporter() *applyReporter {
 	return &applyReporter{
-		unappliedTrafficPolicies: map[*discoveryv1.Destination]map[string][]error{},
-		unappliedAccessPolicies:  map[*discoveryv1.Destination]map[string][]error{},
-		unappliedFederations:     map[*discoveryv1.Destination]map[string][]error{},
-		unappliedVirtualMeshes:   map[*discoveryv1.Mesh]map[string][]error{},
+		unappliedTrafficPolicies:     map[*discoveryv1.Destination]map[string][]error{},
+		unappliedAccessPolicies:      map[*discoveryv1.Destination]map[string][]error{},
+		unappliedFederations:         map[*discoveryv1.Destination]map[string][]error{},
+		unappliedPeerAuthentications: map[*discoveryv1.Mesh]map[string][]error{},
 	}
 }
 
@@ -493,6 +494,10 @@ func (v *applyReporter) ReportVirtualMeshToDestination(destination *discoveryv1.
 	errs = append(errs, err)
 	invalidFederationsForDestination[key] = errs
 	v.unappliedFederations[destination] = invalidFederationsForDestination
+}
+
+func (p *applyReporter) ReportPeerAuthenticationToMesh(mesh *discoveryv1.Mesh, virtualMesh ezkube.ResourceId, err error) {
+	return // todo do stuff
 }
 
 func (v *applyReporter) getTrafficPolicyErrors(destination *discoveryv1.Destination, trafficPolicy ezkube.ResourceId) []error {

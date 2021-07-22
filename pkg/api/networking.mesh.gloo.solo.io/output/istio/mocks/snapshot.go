@@ -156,6 +156,20 @@ func (mr *MockSnapshotMockRecorder) MarshalJSON() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarshalJSON", reflect.TypeOf((*MockSnapshot)(nil).MarshalJSON))
 }
 
+// PeerAuthentications mocks base method.
+func (m *MockSnapshot) PeerAuthentications() []istio.LabeledPeerAuthenticationSet {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PeerAuthentications")
+	ret0, _ := ret[0].([]istio.LabeledPeerAuthenticationSet)
+	return ret0
+}
+
+// PeerAuthentications indicates an expected call of PeerAuthentications.
+func (mr *MockSnapshotMockRecorder) PeerAuthentications() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PeerAuthentications", reflect.TypeOf((*MockSnapshot)(nil).PeerAuthentications))
+}
+
 // PodBounceDirectives mocks base method.
 func (m *MockSnapshot) PodBounceDirectives() []istio.LabeledPodBounceDirectiveSet {
 	m.ctrl.T.Helper()
@@ -876,6 +890,71 @@ func (mr *MockLabeledAuthorizationPolicySetMockRecorder) Set() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockLabeledAuthorizationPolicySet)(nil).Set))
 }
 
+// MockLabeledPeerAuthenticationSet is a mock of LabeledPeerAuthenticationSet interface.
+type MockLabeledPeerAuthenticationSet struct {
+	ctrl     *gomock.Controller
+	recorder *MockLabeledPeerAuthenticationSetMockRecorder
+}
+
+// MockLabeledPeerAuthenticationSetMockRecorder is the mock recorder for MockLabeledPeerAuthenticationSet.
+type MockLabeledPeerAuthenticationSetMockRecorder struct {
+	mock *MockLabeledPeerAuthenticationSet
+}
+
+// NewMockLabeledPeerAuthenticationSet creates a new mock instance.
+func NewMockLabeledPeerAuthenticationSet(ctrl *gomock.Controller) *MockLabeledPeerAuthenticationSet {
+	mock := &MockLabeledPeerAuthenticationSet{ctrl: ctrl}
+	mock.recorder = &MockLabeledPeerAuthenticationSetMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockLabeledPeerAuthenticationSet) EXPECT() *MockLabeledPeerAuthenticationSetMockRecorder {
+	return m.recorder
+}
+
+// Generic mocks base method.
+func (m *MockLabeledPeerAuthenticationSet) Generic() output.ResourceList {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Generic")
+	ret0, _ := ret[0].(output.ResourceList)
+	return ret0
+}
+
+// Generic indicates an expected call of Generic.
+func (mr *MockLabeledPeerAuthenticationSetMockRecorder) Generic() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Generic", reflect.TypeOf((*MockLabeledPeerAuthenticationSet)(nil).Generic))
+}
+
+// Labels mocks base method.
+func (m *MockLabeledPeerAuthenticationSet) Labels() map[string]string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Labels")
+	ret0, _ := ret[0].(map[string]string)
+	return ret0
+}
+
+// Labels indicates an expected call of Labels.
+func (mr *MockLabeledPeerAuthenticationSetMockRecorder) Labels() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Labels", reflect.TypeOf((*MockLabeledPeerAuthenticationSet)(nil).Labels))
+}
+
+// Set mocks base method.
+func (m *MockLabeledPeerAuthenticationSet) Set() v1beta1sets.PeerAuthenticationSet {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Set")
+	ret0, _ := ret[0].(v1beta1sets.PeerAuthenticationSet)
+	return ret0
+}
+
+// Set indicates an expected call of Set.
+func (mr *MockLabeledPeerAuthenticationSetMockRecorder) Set() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockLabeledPeerAuthenticationSet)(nil).Set))
+}
+
 // MockBuilder is a mock of Builder interface.
 type MockBuilder struct {
 	ctrl     *gomock.Controller
@@ -989,6 +1068,22 @@ func (m *MockBuilder) AddIssuedCertificates(issuedCertificates ...*v1.IssuedCert
 func (mr *MockBuilderMockRecorder) AddIssuedCertificates(issuedCertificates ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddIssuedCertificates", reflect.TypeOf((*MockBuilder)(nil).AddIssuedCertificates), issuedCertificates...)
+}
+
+// AddPeerAuthentications mocks base method.
+func (m *MockBuilder) AddPeerAuthentications(peerAuthentications ...*v1beta10.PeerAuthentication) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range peerAuthentications {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "AddPeerAuthentications", varargs...)
+}
+
+// AddPeerAuthentications indicates an expected call of AddPeerAuthentications.
+func (mr *MockBuilderMockRecorder) AddPeerAuthentications(peerAuthentications ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPeerAuthentications", reflect.TypeOf((*MockBuilder)(nil).AddPeerAuthentications), peerAuthentications...)
 }
 
 // AddPodBounceDirectives mocks base method.
@@ -1211,6 +1306,20 @@ func (m *MockBuilder) GetIssuedCertificates() v1sets.IssuedCertificateSet {
 func (mr *MockBuilderMockRecorder) GetIssuedCertificates() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIssuedCertificates", reflect.TypeOf((*MockBuilder)(nil).GetIssuedCertificates))
+}
+
+// GetPeerAuthentications mocks base method.
+func (m *MockBuilder) GetPeerAuthentications() v1beta1sets.PeerAuthenticationSet {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPeerAuthentications")
+	ret0, _ := ret[0].(v1beta1sets.PeerAuthenticationSet)
+	return ret0
+}
+
+// GetPeerAuthentications indicates an expected call of GetPeerAuthentications.
+func (mr *MockBuilderMockRecorder) GetPeerAuthentications() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPeerAuthentications", reflect.TypeOf((*MockBuilder)(nil).GetPeerAuthentications))
 }
 
 // GetPodBounceDirectives mocks base method.

@@ -76,6 +76,7 @@ var (
 			},
 			istiosecurityv1beta1.SchemeGroupVersion: {
 				"AuthorizationPolicy",
+				"PeerAuthentication",
 			},
 			schema.GroupVersion{
 				Group:   "certificates." + constants.GlooMeshApiGroupSuffix,

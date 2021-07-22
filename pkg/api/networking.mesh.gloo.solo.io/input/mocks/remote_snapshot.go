@@ -140,6 +140,20 @@ func (mr *MockRemoteSnapshotMockRecorder) MarshalJSON() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarshalJSON", reflect.TypeOf((*MockRemoteSnapshot)(nil).MarshalJSON))
 }
 
+// PeerAuthentications mocks base method.
+func (m *MockRemoteSnapshot) PeerAuthentications() v1beta1sets.PeerAuthenticationSet {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PeerAuthentications")
+	ret0, _ := ret[0].(v1beta1sets.PeerAuthenticationSet)
+	return ret0
+}
+
+// PeerAuthentications indicates an expected call of PeerAuthentications.
+func (mr *MockRemoteSnapshotMockRecorder) PeerAuthentications() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PeerAuthentications", reflect.TypeOf((*MockRemoteSnapshot)(nil).PeerAuthentications))
+}
+
 // PodBounceDirectives mocks base method.
 func (m *MockRemoteSnapshot) PodBounceDirectives() v1sets.PodBounceDirectiveSet {
 	m.ctrl.T.Helper()

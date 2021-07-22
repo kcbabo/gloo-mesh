@@ -241,6 +241,7 @@ rules:
   - security.istio.io
   resources:
   - authorizationpolicies
+  - peerauthentications
   verbs:
   - '*'
 - apiGroups:

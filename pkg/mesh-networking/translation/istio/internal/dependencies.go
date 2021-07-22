@@ -3,6 +3,8 @@ package internal
 import (
 	"context"
 
+	"github.com/solo-io/go-utils/contextutils"
+
 	discoveryv1sets "github.com/solo-io/gloo-mesh/pkg/api/discovery.mesh.gloo.solo.io/v1/sets"
 	"github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/input"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/decorators"
@@ -15,6 +17,7 @@ import (
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh/access"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh/federation"
+	peerAuth "github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh/peer-auth"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/utils/hostutils"
 	skv1alpha1sets "github.com/solo-io/skv2/pkg/api/multicluster.solo.io/v1alpha1/sets"
 )
@@ -61,14 +64,17 @@ func (d dependencyFactoryImpl) MakeMeshTranslator(
 	secrets corev1sets.SecretSet,
 	workloads discoveryv1sets.WorkloadSet,
 ) mesh.Translator {
+	contextutils.LoggerFrom(ctx).Infof("miles making translator")
 	federationTranslator := federation.NewTranslator(ctx)
 	mtlsTranslator := mtls.NewTranslator(ctx, secrets, workloads)
 	accessTranslator := access.NewTranslator(ctx)
+	peerAuthTranslator := peerAuth.NewTranslator(ctx, secrets, workloads)
 
 	return mesh.NewTranslator(
 		ctx,
 		mtlsTranslator,
 		federationTranslator,
 		accessTranslator,
+		peerAuthTranslator,
 	)
 }

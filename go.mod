@@ -12,6 +12,7 @@ replace (
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
 	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309
 	github.com/envoyproxy/go-control-plane => github.com/envoyproxy/go-control-plane v0.9.9-0.20210115003313-31f9241a16e6
+	github.com/solo-io/external-apis => /Users/milesholland/workRepos/external-apis
 	github.com/spf13/viper => github.com/istio/viper v1.3.3-0.20190515210538-2789fed3109c
 
 	k8s.io/api => k8s.io/api v0.20.4

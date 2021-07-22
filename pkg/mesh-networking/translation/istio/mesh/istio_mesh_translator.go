@@ -6,6 +6,7 @@ import (
 	"github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/output/istio"
 	"github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/output/local"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh/mtls"
+	peerAuth "github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh/peer-auth"
 
 	discoveryv1 "github.com/solo-io/gloo-mesh/pkg/api/discovery.mesh.gloo.solo.io/v1"
 	"github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/input"
@@ -37,6 +38,7 @@ type translator struct {
 	mtlsTranslator       mtls.Translator
 	federationTranslator federation.Translator
 	accessTranslator     access.Translator
+	peerAuthTranslator   peerAuth.Translator
 }
 
 func NewTranslator(
@@ -44,12 +46,14 @@ func NewTranslator(
 	mtlsTranslator mtls.Translator,
 	federationTranslator federation.Translator,
 	accessTranslator access.Translator,
+	peerAuthTranslator peerAuth.Translator,
 ) Translator {
 	return &translator{
 		ctx:                  ctx,
 		mtlsTranslator:       mtlsTranslator,
 		federationTranslator: federationTranslator,
 		accessTranslator:     accessTranslator,
+		peerAuthTranslator:   peerAuthTranslator,
 	}
 }
 
@@ -72,6 +76,7 @@ func (t *translator) Translate(
 
 	appliedVirtualMesh := mesh.Status.AppliedVirtualMesh
 	if appliedVirtualMesh != nil {
+		t.peerAuthTranslator.Translate(mesh, nil, istioOutputs, reporter) // Todo move out of this block if we don't actually need a v-mesh
 		t.mtlsTranslator.Translate(mesh, appliedVirtualMesh, istioOutputs, localOutputs, reporter)
 		t.federationTranslator.Translate(in, mesh, appliedVirtualMesh, istioOutputs, reporter)
 		t.accessTranslator.Translate(mesh, appliedVirtualMesh, istioOutputs)
