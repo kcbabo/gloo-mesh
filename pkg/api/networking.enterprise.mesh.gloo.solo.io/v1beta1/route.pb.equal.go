@@ -77,6 +77,17 @@ func (m *Route) Equal(that interface{}) bool {
 		}
 	}
 
+	if len(m.GetLabels()) != len(target.GetLabels()) {
+		return false
+	}
+	for k, v := range m.GetLabels() {
+
+		if strings.Compare(v, target.GetLabels()[k]) != 0 {
+			return false
+		}
+
+	}
+
 	switch m.Action.(type) {
 
 	case *Route_RouteAction_:
@@ -294,6 +305,10 @@ func (m *DelegateAction) Equal(that interface{}) bool {
 		if !proto.Equal(m.GetSelector(), target.GetSelector()) {
 			return false
 		}
+	}
+
+	if m.GetSortMethod() != target.GetSortMethod() {
+		return false
 	}
 
 	return true
