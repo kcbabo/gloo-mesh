@@ -310,7 +310,7 @@ func (t *translator) getOrCreateGeneratedCaSecret(
 	}
 	selfSignedCertSecret, err := t.secrets.Find(rootCaSecret)
 	if err != nil {
-		selfSignedCert, err := GenerateSelfSignedCert(generatedRootCa)
+		selfSignedCert, err := generateSelfSignedCert(generatedRootCa)
 		if err != nil {
 			// should never happen
 			return nil, err
@@ -370,7 +370,7 @@ func (t *translator) constructIssuedCertificate(
 	}
 
 	// get the pods that need to be bounced for this mesh
-	podsToBounce := GetPodsToBounce(mesh, sharedTrust, t.workloads, autoRestartPods)
+	podsToBounce := getPodsToBounce(mesh, sharedTrust, t.workloads, autoRestartPods)
 	var (
 		podBounceDirective *certificatesv1.PodBounceDirective
 		podBounceRef       *skv2corev1.ObjectRef
@@ -388,8 +388,8 @@ func (t *translator) constructIssuedCertificate(
 	issuedCert := &certificatesv1.IssuedCertificate{
 		ObjectMeta: issuedCertificateMeta,
 		Spec: certificatesv1.IssuedCertificateSpec{
-			Hosts: []string{BuildSpiffeURI(trustDomain, istioNamespace, istiodServiceAccount)},
-			CertOptions: BuildDefaultCertOptions(
+			Hosts: []string{buildSpiffeURI(trustDomain, istioNamespace, istiodServiceAccount)},
+			CertOptions: buildDefaultCertOptions(
 				sharedTrust.GetIntermediateCertOptions(),
 				defaultIstioOrg,
 			),
@@ -413,7 +413,7 @@ func (t *translator) constructIssuedCertificate(
 	return issuedCert, podBounceDirective
 }
 
-func BuildDefaultCertOptions(
+func buildDefaultCertOptions(
 	options *certificatesv1.CommonCertOptions,
 	orgName string,
 ) *certificatesv1.CommonCertOptions {
@@ -436,10 +436,10 @@ func BuildDefaultCertOptions(
 	return result
 }
 
-func GenerateSelfSignedCert(
+func generateSelfSignedCert(
 	builtinCA *certificatesv1.CommonCertOptions,
-) (*secrets.RootCAData, error) {
-	certOptions := BuildDefaultCertOptions(builtinCA, defaultOrgName)
+) (*secrets.CAData, error) {
+	certOptions := buildDefaultCertOptions(builtinCA, defaultOrgName)
 	options := util.CertOptions{
 		Org:          certOptions.GetOrgName(),
 		IsCA:         true,
@@ -461,12 +461,12 @@ func GenerateSelfSignedCert(
 	return rootCaData, nil
 }
 
-func BuildSpiffeURI(trustDomain, namespace, serviceAccount string) string {
+func buildSpiffeURI(trustDomain, namespace, serviceAccount string) string {
 	return fmt.Sprintf("%s%s/ns/%s/sa/%s", spiffe.URIPrefix, trustDomain, namespace, serviceAccount)
 }
 
 // get selectors for all the pods in a mesh; they need to be bounced (including the mesh control plane itself)
-func GetPodsToBounce(
+func getPodsToBounce(
 	mesh *discoveryv1.Mesh,
 	sharedTrust *networkingv1.SharedTrust,
 	allWorkloads discoveryv1sets.WorkloadSet,
