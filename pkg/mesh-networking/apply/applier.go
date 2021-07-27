@@ -444,18 +444,20 @@ func validateAndReturnVirtualMesh(
 type applyReporter struct {
 	// NOTE(ilackarms): map access should be synchronous (called in a single context),
 	// so locking should not be necessary.
-	unappliedTrafficPolicies map[string]map[string][]error // sets.Key(*discoveryv1.Destination)
-	unappliedAccessPolicies  map[string]map[string][]error // sets.Key(*discoveryv1.Destination)
-	unappliedFederations     map[string]map[string][]error // sets.Key(*discoveryv1.Destination)
-	unappliedVirtualMeshes   map[string]map[string][]error // sets.Key(*discoveryv1.Mesh)
+	unappliedTrafficPolicies     map[string]map[string][]error // sets.Key(*discoveryv1.Destination)
+	unappliedAccessPolicies      map[string]map[string][]error // sets.Key(*discoveryv1.Destination)
+	unappliedFederations         map[string]map[string][]error // sets.Key(*discoveryv1.Destination)
+	unappliedVirtualMeshes       map[string]map[string][]error // sets.Key(*discoveryv1.Mesh)
+	unappliedPeerAuthentications map[string]map[string][]error // sets.Key(*discoveryv1.Mesh)
 }
 
 func newApplyReporter() *applyReporter {
 	return &applyReporter{
-		unappliedTrafficPolicies: map[string]map[string][]error{},
-		unappliedAccessPolicies:  map[string]map[string][]error{},
-		unappliedFederations:     map[string]map[string][]error{},
-		unappliedVirtualMeshes:   map[string]map[string][]error{},
+		unappliedTrafficPolicies:     map[string]map[string][]error{},
+		unappliedAccessPolicies:      map[string]map[string][]error{},
+		unappliedFederations:         map[string]map[string][]error{},
+		unappliedVirtualMeshes:       map[string]map[string][]error{},
+		unappliedPeerAuthentications: map[string]map[string][]error{},
 	}
 }
 
@@ -509,8 +511,16 @@ func (v *applyReporter) ReportVirtualMeshToDestination(destination *discoveryv1.
 	v.unappliedFederations[sets.Key(destination)] = invalidFederationsForDestination
 }
 
-func (p *applyReporter) ReportPeerAuthenticationToMesh(mesh *discoveryv1.Mesh, virtualMesh ezkube.ResourceId, err error) {
-	return // todo do stuff
+func (v *applyReporter) ReportPeerAuthenticationToMesh(mesh *discoveryv1.Mesh, virtualMesh ezkube.ResourceId, err error) {
+	invalidPeerAuthenticationsForDestination := v.unappliedPeerAuthentications[sets.Key(mesh)]
+	if invalidPeerAuthenticationsForDestination == nil {
+		invalidPeerAuthenticationsForDestination = map[string][]error{}
+	}
+	key := sets.Key(virtualMesh)
+	errs := invalidPeerAuthenticationsForDestination[key]
+	errs = append(errs, err)
+	invalidPeerAuthenticationsForDestination[key] = errs
+	v.unappliedPeerAuthentications[sets.Key(mesh)] = invalidPeerAuthenticationsForDestination
 }
 
 func (v *applyReporter) getTrafficPolicyErrors(destination *discoveryv1.Destination, trafficPolicy ezkube.ResourceId) []error {
