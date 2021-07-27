@@ -237,3 +237,8 @@ spec:
       multiCluster:
         clusterName: production-cluster
 ```
+
+
+
+[Deploying Istio Control Plane](./istiod_deployment.md)
+[Deploying Istio Operator](./operator_deployment.md)

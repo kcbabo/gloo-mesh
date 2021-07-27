@@ -2,7 +2,9 @@
 
 ## Recommended Architecture
 
-![Istio Production Architecture](../../img/production-istio_architecture.md)
+This is the architecture diagram of our prodcuction Istio deployment. The following documentation will go into more detail about how to deploy and mange Istio with this configuration.
+
+![Istio Production Architecture](../../img/production-istio_architecture.png)
 
 ## Namespaces
 

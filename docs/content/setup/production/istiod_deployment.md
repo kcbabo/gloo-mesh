@@ -2,6 +2,8 @@
 
 Below is a full IstioOperator spec examples that shows you how to set a number of common values.
 
+![Production IstioOperator Configuration](../../img/production-istio_gateways.png)
+
 ## Deployment with Revisions
 
 Following [Canary Based Deployment](https://istio.io/latest/blog/2017/0.1-canary/) from the Istio website, we will deploy Istio with a revision label that matches its version. This makes it easy to migrate to new versions of Istio control plane when they are available.
@@ -292,3 +294,6 @@ spec:
       #       memory: 1024Mi
       #   logLevel: warning
 ```
+
+[Deploying Istio Operator](./operator_deployment.md)
+[Deploying Istio Gateways](./gateway_deployment.md)

@@ -35,3 +35,7 @@ helm install istio-operator manifests/charts/istio-operator \
 ## Resources
 
 * [Istio Operator Deployment](https://istio.io/latest/docs/setup/install/operator/)
+
+
+[Deploying Istio Control Plane](./istiod_deployment.md)
+[Deploying Istio Gateways](./gateway_deployment.md)
