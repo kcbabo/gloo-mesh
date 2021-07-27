@@ -66,6 +66,8 @@ spec:
       mode: ALLOW_ANY
     # The trust domain corresponds to the trust root of a system. For Gloo Mesh this should be the name of the cluster that cooresponds with the CA certificate CommonName identity
     trustDomain: cluster-1.solo
+    # The namespace to treat as the administrative root namespace for Istio configuration.
+    rootNamespace: istio-config
 
   # Traffic management feature
   components:
@@ -103,6 +105,7 @@ spec:
       namespace: kube-system
 
     # Istio Gateway feature
+    # Disable gateways deployments because they will be in separate IstioOperator configs
     ingressGateways:
     - name: istio-ingressgateway
       enabled: false
@@ -117,16 +120,17 @@ spec:
       enabled: false
 
   # CNI options if using OpenShift
-  # values:
-    # cni:
-      # cniBinDir: /var/lib/cni/bin
-      # cniConfDir: /etc/cni/multus/net.d
-      # chained: false
-      # cniConfFileName: "istio-cni.conf"
-      # excludeNamespaces:
-      #  - istio-system
-      #  - kube-system
-      # logLevel: info
+  # ONLY used if spec.components.cni.enabled == true
+  values:
+    cni:
+      cniBinDir: /var/lib/cni/bin
+      cniConfDir: /etc/cni/multus/net.d
+      chained: false
+      cniConfFileName: "istio-cni.conf"
+      excludeNamespaces:
+       - istio-system
+       - kube-system
+      logLevel: info
 ```
 
 

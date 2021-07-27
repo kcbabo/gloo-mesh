@@ -18,7 +18,7 @@ kubectl create namespace istio-config
 
 # Download the latest istio release
 
-ISTIO_VERSION=1.9.7
+ISTIO_VERSION=1.10.3
 
 curl -L https://istio.io/downloadIstio | ISTIO_VERSION=$ISTIO_VERSION sh -
 
