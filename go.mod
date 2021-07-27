@@ -99,7 +99,7 @@ require (
 	google.golang.org/grpc v1.37.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0
-	helm.sh/helm/v3 v3.5.3
+	helm.sh/helm/v3 v3.6.3
 	istio.io/api v0.0.0-20210420211535-1c598ea4139c
 	istio.io/client-go v1.9.3-0.20210420212959-a7d9bf5db101
 	istio.io/istio v0.0.0-20210423173126-13fb8ac89420
