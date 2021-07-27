@@ -78,10 +78,11 @@ spec:
       k8s:
         # Recommended to be >1 in production
         replicaCount: 2
+        # The Istio load tests mesh consists of 1000 services and 2000 sidecars with 70,000 mesh-wide requests per second and Istiod used 1 vCPU and 1.5 GB of memory (1.10.3).
         resources:
           requests:
-            cpu: 10m
-            memory: 100Mi
+            cpu: 500m
+            memory: 500Mi
         strategy:
           rollingUpdate:
             maxSurge: 100%
