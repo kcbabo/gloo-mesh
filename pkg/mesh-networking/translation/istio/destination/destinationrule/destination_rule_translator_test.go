@@ -197,7 +197,7 @@ var _ = Describe("DestinationRuleTranslator", func() {
 				destination.Annotations,
 			),
 			Spec: networkingv1alpha3spec.DestinationRule{
-				Host: "local-hostname",
+				Host:          "local-hostname",
 				TrafficPolicy: &networkingv1alpha3spec.TrafficPolicy{},
 				Subsets: []*networkingv1alpha3spec.Subset{
 					{
@@ -336,9 +336,9 @@ var _ = Describe("DestinationRuleTranslator", func() {
 				destination.Annotations,
 			),
 			Spec: networkingv1alpha3spec.DestinationRule{
-				Host: "global-hostname",
+				Host:          "global-hostname",
 				TrafficPolicy: &networkingv1alpha3spec.TrafficPolicy{},
-				Subsets: routeutils.MakeDestinationRuleSubsets(destination.Status.RequiredSubsets),
+				Subsets:       routeutils.MakeDestinationRuleSubsets(destination.Status.RequiredSubsets),
 			},
 		}
 

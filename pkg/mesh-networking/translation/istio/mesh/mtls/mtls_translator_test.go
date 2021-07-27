@@ -4,6 +4,13 @@ import (
 	"context"
 	"time"
 
+	"istio.io/api/security/v1beta1"
+
+	security_istio_io_v1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+
+	settingsv1 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
+	"github.com/solo-io/gloo-mesh/pkg/common/defaults"
+
 	"istio.io/istio/security/pkg/pki/util"
 
 	"github.com/golang/mock/gomock"
@@ -37,6 +44,12 @@ var _ = Describe("MtlsTranslator", func() {
 
 		istioMesh         *discoveryv1.Mesh
 		childResourceMeta *metav1.ObjectMeta
+		settings          = &settingsv1.Settings{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      defaults.DefaultSettingsName,
+				Namespace: defaults.DefaultPodNamespace,
+			},
+		}
 	)
 
 	BeforeEach(func() {
@@ -80,7 +93,7 @@ var _ = Describe("MtlsTranslator", func() {
 	})
 
 	It("will skip if non-istio mesh", func() {
-		translator := mtls.NewTranslator(ctx, nil, nil)
+		translator := mtls.NewTranslator(ctx, settings, nil, nil)
 		mesh := &discoveryv1.Mesh{}
 		vm := &discoveryv1.MeshStatus_AppliedVirtualMesh{}
 		translator.Translate(mesh, vm, mockIstioBuilder, mockLocalBuilder, mockReporter)
@@ -162,7 +175,20 @@ var _ = Describe("MtlsTranslator", func() {
 
 		mockIstioBuilder.EXPECT().AddPodBounceDirectives(nil)
 
-		translator := mtls.NewTranslator(ctx, v1sets.NewSecretSet(), nil)
+		expectedPeerAuth := &security_istio_io_v1beta1.PeerAuthentication{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "default",
+				Namespace:   "gloo-mesh",
+				ClusterName: "cluster-name",
+			},
+			Spec: v1beta1.PeerAuthentication{
+				Mtls: &v1beta1.PeerAuthentication_MutualTLS{
+					Mode: v1beta1.PeerAuthentication_MutualTLS_DISABLE,
+				},
+			}}
+		mockIstioBuilder.EXPECT().AddPeerAuthentications(expectedPeerAuth)
+
+		translator := mtls.NewTranslator(ctx, settings, v1sets.NewSecretSet(), nil)
 
 		translator.Translate(istioMesh, vm, mockIstioBuilder, mockLocalBuilder, mockReporter)
 	})
@@ -309,8 +335,22 @@ var _ = Describe("MtlsTranslator", func() {
 				Expect(pbd).To(Equal(podBounceDirective))
 			})
 
+		expectedPeerAuth := &security_istio_io_v1beta1.PeerAuthentication{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "default",
+				Namespace:   "gloo-mesh",
+				ClusterName: "cluster-name",
+			},
+			Spec: v1beta1.PeerAuthentication{
+				Mtls: &v1beta1.PeerAuthentication_MutualTLS{
+					Mode: v1beta1.PeerAuthentication_MutualTLS_DISABLE,
+				},
+			}}
+		mockIstioBuilder.EXPECT().AddPeerAuthentications(expectedPeerAuth)
+
 		translator := mtls.NewTranslator(
 			ctx,
+			settings,
 			v1sets.NewSecretSet(generatedSecret),
 			discoveryv1sets.NewWorkloadSet(),
 		)
@@ -429,7 +469,20 @@ var _ = Describe("MtlsTranslator", func() {
 				Expect(pbd).To(Equal(podBounceDirective))
 			})
 
-		translator := mtls.NewTranslator(ctx, nil, discoveryv1sets.NewWorkloadSet(kubeWorkload))
+		expectedPeerAuth := &security_istio_io_v1beta1.PeerAuthentication{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "default",
+				Namespace:   "gloo-mesh",
+				ClusterName: "cluster-name",
+			},
+			Spec: v1beta1.PeerAuthentication{
+				Mtls: &v1beta1.PeerAuthentication_MutualTLS{
+					Mode: v1beta1.PeerAuthentication_MutualTLS_DISABLE,
+				},
+			}}
+		mockIstioBuilder.EXPECT().AddPeerAuthentications(expectedPeerAuth)
+
+		translator := mtls.NewTranslator(ctx, settings, nil, discoveryv1sets.NewWorkloadSet(kubeWorkload))
 
 		translator.Translate(istioMesh, vm, mockIstioBuilder, mockLocalBuilder, mockReporter)
 	})
