@@ -21,56 +21,6 @@ helm install istio-operator manifests/charts/istio-operator \
 ```
 
 
-# Gateways
-
-
-```yaml
-# single point of entry
-apiVersion: v1
-kind: Service
-metadata:
-  name: istio-ingressgateway
-  namespace: istio-ingress
-spec:
-  type: LoadBalancer
-  selector:
-    istio: ingressgateway
-    version: "1_9_5"
-  ports:
-  - port: 80
-    name: http
-  - port: 443
-    name: https
----
-apiVersion: install.istio.io/v1alpha1
-kind: IstioOperator
-metadata:
-  name: istio-ingress-gw-install
-spec:
-  profile: empty
-  values:
-    gateways:
-      istio-ingressgateway:
-        autoscaleEnabled: false
-  components:
-    ingressGateways:
-    - name: istio-ingressgateway
-      enabled: false
-    - name: istio-ingressgateway-1_9_5
-      namespace: istio-system
-      enabled: true
-      k8s:
-        serviceOverride:
-          type: ClusterIP
-    - name: istio-ingressgateway-1_10_3
-      namespace: istio-system
-      enabled: true
-      k8s:
-        serviceOverride:
-          type: ClusterIP
-
-```
-
 # Upgrading
 
 # Tuning Istio Service Discovery
