@@ -93,7 +93,8 @@ spec:
           scaleTargetRef:
             apiVersion: apps/v1
             kind: Deployment
-            name: istiod
+            # matches the format istiod-<revision_label>
+            name: istiod-1-10-3
           metrics:
             - resource:
                 name: cpu
