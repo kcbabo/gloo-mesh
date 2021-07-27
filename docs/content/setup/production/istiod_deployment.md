@@ -2,12 +2,17 @@
 
 Below is a full IstioOperator spec examples that shows you how to set a number of common values.
 
+## Deployment with Revisions
+
+Following [Canary Based Deployment](https://istio.io/latest/blog/2017/0.1-canary/) from the Istio website, we will deploy Istio with a revision label that matches its version. This makes it easy to migrate to new versions of Istio control plane when they are available.
+
+Below is a couple of example deployments with their respective production settings. Depending on your environment you may need to edit certain istio functionality.
+
 ## References
 
 * [Istio default profiles](https://github.com/istio/istio/tree/master/manifests/profiles)
 * [Istio Operator Spec](https://istio.io/latest/docs/reference/config/istio.operator.v1alpha1/)
 * [Istio MeshConfig Spec](https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig)
-
 
 ## Example Production IstioOperator
 
@@ -35,6 +40,8 @@ spec:
     enableTracing: false
 
     defaultConfig:
+      # location of istiod service
+      # discoveryAddress: istiod-1-10-3.istio-system.svc:15012
       # enable GlooMesh metrics service
       envoyMetricsService:
         address: enterprise-agent.gloo-mesh:9977
@@ -163,6 +170,8 @@ spec:
     enableTracing: false
 
     defaultConfig:
+      # location of istiod service
+      # discoveryAddress: istiod-1-10-3.istio-system.svc:15012
       # enable GlooMesh metrics service
       envoyMetricsService:
         address: enterprise-agent.gloo-mesh:9977

@@ -32,18 +32,6 @@ helm install istio-operator manifests/charts/istio-operator \
   --set global.tag="$ISTIO_VERSION"
 ```
 
-## Deploy Istiod With Revision
-
-Following the Canary based deployment of the Istio control plane, we will deploy Istio with a revision label that matches its version. This makes it easy to migrate to new versions of Istio control plane when they are available.
-
-```
-REVISION_LABEL=1_9_5
-
-
-
-```
-
 ## Resources
 
-* [Istio Canary Deployments](https://istio.io/latest/blog/2017/0.1-canary/)
 * [Istio Operator Deployment](https://istio.io/latest/docs/setup/install/operator/)
