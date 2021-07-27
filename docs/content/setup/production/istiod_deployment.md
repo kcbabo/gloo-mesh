@@ -295,5 +295,7 @@ spec:
       #   logLevel: warning
 ```
 
-[Deploying Istio Operator](./operator_deployment.md)
-[Deploying Istio Gateways](./gateway_deployment.md)
+### Navigate
+
+* [Deploying Istio Operator](./operator_deployment.md)
+* [Deploying Istio Gateways](./gateway_deployment.md)

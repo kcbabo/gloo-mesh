@@ -238,7 +238,7 @@ spec:
         clusterName: production-cluster
 ```
 
+### Navigate
 
-
-[Deploying Istio Control Plane](./istiod_deployment.md)
-[Deploying Istio Operator](./operator_deployment.md)
+* [Deploying Istio Control Plane](./istiod_deployment.md)
+* [Deploying Istio Operator](./operator_deployment.md)
