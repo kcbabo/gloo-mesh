@@ -198,11 +198,7 @@ var _ = Describe("DestinationRuleTranslator", func() {
 			),
 			Spec: networkingv1alpha3spec.DestinationRule{
 				Host: "local-hostname",
-				TrafficPolicy: &networkingv1alpha3spec.TrafficPolicy{
-					Tls: &networkingv1alpha3spec.ClientTLSSettings{
-						Mode: networkingv1alpha3spec.ClientTLSSettings_ISTIO_MUTUAL,
-					},
-				},
+				TrafficPolicy: &networkingv1alpha3spec.TrafficPolicy{},
 				Subsets: []*networkingv1alpha3spec.Subset{
 					{
 						Name:   "foo-bar-version-v1",
@@ -283,10 +279,6 @@ var _ = Describe("DestinationRuleTranslator", func() {
 				},
 				RequiredSubsets: []*discoveryv1.RequiredSubsets{
 					{
-						TrafficPolicyRef: &skv2corev1.ObjectRef{
-							Name:      "tp-1",
-							Namespace: "tp-namespace-1",
-						},
 						TrafficShift: &v1.TrafficPolicySpec_Policy_MultiDestination{
 							Destinations: []*v1.WeightedDestination{
 								{
@@ -304,10 +296,6 @@ var _ = Describe("DestinationRuleTranslator", func() {
 						},
 					},
 					{
-						TrafficPolicyRef: &skv2corev1.ObjectRef{
-							Name:      "tp-2",
-							Namespace: "tp-namespace-2",
-						},
 						TrafficShift: &v1.TrafficPolicySpec_Policy_MultiDestination{
 							Destinations: []*v1.WeightedDestination{
 								{
@@ -349,11 +337,7 @@ var _ = Describe("DestinationRuleTranslator", func() {
 			),
 			Spec: networkingv1alpha3spec.DestinationRule{
 				Host: "global-hostname",
-				TrafficPolicy: &networkingv1alpha3spec.TrafficPolicy{
-					Tls: &networkingv1alpha3spec.ClientTLSSettings{
-						Mode: networkingv1alpha3spec.ClientTLSSettings_ISTIO_MUTUAL,
-					},
-				},
+				TrafficPolicy: &networkingv1alpha3spec.TrafficPolicy{},
 				Subsets: routeutils.MakeDestinationRuleSubsets(destination.Status.RequiredSubsets),
 			},
 		}
@@ -528,9 +512,6 @@ var _ = Describe("DestinationRuleTranslator", func() {
 			Spec: networkingv1alpha3spec.DestinationRule{
 				Host: "global-hostname",
 				TrafficPolicy: &networkingv1alpha3spec.TrafficPolicy{
-					Tls: &networkingv1alpha3spec.ClientTLSSettings{
-						Mode: networkingv1alpha3spec.ClientTLSSettings_ISTIO_MUTUAL,
-					},
 					ConnectionPool: &networkingv1alpha3spec.ConnectionPoolSettings{
 						Tcp: &networkingv1alpha3spec.ConnectionPoolSettings_TCPSettings{
 							TcpKeepalive: &networkingv1alpha3spec.ConnectionPoolSettings_TCPSettings_TcpKeepalive{
