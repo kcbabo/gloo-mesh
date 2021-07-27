@@ -652,6 +652,15 @@ func (s snapshotRemote) ForEachObject(handleObject func(cluster string, gvk sche
 		}
 		handleObject(cluster, gvk, obj)
 	}
+	for _, obj := range s.peerAuthentications.List() {
+		cluster := obj.GetClusterName()
+		gvk := schema.GroupVersionKind{
+			Group:   "security.istio.io",
+			Version: "v1beta1",
+			Kind:    "PeerAuthentication",
+		}
+		handleObject(cluster, gvk, obj)
+	}
 }
 
 // builds the input snapshot from API Clients.

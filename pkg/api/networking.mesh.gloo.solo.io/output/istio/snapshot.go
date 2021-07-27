@@ -581,6 +581,17 @@ func (s *snapshot) ForEachObject(handleObject func(cluster string, gvk schema.Gr
 			handleObject(cluster, gvk, obj)
 		}
 	}
+	for _, set := range s.peerAuthentications {
+		for _, obj := range set.Set().List() {
+			cluster := obj.GetClusterName()
+			gvk := schema.GroupVersionKind{
+				Group:   "security.istio.io",
+				Version: "v1beta1",
+				Kind:    "PeerAuthentication",
+			}
+			handleObject(cluster, gvk, obj)
+		}
+	}
 }
 
 func partitionIssuedCertificatesByLabel(labelKey string, set certificates_mesh_gloo_solo_io_v1_sets.IssuedCertificateSet) ([]LabeledIssuedCertificateSet, error) {
@@ -2150,7 +2161,6 @@ func (b *builder) AddPeerAuthentications(peerAuthentications ...*security_istio_
 		if obj == nil {
 			continue
 		}
-		contextutils.LoggerFrom(b.ctx).Debugf("added output PeerAuthentication %v", sets.Key(obj))
 		b.peerAuthentications.Insert(obj)
 	}
 }
@@ -2527,6 +2537,15 @@ func (b *builder) ForEachObject(handleObject func(cluster string, gvk schema.Gro
 			Group:   "security.istio.io",
 			Version: "v1beta1",
 			Kind:    "AuthorizationPolicy",
+		}
+		handleObject(cluster, gvk, obj)
+	}
+	for _, obj := range b.GetPeerAuthentications().List() {
+		cluster := obj.GetClusterName()
+		gvk := schema.GroupVersionKind{
+			Group:   "security.istio.io",
+			Version: "v1beta1",
+			Kind:    "PeerAuthentication",
 		}
 		handleObject(cluster, gvk, obj)
 	}

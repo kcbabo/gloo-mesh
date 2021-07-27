@@ -55,7 +55,6 @@ const (
 	defaultSecretRotationGracePeriodRatio = 0.10
 
 	defaultPeerName = "default"
-	defaultPeerMode = v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE
 )
 
 var (
