@@ -81,8 +81,8 @@ spec:
         # The Istio load tests mesh consists of 1000 services and 2000 sidecars with 70,000 mesh-wide requests per second and Istiod used 1 vCPU and 1.5 GB of memory (1.10.3).
         resources:
           requests:
-            cpu: 500m
-            memory: 500Mi
+            cpu: 200m
+            memory: 200Mi
         strategy:
           rollingUpdate:
             maxSurge: 100%
