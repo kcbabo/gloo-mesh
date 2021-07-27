@@ -4,8 +4,6 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/decorators/tls"
-
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/utils/gogoutils"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/utils/routeutils"
 
@@ -99,7 +97,7 @@ func (t *translator) Translate(
 		sourceClusterName = sourceMeshInstallation.Cluster
 	}
 
-	destinationRule, err := t.initializeDestinationRule(destination, t.settings.Spec.Mtls, sourceMeshInstallation)
+	destinationRule, err := t.initializeDestinationRule(destination, sourceMeshInstallation)
 	if err != nil {
 		contextutils.LoggerFrom(ctx).Error(err)
 		return nil
@@ -186,7 +184,6 @@ func registerFieldFunc(
 
 func (t *translator) initializeDestinationRule(
 	destination *discoveryv1.Destination,
-	mtlsDefault *v1.TrafficPolicySpec_Policy_MTLS,
 	sourceMeshInstallation *discoveryv1.MeshInstallation,
 ) (*networkingv1alpha3.DestinationRule, error) {
 	var meta metav1.ObjectMeta
@@ -211,15 +208,6 @@ func (t *translator) initializeDestinationRule(
 			TrafficPolicy: &networkingv1alpha3spec.TrafficPolicy{},
 			Subsets:       routeutils.MakeDestinationRuleSubsets(destination.Status.GetRequiredSubsets()),
 		},
-	}
-
-	// Initialize Istio TLS mode with default declared in Settings
-	istioTlsMode, err := tls.MapIstioTlsMode(mtlsDefault.GetIstio().GetTlsMode())
-	if err != nil {
-		return nil, err
-	}
-	destinationRule.Spec.TrafficPolicy.Tls = &networkingv1alpha3spec.ClientTLSSettings{
-		Mode: istioTlsMode,
 	}
 
 	return destinationRule, nil

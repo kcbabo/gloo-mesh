@@ -15,7 +15,6 @@ import (
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh"
 	mock_access "github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh/access/mocks"
 	mock_federation "github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh/federation/mocks"
-	mock_peerAuth "github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh/peer-auth/mocks"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,7 +25,6 @@ var _ = Describe("IstioMeshTranslator", func() {
 		mockMtlsTranslator       *mock_mtls.MockTranslator
 		mockFederationTranslator *mock_federation.MockTranslator
 		mockAccessTranslator     *mock_access.MockTranslator
-		mockPeerAuthTranslator   *mock_peerAuth.MockTranslator
 		mockReporter             *mock_reporting.MockReporter
 		in                       input.LocalSnapshot
 		istioMeshTranslator      mesh.Translator
@@ -38,10 +36,9 @@ var _ = Describe("IstioMeshTranslator", func() {
 		mockMtlsTranslator = mock_mtls.NewMockTranslator(ctrl)
 		mockFederationTranslator = mock_federation.NewMockTranslator(ctrl)
 		mockAccessTranslator = mock_access.NewMockTranslator(ctrl)
-		mockPeerAuthTranslator = mock_peerAuth.NewMockTranslator(ctrl)
 		mockReporter = mock_reporting.NewMockReporter(ctrl)
 		in = input.NewInputLocalSnapshotManualBuilder("").Build()
-		istioMeshTranslator = mesh.NewTranslator(ctx, mockMtlsTranslator, mockFederationTranslator, mockAccessTranslator, mockPeerAuthTranslator)
+		istioMeshTranslator = mesh.NewTranslator(ctx, mockMtlsTranslator, mockFederationTranslator, mockAccessTranslator)
 	})
 
 	AfterEach(func() {

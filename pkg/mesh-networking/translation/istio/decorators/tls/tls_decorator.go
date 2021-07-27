@@ -6,6 +6,7 @@ import (
 	v1 "github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/v1"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/decorators"
 	networkingv1alpha3spec "istio.io/api/networking/v1alpha3"
+	"istio.io/api/security/v1beta1"
 )
 
 const (
@@ -79,6 +80,21 @@ func MapIstioTlsMode(tlsMode v1.TrafficPolicySpec_Policy_MTLS_Istio_TLSmode) (ne
 	case v1.TrafficPolicySpec_Policy_MTLS_Istio_ISTIO_MUTUAL:
 		return networkingv1alpha3spec.ClientTLSSettings_ISTIO_MUTUAL, nil
 	default:
+		return 0, eris.Errorf("unrecognized Istio TLS mode %s", tlsMode)
+	}
+}
+
+func MapIstioTlsModeToPeerAuth(tlsMode v1.TrafficPolicySpec_Policy_MTLS_Istio_TLSmode) (v1beta1.PeerAuthentication_MutualTLS_Mode, error) {
+	switch tlsMode {
+	case v1.TrafficPolicySpec_Policy_MTLS_Istio_DISABLE:
+		return v1beta1.PeerAuthentication_MutualTLS_DISABLE, nil
+	// case ????: // Todo figure out if one of these corresponds to permissive, or if we need to change the traffic policy proto's options
+	//	 return v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE, nil
+	case v1.TrafficPolicySpec_Policy_MTLS_Istio_SIMPLE:
+		return v1beta1.PeerAuthentication_MutualTLS_STRICT, nil
+	case v1.TrafficPolicySpec_Policy_MTLS_Istio_ISTIO_MUTUAL:
+		return v1beta1.PeerAuthentication_MutualTLS_STRICT, nil
+	default: // todo: determine if we just want to return PeerAuthentication_MutualTLS_UNSET instead?
 		return 0, eris.Errorf("unrecognized Istio TLS mode %s", tlsMode)
 	}
 }

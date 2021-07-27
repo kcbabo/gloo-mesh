@@ -5,6 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	settingsv1 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
+	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/decorators/tls"
+	"istio.io/api/security/v1beta1"
+	security_istio_io_v1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/rotisserie/eris"
 	corev1sets "github.com/solo-io/external-apis/pkg/api/k8s/core/v1/sets"
@@ -48,6 +53,9 @@ const (
 	defaultRootCertRsaKeySize             = 4096
 	defaultOrgName                        = "gloo-mesh"
 	defaultSecretRotationGracePeriodRatio = 0.10
+
+	defaultPeerName = "default"
+	defaultPeerMode = v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE
 )
 
 var (
@@ -89,17 +97,20 @@ type Translator interface {
 
 type translator struct {
 	ctx       context.Context
+	settings  *settingsv1.Settings
 	secrets   corev1sets.SecretSet
 	workloads discoveryv1sets.WorkloadSet
 }
 
 func NewTranslator(
 	ctx context.Context,
+	settings *settingsv1.Settings,
 	secrets corev1sets.SecretSet,
 	workloads discoveryv1sets.WorkloadSet,
 ) Translator {
 	return &translator{
 		ctx:       ctx,
+		settings:  settings,
 		secrets:   secrets,
 		workloads: workloads,
 	}
@@ -228,13 +239,43 @@ func (t *translator) configureSharedTrust(
 		return eris.Errorf("No ca source specified for Virtual Mesh (%s)", sets.Key(virtualMeshRef))
 	}
 
+	// Next, translate this mtls config into a PeerAuthentication object if need be.
+	// Todo: do we want to gate this is any way?
+	peerAuth, err := t.constructPeerAuthentication(mesh)
+	if err != nil {
+		return err
+	}
+
 	// Append the VirtualMesh as a parent to each output resource
 	metautils.AppendParent(t.ctx, issuedCertificate, virtualMeshRef, networkingv1.VirtualMesh{}.GVK())
 	metautils.AppendParent(t.ctx, podBounceDirective, virtualMeshRef, networkingv1.VirtualMesh{}.GVK())
 
 	istioOutputs.AddIssuedCertificates(issuedCertificate)
 	istioOutputs.AddPodBounceDirectives(podBounceDirective)
+	istioOutputs.AddPeerAuthentications(peerAuth)
 	return nil
+}
+
+func (t *translator) constructPeerAuthentication(
+	mesh *discoveryv1.Mesh,
+) (*security_istio_io_v1beta1.PeerAuthentication, error) {
+
+	istioTlsMode, err := tls.MapIstioTlsModeToPeerAuth(t.settings.Spec.Mtls.GetIstio().GetTlsMode())
+	if err != nil {
+		return nil, err
+	}
+
+	return &security_istio_io_v1beta1.PeerAuthentication{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        defaultPeerName,
+			Namespace:   mesh.Spec.AgentInfo.AgentNamespace,
+			ClusterName: mesh.Spec.GetIstio().GetInstallation().GetCluster(),
+		},
+		Spec: v1beta1.PeerAuthentication{
+			Mtls: &v1beta1.PeerAuthentication_MutualTLS{
+				Mode: istioTlsMode,
+			},
+		}}, nil
 }
 
 // will create the secret if it is self-signed,
@@ -259,7 +300,7 @@ func (t *translator) getOrCreateGeneratedCaSecret(
 	}
 	selfSignedCertSecret, err := t.secrets.Find(rootCaSecret)
 	if err != nil {
-		selfSignedCert, err := generateSelfSignedCert(generatedRootCa)
+		selfSignedCert, err := GenerateSelfSignedCert(generatedRootCa)
 		if err != nil {
 			// should never happen
 			return nil, err
@@ -319,7 +360,7 @@ func (t *translator) constructIssuedCertificate(
 	}
 
 	// get the pods that need to be bounced for this mesh
-	podsToBounce := getPodsToBounce(mesh, sharedTrust, t.workloads, autoRestartPods)
+	podsToBounce := GetPodsToBounce(mesh, sharedTrust, t.workloads, autoRestartPods)
 	var (
 		podBounceDirective *certificatesv1.PodBounceDirective
 		podBounceRef       *skv2corev1.ObjectRef
@@ -337,8 +378,8 @@ func (t *translator) constructIssuedCertificate(
 	issuedCert := &certificatesv1.IssuedCertificate{
 		ObjectMeta: issuedCertificateMeta,
 		Spec: certificatesv1.IssuedCertificateSpec{
-			Hosts: []string{buildSpiffeURI(trustDomain, istioNamespace, istiodServiceAccount)},
-			CertOptions: buildDefaultCertOptions(
+			Hosts: []string{BuildSpiffeURI(trustDomain, istioNamespace, istiodServiceAccount)},
+			CertOptions: BuildDefaultCertOptions(
 				sharedTrust.GetIntermediateCertOptions(),
 				defaultIstioOrg,
 			),
@@ -362,7 +403,7 @@ func (t *translator) constructIssuedCertificate(
 	return issuedCert, podBounceDirective
 }
 
-func buildDefaultCertOptions(
+func BuildDefaultCertOptions(
 	options *certificatesv1.CommonCertOptions,
 	orgName string,
 ) *certificatesv1.CommonCertOptions {
@@ -385,10 +426,10 @@ func buildDefaultCertOptions(
 	return result
 }
 
-func generateSelfSignedCert(
+func GenerateSelfSignedCert(
 	builtinCA *certificatesv1.CommonCertOptions,
 ) (*secrets.RootCAData, error) {
-	certOptions := buildDefaultCertOptions(builtinCA, defaultOrgName)
+	certOptions := BuildDefaultCertOptions(builtinCA, defaultOrgName)
 	options := util.CertOptions{
 		Org:          certOptions.GetOrgName(),
 		IsCA:         true,
@@ -408,12 +449,12 @@ func generateSelfSignedCert(
 	return rootCaData, nil
 }
 
-func buildSpiffeURI(trustDomain, namespace, serviceAccount string) string {
+func BuildSpiffeURI(trustDomain, namespace, serviceAccount string) string {
 	return fmt.Sprintf("%s%s/ns/%s/sa/%s", spiffe.URIPrefix, trustDomain, namespace, serviceAccount)
 }
 
 // get selectors for all the pods in a mesh; they need to be bounced (including the mesh control plane itself)
-func getPodsToBounce(
+func GetPodsToBounce(
 	mesh *discoveryv1.Mesh,
 	sharedTrust *networkingv1.SharedTrust,
 	allWorkloads discoveryv1sets.WorkloadSet,
