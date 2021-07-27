@@ -37,6 +37,7 @@ RouteTable is a resource which can be referenced either from the top level Virtu
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | routes | [][networking.enterprise.mesh.gloo.solo.io.Route]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.enterprise.networking.v1beta1.route#networking.enterprise.mesh.gloo.solo.io.Route" >}}) | repeated | The list of HTTP Routes define routing actions to be taken for incoming HTTP requests whose host header matches this virtual host. If the request matches more than one Route in the list, the first Route matched will be selected. If the list of Routes is empty, the virtual host will be ignored by Gloo. |
+  | weight | int32 |  | Weight is used when sorting route tables in delegate action or routes when sorted by specificity. Higher integer values are considered higher priority. The default value is 0. |
   
 
 
@@ -56,6 +57,7 @@ RouteTable is a resource which can be referenced either from the top level Virtu
   | warnings | []string | repeated | Any warnings found while processing this generation of the resource. |
   | selectedBy | [][networking.enterprise.mesh.gloo.solo.io.SelectedBy]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.enterprise.networking.v1beta1.route_table#networking.enterprise.mesh.gloo.solo.io.SelectedBy" >}}) | repeated | List of resources which have selected this RouteTable. Can be VirtualHosts or other RouteTables |
   | selectedRouteTables | [][core.skv2.solo.io.ObjectRef]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.skv2.api.core.v1.core#core.skv2.solo.io.ObjectRef" >}}) | repeated | List of child RouteTables that this RouteTable delegates to |
+  | appliedTrafficPolicies | [][networking.mesh.gloo.solo.io.AppliedTrafficPolicy]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.networking.v1.applied_policies#networking.mesh.gloo.solo.io.AppliedTrafficPolicy" >}}) | repeated | The set of TrafficPolicies that have been applied to this Destination. {{/* Note: validation of this field disabled because it slows down cue tremendously*/}} |
   
 
 

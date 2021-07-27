@@ -13,6 +13,9 @@ spec:
     kind: TrafficPolicy
     listKind: TrafficPolicyList
     plural: trafficpolicies
+    shortNames:
+    - tp
+    - tps
     singular: trafficpolicy
   preserveUnknownFields: false
   scope: Namespaced
@@ -1123,9 +1126,156 @@ spec:
                       type: array
                   type: object
               type: object
+            routeSelector:
+              description: |-
+                Specify which ingress gateway traffic this trafficPolicy should
+                apply to. Multiple policies from different sources defining
+                different policies (eg retries, timeouts) will be merged.
+                If a conflicting policy value is defined in both a TrafficPolicy
+                resource (or multiple TrafficPolicy resources) and in-line on a VirtualHost,
+                or Route - then the in-line values will take precedence. If multiple
+                TrafficPolicies select the same VirtualHost, RouteTable, or Route, then the older
+                TrafficPolicy (by CreationTime) takes precedence over any newer Traffic policy.
+                Omit to apply to all VirtualHosts and all of their routes.
+              items:
+                properties:
+                  routeLabelMatcher:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      Specify a set of labels for selecting Routes. All labels listed here must be
+                      present on a route for that route to be considered matched.
+                      If omitted, all routes on the selected VirtualHosts are selected.
+                    type: object
+                  routeTableRefs:
+                    description: Select RouteTables by reference.
+                    items:
+                      properties:
+                        name:
+                          description: name of the resource being referenced
+                          type: string
+                        namespace:
+                          description: namespace of the resource being referenced
+                          type: string
+                      type: object
+                    type: array
+                  routeTableSelector:
+                    description: Select RouteTables by label and/or namespace.
+                    properties:
+                      expressions:
+                        description: |-
+                          Expressions allow for more flexible object label matching, such as equality-based requirements, set-based requirements, or a combination of both.
+                          https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#equality-based-requirement
+                        items:
+                          properties:
+                            key:
+                              description: |-
+                                Kubernetes label key, must conform to Kubernetes syntax requirements
+                                https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
+                              type: string
+                            operator:
+                              description: The operator can only be in, notin, =,
+                                ==, !=, exists, ! (DoesNotExist), gt (GreaterThan),
+                                lt (LessThan).
+                              enum:
+                              - Equals
+                              - DoubleEquals
+                              - NotEquals
+                              - In
+                              - NotIn
+                              - Exists
+                              - DoesNotExist
+                              - GreaterThan
+                              - LessThan
+                              type: string
+                            values:
+                              items:
+                                type: string
+                              type: array
+                          type: object
+                        type: array
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Select objects whose labels match the ones specified
+                          here.
+                        type: object
+                      namespaces:
+                        description: |-
+                          Select Objects in these namespaces. If omitted, Gloo Mesh will only select Objects in the same namespace
+                          as the parent resource (e.g. VirtualGateway) that owns this selector.
+                          The reserved value "*" can be used to select objects in all namespaces watched by Gloo Mesh.
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  virtualHostRefs:
+                    description: Select VirtualHosts by reference.
+                    items:
+                      properties:
+                        name:
+                          description: name of the resource being referenced
+                          type: string
+                        namespace:
+                          description: namespace of the resource being referenced
+                          type: string
+                      type: object
+                    type: array
+                  virtualHostSelector:
+                    description: Select VirtualHosts by label and/or namespace.
+                    properties:
+                      expressions:
+                        description: |-
+                          Expressions allow for more flexible object label matching, such as equality-based requirements, set-based requirements, or a combination of both.
+                          https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#equality-based-requirement
+                        items:
+                          properties:
+                            key:
+                              description: |-
+                                Kubernetes label key, must conform to Kubernetes syntax requirements
+                                https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
+                              type: string
+                            operator:
+                              description: The operator can only be in, notin, =,
+                                ==, !=, exists, ! (DoesNotExist), gt (GreaterThan),
+                                lt (LessThan).
+                              enum:
+                              - Equals
+                              - DoubleEquals
+                              - NotEquals
+                              - In
+                              - NotIn
+                              - Exists
+                              - DoesNotExist
+                              - GreaterThan
+                              - LessThan
+                              type: string
+                            values:
+                              items:
+                                type: string
+                              type: array
+                          type: object
+                        type: array
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Select objects whose labels match the ones specified
+                          here.
+                        type: object
+                      namespaces:
+                        description: |-
+                          Select Objects in these namespaces. If omitted, Gloo Mesh will only select Objects in the same namespace
+                          as the parent resource (e.g. VirtualGateway) that owns this selector.
+                          The reserved value "*" can be used to select objects in all namespaces watched by Gloo Mesh.
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                type: object
+              type: array
             sourceSelector:
               description: |-
-                Specify the Workloads (traffic sources) this TrafficPolicy applies to.
+                Specify the Workloads (sources for east-west traffic) this TrafficPolicy applies to.
                 Omit to apply to all Workloads.
               items:
                 properties:
@@ -1208,6 +1358,22 @@ spec:
               items:
                 type: string
               type: array
+            gatewayRoutes:
+              additionalProperties:
+                properties:
+                  routes:
+                    description: |-
+                      The list of routes selected. If no routeLabelMatcher was provided,
+                      the value "*" will be used to indicate all routes were selected.
+                    items:
+                      type: string
+                    type: array
+                type: object
+              description: |-
+                The Gateway resoures to which this traffic policy has been applied.
+                The resource names are in the format `name.namespace (resourceType)`,
+                which act as the keys in this map.
+              type: object
             observedGeneration:
               description: |-
                 The most recent generation observed in the the TrafficPolicy metadata.
@@ -1252,6 +1418,9 @@ spec:
     kind: AccessPolicy
     listKind: AccessPolicyList
     plural: accesspolicies
+    shortNames:
+    - ap
+    - aps
     singular: accesspolicy
   preserveUnknownFields: false
   scope: Namespaced
@@ -1407,6 +1576,25 @@ spec:
                           type: object
                         type: array
                     type: object
+                  requestIdentityMatcher:
+                    description: |-
+                      Match requests based on the identity of the request. If multiple fields are set, they are ANDed together.
+                      More information about the individual values can be found here: https://istio.io/latest/docs/reference/config/security/authorization-policy/#Source
+                    properties:
+                      notRequestPrincipals:
+                        description: Optional. A list of identities to negative match
+                          the request identity.
+                        items:
+                          type: string
+                        type: array
+                      requestPrincipals:
+                        description: |-
+                          Optional. A list of identities to match the request identity ("iss/sub" from the JWT).
+                                     If omitted all request identity values will be accepted.
+                        items:
+                          type: string
+                        type: array
+                    type: object
                 type: object
               type: array
           type: object
@@ -1500,6 +1688,9 @@ spec:
     kind: VirtualMesh
     listKind: VirtualMeshList
     plural: virtualmeshes
+    shortNames:
+    - vm
+    - vms
     singular: virtualmesh
   preserveUnknownFields: false
   scope: Namespaced

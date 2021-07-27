@@ -59,7 +59,7 @@ const (
 )
 
 var (
-	signingCertSecretType = corev1.SecretType(
+	generatedSecretType = corev1.SecretType(
 		fmt.Sprintf("%s/generated_signing_cert", certificatesv1.SchemeGroupVersion.Group),
 	)
 
@@ -77,7 +77,7 @@ var (
 
 // used by networking reconciler to filter ignored secrets
 func IsSigningCert(secret *corev1.Secret) bool {
-	return secret.Type == signingCertSecretType
+	return secret.Type == generatedSecretType
 }
 
 // the VirtualService translator translates a Mesh into a VirtualService.
@@ -223,6 +223,17 @@ func (t *translator) configureSharedTrust(
 			// Set deprecated field for backwards compatibility
 			issuedCertificate.Spec.SigningCertificateSecret = rootCaSecret
 		case *networkingv1.RootCertificateAuthority_Secret:
+			// Pre-Validate secret to ensure it's formatted properly
+			secret, err := t.secrets.Find(typedCaSource.Secret)
+			if err != nil {
+				return eris.Wrapf(err, "Could not find provided ca signing secret (%s).", sets.Key(secret))
+			}
+
+			caData := secrets.CADataFromSecretData(secret.Data)
+			if err := caData.Verify(); err != nil {
+				return eris.Wrapf(err, "Provided CA (%s) is invalid", sets.Key(secret))
+			}
+
 			issuedCertificate.Spec.CertificateAuthority = &certificatesv1.IssuedCertificateSpec_GlooMeshCa{
 				GlooMeshCa: &certificatesv1.RootCertificateAuthority{
 					CertificateAuthority: &certificatesv1.RootCertificateAuthority_SigningCertificateSecret{
@@ -316,7 +327,7 @@ func (t *translator) getOrCreateGeneratedCaSecret(
 				Labels:      metautils.TranslatedObjectLabels(),
 			},
 			Data: selfSignedCert.ToSecretData(),
-			Type: signingCertSecretType,
+			Type: generatedSecretType,
 		}
 	}
 
@@ -442,9 +453,11 @@ func GenerateSelfSignedCert(
 	if err != nil {
 		return nil, err
 	}
-	rootCaData := &secrets.RootCAData{
-		PrivateKey: key,
-		RootCert:   cert,
+	rootCaData := &secrets.CAData{
+		CaPrivateKey: key,
+		CaCert:       cert,
+		RootCert:     cert,
+		CertChain:    cert,
 	}
 	return rootCaData, nil
 }
