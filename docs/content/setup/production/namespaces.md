@@ -44,7 +44,7 @@ The istiod namespace typically retains the `istio-system` name. It is now recomm
 
 * `istio-config`
 
-This is Istio's new `rootNamespace` where all global istio dataplane configuration should be stored. It is recommended to deploy specific istio configurations to the service owners namespace (discussed more in [./configuration_management](./configuration_management) page)
+This is Istio's new `rootNamespace` where all global istio dataplane configuration should be stored. It is recommended to deploy specific istio configurations to the service owners namespace (discussed more in [./configuration_management](./configuration_management.md) page)
 
 ## Istio Gateway Namespace(s)
 

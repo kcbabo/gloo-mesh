@@ -17,7 +17,7 @@ Below is the recommended naming scheme for Istio namespaces.
   * `istio-egress` - Non-shared istio-egressgateway deployment namespace
   * `istio-eastwest` - Non-shared istio-eastwestgateway deployment namespace
 
-* For more Information see: [Istio Namespaces](./namespaces)
+* For more Information see: [Istio Namespaces](./namespaces.md)
 
 
 ## Deployment
