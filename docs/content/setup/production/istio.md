@@ -19,7 +19,6 @@ Below is the recommended naming scheme for Istio namespaces.
 
 * For more Information see: [Istio Namespaces](./namespaces.md)
 
-
 ## Deployment
 
 You can deploy Istio a number of ways but it is recommended to deploy the Operator and configure it with the `IstioOperator` config. If you use a helm based deployment model you can still deploy it with a helm chart provided by Istio.

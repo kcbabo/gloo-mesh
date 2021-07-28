@@ -8,7 +8,6 @@ This image illustrates the multiple IstioOperator configurations that might exis
 
 It is recommended that each Istio Gateway have its own IstioOperator configuration file. This allows the admin to upgrade each independently when changes are made.
 
-
 ## NOTE
 
 * https://github.com/istio/istio/issues/33075
@@ -38,6 +37,7 @@ kubectl apply -f istio-$REVISION.json
 
 
 ## Examples
+
 ```yaml
 # single point of entry
 apiVersion: v1
@@ -75,6 +75,10 @@ metadata:
   namespace: istio-gateways
 spec:
   profile: empty
+  # This value is required for Gloo Mesh Istio
+  hub: gcr.io/istio-enterprise
+  # This value can be any Gloo Mesh Istio tag
+  tag: 1.10.3
   revision: 1-10-3
   components:
     ingressGateways:
@@ -175,6 +179,10 @@ metadata:
 spec:
   profile: empty
   revision: 1-10-3
+  # This value is required for Gloo Mesh Istio
+  hub: gcr.io/istio-enterprise
+  # This value can be any Gloo Mesh Istio tag
+  tag: 1.10.3
   components:
     ingressGateways:
       - name: istio-eastwestgateway
