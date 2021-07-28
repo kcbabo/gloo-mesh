@@ -14,9 +14,36 @@ NOTE: In the past users may have used it to store all Istio configurations but t
 
 Cluster owners can
 
-* manage global service discovery properties
-* enable default security policies
 * add custom filters
+* manage global service discovery properties
+
+```yaml
+# configures sidecars in all namespaces to allow egress traffic only to other workloads in the same namespace as well as to services in the istio-system namespace.
+apiVersion: networking.istio.io/v1alpha3
+kind: Sidecar
+metadata:
+  name: default
+  namespace: istio-config
+spec:
+  egress:
+  - hosts:
+    - "./*"
+    - "istio-system/*"
+```
+
+* enable default security policies
+
+```yaml
+# require that all workloads in the mesh only accept mTLS traffic. 
+# This is only recommended once all worklads have been added to the mesh.
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: "default"
+spec:
+  mtls:
+    mode: STRICT
+```
 
 ## Gateway Namespaces (network owners)
 

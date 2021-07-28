@@ -31,6 +31,13 @@ As shown in the above diagram. We first deploy the IstioOperator to the `istio-o
 2. [Deploying Istio Control Plane](./istiod_deployment.md)
 3. [Deploying Gateways](./gateway_deployment.md)
 
+
+## Configuration Management
+
+Istio has implemented its configuration in a way to allow admins to set mesh wide policies that allows individual service owners to override them for their workloads. For further reading on how to manage configuration see below. 
+
+* [Configuration Management](./config_management.md)
+
 ## Upgrading
 
 ## Tuning Istio Service Discovery
@@ -44,20 +51,9 @@ As shown in the above diagram. We first deploy the IstioOperator to the `istio-o
 ## Adding Istio to an Existing Production Cluster
 
 Avoid 
+
 * STRICT PeerAuthentication
 * outbound REGISTRY_ONLY mode
 * GLobal Authorization Policy
 
 EnvoyFilter Naming
-
-
-## Bad Habbits 
- * If a company opts for using a single namespace for all istio confiuguration how does that work with a root namespace? For example if they want specific PeerAuthentication Policies in a namespace does it have to exist there?
-
-# Unknowns
-* Labelling pods to get envoy filters is recommended by label selector
-* Ops people manage envoy filters, service owner chooses them
-
-* Label based configurations recommendation
-  *  Examples for global resources that could be selected by service owners
-  * I have a Access log EnvoyFilter and devs can label istio-logs: "enabled" and gets logs
