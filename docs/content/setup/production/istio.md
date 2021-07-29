@@ -31,29 +31,26 @@ As shown in the above diagram. We first deploy the IstioOperator to the `istio-o
 2. [Deploying Istio Control Plane](./istiod_deployment.md)
 3. [Deploying Gateways](./gateway_deployment.md)
 
-
 ## Configuration Management
 
 Istio has implemented its configuration in a way to allow admins to set mesh wide policies that allows individual service owners to override them for their workloads. For further reading on how to manage configuration see below. 
 
 * [Configuration Management](./config_management.md)
 
-## Upgrading
+## Upgrading Istio
 
-## Tuning Istio Service Discovery
+Due to the complexity up upgrading Istio and to prevent downtime, it is recommended that the you follow the `Full Installation Details` above. The following documentation will show you how to upgrade Istio with no downtime using the Istio Operator for both the control plane and gateways.
 
-## Sidecar Properties
+```txt
+Upgrading across more than one minor version (e.g., 1.6.x to 1.8.x) in one step is not officially tested or recommended.
+```
 
-## Access Logging
+### [How To Upgrade Istio Using Operators](./upgrade_istio/upgrade.md)
 
-## Metrics
+[Upgrade Istio Official Documenation](https://istio.io/latest/docs/setup/upgrade/)
 
-## Adding Istio to an Existing Production Cluster
+## Misc Advice
 
-Avoid 
+Other good practices can be found here
 
-* STRICT PeerAuthentication
-* outbound REGISTRY_ONLY mode
-* GLobal Authorization Policy
-
-EnvoyFilter Naming
+* [Good Istio Practices](./misc.md)

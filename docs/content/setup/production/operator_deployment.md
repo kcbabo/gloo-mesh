@@ -19,17 +19,24 @@ kubectl create namespace istio-config
 # Download the latest istio release
 
 ISTIO_VERSION=1.10.3
+REVISION=1-10-3
 
 curl -L https://istio.io/downloadIstio | ISTIO_VERSION=$ISTIO_VERSION sh -
 
 cd istio-$ISTIO_VERSION
 
 # Deploy operator
-helm install istio-operator manifests/charts/istio-operator \
+# cannot use helm install due to namespace ownership https://github.com/istio/istio/pull/30741
+TEMPLATE=$(helm template istio-operator-$REVISION manifests/charts/istio-operator \
   --set operatorNamespace=istio-operator \
   --set watchedNamespaces="istio-system\,istio-gateways" \
   --set global.hub="docker.io/istio" \
-  --set global.tag="$ISTIO_VERSION"
+  --set global.tag="$ISTIO_VERSION" \
+  --set revision="$REVISION")
+
+echo $TEMPLATE > operator.yaml
+
+kubectl apply -f operator.yaml
 ```
 
 ## Resources

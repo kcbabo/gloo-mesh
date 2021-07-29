@@ -51,22 +51,22 @@ spec:
     istio: ingressgateway
     # select the 1-10-3 revision
     version: 1-10-3
-    ports:
-      - name: status-port
-        port: 15021
-        targetPort: 15021
-      - name: http2
-        port: 80
-        targetPort: 8080
-      - name: https
-        port: 443
-        targetPort: 8443
-      - name: tcp
-        port: 31400
-        targetPort: 31400
-      - name: tls
-        port: 15443
-        targetPort: 15443
+  ports:
+    - name: status-port
+      port: 15021
+      targetPort: 15021
+    - name: http2
+      port: 80
+      targetPort: 8080
+    - name: https
+      port: 443
+      targetPort: 8443
+    - name: tcp
+      port: 31400
+      targetPort: 31400
+    - name: tls
+      port: 15443
+      targetPort: 15443
 ---
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
