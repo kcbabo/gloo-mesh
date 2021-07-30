@@ -641,8 +641,8 @@ function install_gloomesh() {
 #### START SCRIPT
 
 # Note(ilackarms): these names are hard-coded in test/e2e/env.go
-mgmtCluster=mgmt-cluster
-remoteCluster=remote-cluster
+mgmtCluster=mgmt-cluster2
+remoteCluster=remote-cluster2
 
 ### DEBUG FUNCS
 function debug_proxy() {
