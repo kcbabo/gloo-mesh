@@ -28,7 +28,7 @@ require (
 	github.com/aws/aws-sdk-go v1.36.19
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v1.13.1 // indirect
-	github.com/envoyproxy/go-control-plane v0.9.9-0.20210115003313-31f9241a16e6
+	github.com/envoyproxy/go-control-plane v0.9.9-0.20210511190911-87d352569d55
 	github.com/fatih/color v1.10.0
 	github.com/gertd/go-pluralize v0.1.1
 	github.com/go-logr/zapr v0.3.0 // indirect
@@ -64,17 +64,17 @@ require (
 	github.com/solo-io/external-apis v0.1.4
 	github.com/solo-io/go-list-licenses v0.1.3
 	github.com/solo-io/go-utils v0.21.9
-	github.com/solo-io/k8s-utils v0.0.3
+	github.com/solo-io/k8s-utils v0.0.8
 	github.com/solo-io/protoc-gen-ext v0.0.15
 	github.com/solo-io/skv2 v0.17.20
-	github.com/solo-io/solo-kit v0.16.0
+	github.com/solo-io/solo-kit v0.21.0
 	github.com/spf13/afero v1.5.1
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/stoewer/go-strcase v1.2.0
 	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.16.0
-	google.golang.org/grpc v1.35.0
+	google.golang.org/grpc v1.36.0
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/yaml.v2 v2.4.0
 	helm.sh/helm/v3 v3.4.2

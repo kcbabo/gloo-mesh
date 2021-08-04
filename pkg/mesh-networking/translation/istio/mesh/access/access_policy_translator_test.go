@@ -32,7 +32,7 @@ var _ = Describe("AccessPolicyTranslator", func() {
 			Spec: discoveryv1.MeshSpec{
 				Type: &discoveryv1.MeshSpec_Istio_{
 					Istio: &discoveryv1.MeshSpec_Istio{
-						Installation: &discoveryv1.MeshSpec_MeshInstallation{
+						Installation: &discoveryv1.MeshInstallation{
 							Namespace: "istio-system",
 							Cluster:   "cluster-name",
 						},
@@ -133,7 +133,7 @@ var _ = Describe("AccessPolicyTranslator", func() {
 			Spec: discoveryv1.MeshSpec{
 				Type: &discoveryv1.MeshSpec_Istio_{
 					Istio: &discoveryv1.MeshSpec_Istio{
-						Installation: &discoveryv1.MeshSpec_MeshInstallation{
+						Installation: &discoveryv1.MeshInstallation{
 							Namespace: "istio-system",
 						},
 					},

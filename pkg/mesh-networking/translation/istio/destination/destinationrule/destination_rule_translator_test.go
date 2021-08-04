@@ -288,7 +288,7 @@ var _ = Describe("DestinationRuleTranslator", func() {
 			destinations,
 		)
 
-		sourceMeshInstallation := &discoveryv1.MeshSpec_MeshInstallation{
+		sourceMeshInstallation := &discoveryv1.MeshInstallation{
 			Cluster: "source-cluster",
 		}
 

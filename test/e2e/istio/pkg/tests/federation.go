@@ -196,7 +196,7 @@ func FederationTest() {
 						Namespace:   BookinfoNamespace,
 						ClusterName: RemoteClusterName,
 					},
-					&discoveryv1.MeshSpec_MeshInstallation{
+					&discoveryv1.MeshInstallation{
 						Namespace: "istio-system",
 						Cluster:   MgmtClusterName,
 					},

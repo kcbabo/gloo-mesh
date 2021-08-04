@@ -227,7 +227,7 @@ func (mr *MockTrafficPolicyVirtualServiceDecoratorMockRecorder) DecoratorName() 
 }
 
 // ApplyTrafficPolicyToVirtualService mocks base method
-func (m *MockTrafficPolicyVirtualServiceDecorator) ApplyTrafficPolicyToVirtualService(appliedPolicy *v1.DestinationStatus_AppliedTrafficPolicy, destination *v1.Destination, sourceMeshInstallation *v1.MeshSpec_MeshInstallation, output *v1alpha3.HTTPRoute, registerField decorators.RegisterField) error {
+func (m *MockTrafficPolicyVirtualServiceDecorator) ApplyTrafficPolicyToVirtualService(appliedPolicy *v1.DestinationStatus_AppliedTrafficPolicy, destination *v1.Destination, sourceMeshInstallation *v1.MeshInstallation, output *v1alpha3.HTTPRoute, registerField decorators.RegisterField) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ApplyTrafficPolicyToVirtualService", appliedPolicy, destination, sourceMeshInstallation, output, registerField)
 	ret0, _ := ret[0].(error)

@@ -135,7 +135,7 @@ var _ = Describe("IstioMeshDetector", func() {
 			Spec: discoveryv1.MeshSpec{
 				Type: &discoveryv1.MeshSpec_Istio_{Istio: &discoveryv1.MeshSpec_Istio{
 					SmartDnsProxyingEnabled: smartDnsProxyingEnabled,
-					Installation: &discoveryv1.MeshSpec_MeshInstallation{
+					Installation: &discoveryv1.MeshInstallation{
 						Namespace: meshNs,
 						Cluster:   clusterName,
 						Version:   "latest",
@@ -172,7 +172,7 @@ var _ = Describe("IstioMeshDetector", func() {
 			Spec: discoveryv1.MeshSpec{
 				Type: &discoveryv1.MeshSpec_Istio_{Istio: &discoveryv1.MeshSpec_Istio{
 					SmartDnsProxyingEnabled: smartDnsProxyingEnabled,
-					Installation: &discoveryv1.MeshSpec_MeshInstallation{
+					Installation: &discoveryv1.MeshInstallation{
 						Namespace: meshNs,
 						Cluster:   clusterName,
 						PodLabels: map[string]string{"app": "istiod"},
@@ -260,7 +260,7 @@ var _ = Describe("IstioMeshDetector", func() {
 				Spec: discoveryv1.MeshSpec{
 					Type: &discoveryv1.MeshSpec_Istio_{Istio: &discoveryv1.MeshSpec_Istio{
 						SmartDnsProxyingEnabled: smartDnsProxyingEnabled,
-						Installation: &discoveryv1.MeshSpec_MeshInstallation{
+						Installation: &discoveryv1.MeshInstallation{
 							Namespace: meshNs,
 							Cluster:   clusterName,
 							Version:   "latest",
@@ -330,7 +330,7 @@ var _ = Describe("IstioMeshDetector", func() {
 				Spec: discoveryv1.MeshSpec{
 					Type: &discoveryv1.MeshSpec_Istio_{Istio: &discoveryv1.MeshSpec_Istio{
 						SmartDnsProxyingEnabled: smartDnsProxyingEnabled,
-						Installation: &discoveryv1.MeshSpec_MeshInstallation{
+						Installation: &discoveryv1.MeshInstallation{
 							Namespace: meshNs,
 							Cluster:   clusterName,
 							Version:   "latest",
@@ -409,7 +409,7 @@ var _ = Describe("IstioMeshDetector", func() {
 				Spec: discoveryv1.MeshSpec{
 					Type: &discoveryv1.MeshSpec_Istio_{Istio: &discoveryv1.MeshSpec_Istio{
 						SmartDnsProxyingEnabled: smartDnsProxyingEnabled,
-						Installation: &discoveryv1.MeshSpec_MeshInstallation{
+						Installation: &discoveryv1.MeshInstallation{
 							Namespace: meshNs,
 							Cluster:   clusterName,
 							Version:   "latest",
@@ -479,7 +479,7 @@ var _ = Describe("IstioMeshDetector", func() {
 				Spec: discoveryv1.MeshSpec{
 					Type: &discoveryv1.MeshSpec_Istio_{Istio: &discoveryv1.MeshSpec_Istio{
 						SmartDnsProxyingEnabled: smartDnsProxyingEnabled,
-						Installation: &discoveryv1.MeshSpec_MeshInstallation{
+						Installation: &discoveryv1.MeshInstallation{
 							Namespace: meshNs,
 							Cluster:   clusterName,
 							Version:   "latest",
@@ -593,7 +593,7 @@ var _ = Describe("IstioMeshDetector", func() {
 			Spec: discoveryv1.MeshSpec{
 				Type: &discoveryv1.MeshSpec_Istio_{Istio: &discoveryv1.MeshSpec_Istio{
 					SmartDnsProxyingEnabled: smartDnsProxyingEnabled,
-					Installation: &discoveryv1.MeshSpec_MeshInstallation{
+					Installation: &discoveryv1.MeshInstallation{
 						Namespace: meshNs,
 						Cluster:   clusterName,
 						Version:   "latest",
