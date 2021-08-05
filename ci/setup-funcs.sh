@@ -401,7 +401,7 @@ metadata:
   namespace: istio-system
 spec:
   hub: gcr.io/istio-release
-  profile: preview
+  profile: minimal
   meshConfig:
     enableAutoMtls: true
     defaultConfig:
@@ -472,14 +472,14 @@ metadata:
   namespace: istio-system
 spec:
   hub: gcr.io/istio-release
-  profile: preview
+  profile: minimal
   meshConfig:
     enableAutoMtls: true
     defaultConfig:
-#      envoyAccessLogService:
-#        address: enterprise-agent.gloo-mesh:9977
-#      envoyMetricsService:
-#        address: enterprise-agent.gloo-mesh:9977
+      envoyAccessLogService:
+        address: enterprise-agent.gloo-mesh:9977
+      envoyMetricsService:
+        address: enterprise-agent.gloo-mesh:9977
       proxyMetadata:
         # Enable Istio agent to handle DNS requests for known hosts
         # Unknown hosts will automatically be resolved using upstream dns servers in resolv.conf
@@ -497,10 +497,10 @@ spec:
       label:
         traffic: east-west
       k8s:
-#        env:
-#          # needed for Gateway TLS AUTO_PASSTHROUGH mode, reference: https://istio.io/latest/docs/reference/config/networking/gateway/#ServerTLSSettings-TLSmode
-#          - name: ISTIO_META_ROUTER_MODE
-#            value: "sni-dnat"
+        env:
+          # needed for Gateway TLS AUTO_PASSTHROUGH mode, reference: https://istio.io/latest/docs/reference/config/networking/gateway/#ServerTLSSettings-TLSmode
+          - name: ISTIO_META_ROUTER_MODE
+            value: "sni-dnat"
         service:
           type: NodePort
           selector:
