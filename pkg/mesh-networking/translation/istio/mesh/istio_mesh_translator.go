@@ -11,6 +11,7 @@ import (
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh/access"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh/federation"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh/mtls"
+	peerAuth "github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh/peer-auth"
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/skv2/contrib/pkg/sets"
 )
@@ -36,6 +37,7 @@ type translator struct {
 	mtlsTranslator       mtls.Translator
 	federationTranslator federation.Translator
 	accessTranslator     access.Translator
+	peerAuthTranslator   peerAuth.Translator
 }
 
 func NewTranslator(
@@ -43,12 +45,14 @@ func NewTranslator(
 	mtlsTranslator mtls.Translator,
 	federationTranslator federation.Translator,
 	accessTranslator access.Translator,
+	peerAuthTranslator peerAuth.Translator,
 ) Translator {
 	return &translator{
 		ctx:                  ctx,
 		mtlsTranslator:       mtlsTranslator,
 		federationTranslator: federationTranslator,
 		accessTranslator:     accessTranslator,
+		peerAuthTranslator:   peerAuthTranslator,
 	}
 }
 
@@ -68,6 +72,8 @@ func (t *translator) Translate(
 
 	// add mesh installation cluster to outputs
 	istioOutputs.AddCluster(istioMesh.Installation.GetCluster())
+
+	t.peerAuthTranslator.Translate(mesh, istioOutputs, reporter)
 
 	appliedVirtualMesh := mesh.Status.AppliedVirtualMesh
 	if appliedVirtualMesh != nil {

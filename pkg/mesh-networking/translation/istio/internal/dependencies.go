@@ -3,6 +3,8 @@ package internal
 import (
 	"context"
 
+	peerAuth "github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh/peer-auth"
+
 	corev1sets "github.com/solo-io/external-apis/pkg/api/k8s/core/v1/sets"
 	discoveryv1sets "github.com/solo-io/gloo-mesh/pkg/api/discovery.mesh.gloo.solo.io/v1/sets"
 	"github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/input"
@@ -62,11 +64,13 @@ func (d dependencyFactoryImpl) MakeMeshTranslator(
 	federationTranslator := federation.NewTranslator(ctx)
 	mtlsTranslator := mtls.NewTranslator(ctx, settingsutils.SettingsFromContext(ctx), secrets, workloads)
 	accessTranslator := access.NewTranslator(ctx)
+	peerAuthTranslator := peerAuth.NewTranslator(ctx, workloads)
 
 	return mesh.NewTranslator(
 		ctx,
 		mtlsTranslator,
 		federationTranslator,
 		accessTranslator,
+		peerAuthTranslator,
 	)
 }

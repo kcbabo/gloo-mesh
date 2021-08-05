@@ -5,11 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	settingsv1 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
-	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/decorators/tls"
-	"istio.io/api/security/v1beta1"
-	security_istio_io_v1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/rotisserie/eris"
 	corev1sets "github.com/solo-io/external-apis/pkg/api/k8s/core/v1/sets"
@@ -19,6 +14,7 @@ import (
 	"github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/output/istio"
 	"github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/output/local"
 	networkingv1 "github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/v1"
+	settingsv1 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
 	"github.com/solo-io/gloo-mesh/pkg/certificates/common/secrets"
 	"github.com/solo-io/gloo-mesh/pkg/common/defaults"
 	"github.com/solo-io/gloo-mesh/pkg/common/version"
@@ -53,8 +49,6 @@ const (
 	defaultRootCertRsaKeySize             = 4096
 	defaultOrgName                        = "gloo-mesh"
 	defaultSecretRotationGracePeriodRatio = 0.10
-
-	defaultPeerName = "default"
 )
 
 var (
@@ -249,43 +243,13 @@ func (t *translator) configureSharedTrust(
 		return eris.Errorf("No ca source specified for Virtual Mesh (%s)", sets.Key(virtualMeshRef))
 	}
 
-	// Next, translate this mtls config into a PeerAuthentication object if need be.
-	// Todo: do we want to gate this is any way?
-	peerAuth, err := t.constructPeerAuthentication(mesh)
-	if err != nil {
-		return err
-	}
-
 	// Append the VirtualMesh as a parent to each output resource
 	metautils.AppendParent(t.ctx, issuedCertificate, virtualMeshRef, networkingv1.VirtualMesh{}.GVK())
 	metautils.AppendParent(t.ctx, podBounceDirective, virtualMeshRef, networkingv1.VirtualMesh{}.GVK())
 
 	istioOutputs.AddIssuedCertificates(issuedCertificate)
 	istioOutputs.AddPodBounceDirectives(podBounceDirective)
-	istioOutputs.AddPeerAuthentications(peerAuth)
 	return nil
-}
-
-func (t *translator) constructPeerAuthentication(
-	mesh *discoveryv1.Mesh,
-) (*security_istio_io_v1beta1.PeerAuthentication, error) {
-
-	istioTlsMode, err := tls.MapIstioTlsModeToPeerAuth(t.settings.Spec.Mtls.GetIstio().GetTlsMode())
-	if err != nil {
-		return nil, err
-	}
-
-	return &security_istio_io_v1beta1.PeerAuthentication{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        defaultPeerName,
-			Namespace:   mesh.Spec.AgentInfo.AgentNamespace,
-			ClusterName: mesh.Spec.GetIstio().GetInstallation().GetCluster(),
-		},
-		Spec: v1beta1.PeerAuthentication{
-			Mtls: &v1beta1.PeerAuthentication_MutualTLS{
-				Mode: istioTlsMode,
-			},
-		}}, nil
 }
 
 // will create the secret if it is self-signed,

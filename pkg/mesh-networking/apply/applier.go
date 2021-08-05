@@ -516,16 +516,16 @@ func (v *applyReporter) ReportVirtualMeshToDestination(destination *discoveryv1.
 	v.unappliedFederations[sets.Key(destination)] = invalidFederationsForDestination
 }
 
-func (v *applyReporter) ReportPeerAuthenticationToMesh(mesh *discoveryv1.Mesh, virtualMesh ezkube.ResourceId, err error) {
-	invalidPeerAuthenticationsForDestination := v.unappliedPeerAuthentications[sets.Key(mesh)]
-	if invalidPeerAuthenticationsForDestination == nil {
-		invalidPeerAuthenticationsForDestination = map[string][]error{}
+func (v *applyReporter) ReportPeerAuthenticationToMesh(mesh *discoveryv1.Mesh, peerAuth ezkube.ResourceId, err error) {
+	invalidPeerAuthenticationsForMesh := v.unappliedPeerAuthentications[sets.Key(mesh)]
+	if invalidPeerAuthenticationsForMesh == nil {
+		invalidPeerAuthenticationsForMesh = map[string][]error{}
 	}
-	key := sets.Key(virtualMesh)
-	errs := invalidPeerAuthenticationsForDestination[key]
+	key := sets.Key(peerAuth)
+	errs := invalidPeerAuthenticationsForMesh[key]
 	errs = append(errs, err)
-	invalidPeerAuthenticationsForDestination[key] = errs
-	v.unappliedPeerAuthentications[sets.Key(mesh)] = invalidPeerAuthenticationsForDestination
+	invalidPeerAuthenticationsForMesh[key] = errs
+	v.unappliedPeerAuthentications[sets.Key(mesh)] = invalidPeerAuthenticationsForMesh
 }
 
 func (v *applyReporter) getTrafficPolicyErrors(destination *discoveryv1.Destination, trafficPolicy ezkube.ResourceId) []error {
