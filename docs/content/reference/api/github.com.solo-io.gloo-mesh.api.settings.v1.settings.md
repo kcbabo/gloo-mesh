@@ -24,10 +24,12 @@ title: "settings.proto"
   - [DiscoverySettings.Istio.IngressGatewayDetector.GatewayWorkloadLabelsEntry](#settings.mesh.gloo.solo.io.DiscoverySettings.Istio.IngressGatewayDetector.GatewayWorkloadLabelsEntry)
   - [DiscoverySettings.Istio.IngressGatewayDetectorsEntry](#settings.mesh.gloo.solo.io.DiscoverySettings.Istio.IngressGatewayDetectorsEntry)
   - [GrpcServer](#settings.mesh.gloo.solo.io.GrpcServer)
+  - [PeerAuthenticationSettings](#settings.mesh.gloo.solo.io.PeerAuthenticationSettings)
   - [RelaySettings](#settings.mesh.gloo.solo.io.RelaySettings)
   - [SettingsSpec](#settings.mesh.gloo.solo.io.SettingsSpec)
   - [SettingsStatus](#settings.mesh.gloo.solo.io.SettingsStatus)
 
+  - [PeerAuthenticationSettings.MutualTLS](#settings.mesh.gloo.solo.io.PeerAuthenticationSettings.MutualTLS)
 
 
 
@@ -129,6 +131,22 @@ Options for connecting to an external gRPC server.
 
 
 
+<a name="settings.mesh.gloo.solo.io.PeerAuthenticationSettings"></a>
+
+### PeerAuthenticationSettings
+Settings for the default
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enabled | bool |  | Enable the creation of PeerAuthentications on meshes to manage TLS connections. Defaults to true. |
+  | tls | [settings.mesh.gloo.solo.io.PeerAuthenticationSettings.MutualTLS]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.settings.v1.settings#settings.mesh.gloo.solo.io.PeerAuthenticationSettings.MutualTLS" >}}) |  | The default mutualTls mode for automatically generated Peer Authentications to use. The enum values correspond to the values listed [by istio](https://istio.io/latest/docs/reference/config/security/peer_authentication/#PeerAuthentication-MutualTLS-Mode) Defaults to UNSET, which behaves like PERMISSIVE. |
+  
+
+
+
+
+
 <a name="settings.mesh.gloo.solo.io.RelaySettings"></a>
 
 ### RelaySettings
@@ -157,6 +175,7 @@ Configure system-wide settings and defaults. Settings specified in networking po
   | networkingExtensionServers | [][settings.mesh.gloo.solo.io.GrpcServer]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.settings.v1.settings#settings.mesh.gloo.solo.io.GrpcServer" >}}) | repeated | Configure Gloo Mesh networking to communicate with one or more external gRPC NetworkingExtensions servers. Updates will be applied by the servers in the order they are listed (servers towards the end of the list take precedence). Note: Extension Servers have full write access to the output objects written by Gloo Mesh. |
   | discovery | [settings.mesh.gloo.solo.io.DiscoverySettings]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.settings.v1.settings#settings.mesh.gloo.solo.io.DiscoverySettings" >}}) |  | Settings for Gloo Mesh discovery. |
   | relay | [settings.mesh.gloo.solo.io.RelaySettings]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.settings.v1.settings#settings.mesh.gloo.solo.io.RelaySettings" >}}) |  | Enable and configure use of Relay mode to communicate with remote clusters. This is an enterprise-only feature. |
+  | peerAuth | [settings.mesh.gloo.solo.io.PeerAuthenticationSettings]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.settings.v1.settings#settings.mesh.gloo.solo.io.PeerAuthenticationSettings" >}}) |  | Enable and configure the creation of PeerAuthentications to control mesh connections. |
   
 
 
@@ -180,6 +199,20 @@ Configure system-wide settings and defaults. Settings specified in networking po
 
 
  <!-- end messages -->
+
+
+<a name="settings.mesh.gloo.solo.io.PeerAuthenticationSettings.MutualTLS"></a>
+
+### PeerAuthenticationSettings.MutualTLS
+Istio MutualTLS settings
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UNSET | 0 | Inherit from parent, if has one. Otherwise treated as PERMISSIVE. |
+| DISABLE | 1 | Connection is not tunneled. |
+| PERMISSIVE | 2 | Connection can be either plaintext or mTLS tunnel. |
+| STRICT | 3 | Connection is an mTLS tunnel (TLS with client cert must be presented). |
+
 
  <!-- end enums -->
 

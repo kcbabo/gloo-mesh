@@ -28,7 +28,42 @@ message SettingsSpec {
 
     // Enable and configure use of Relay mode to communicate with remote clusters. This is an enterprise-only feature.
     RelaySettings relay = 4;
+
+    // Enable and configure the creation of PeerAuthentications to control mesh connections.
+    PeerAuthenticationSettings peer_auth = 5;
 }
+
+
+
+// Settings for the default
+message PeerAuthenticationSettings {
+
+    // Enable the creation of PeerAuthentications on meshes to manage TLS connections.
+    // Defaults to true.
+    bool enabled = 1;
+
+    // The default mutualTls mode for automatically generated Peer Authentications to use.
+    // The enum values correspond to the values listed [by istio](https://istio.io/latest/docs/reference/config/security/peer_authentication/#PeerAuthentication-MutualTLS-Mode)
+    // Defaults to UNSET, which behaves like PERMISSIVE.
+    MutualTLS tls = 2;
+
+    // Istio MutualTLS settings
+    enum MutualTLS {
+
+        // Inherit from parent, if has one. Otherwise treated as PERMISSIVE.
+        UNSET = 0;
+
+        // Connection is not tunneled.
+        DISABLE = 1;
+
+        // Connection can be either plaintext or mTLS tunnel.
+        PERMISSIVE = 2;
+
+        // Connection is an mTLS tunnel (TLS with client cert must be presented).
+        STRICT = 3;
+    };
+}
+
 
 // RelaySettings contains options for configuring Gloo Mesh to use Relay for cluster management.
 // Relay provides a way for connecting Gloo Mesh to remote Kubernetes Clusters

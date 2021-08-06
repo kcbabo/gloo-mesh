@@ -93,6 +93,48 @@ func (m *SettingsSpec) Equal(that interface{}) bool {
 		}
 	}
 
+	if h, ok := interface{}(m.GetPeerAuth()).(equality.Equalizer); ok {
+		if !h.Equal(target.GetPeerAuth()) {
+			return false
+		}
+	} else {
+		if !proto.Equal(m.GetPeerAuth(), target.GetPeerAuth()) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Equal function
+func (m *PeerAuthenticationSettings) Equal(that interface{}) bool {
+	if that == nil {
+		return m == nil
+	}
+
+	target, ok := that.(*PeerAuthenticationSettings)
+	if !ok {
+		that2, ok := that.(PeerAuthenticationSettings)
+		if ok {
+			target = &that2
+		} else {
+			return false
+		}
+	}
+	if target == nil {
+		return m == nil
+	} else if m == nil {
+		return false
+	}
+
+	if m.GetEnabled() != target.GetEnabled() {
+		return false
+	}
+
+	if m.GetTls() != target.GetTls() {
+		return false
+	}
+
 	return true
 }
 

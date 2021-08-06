@@ -25,7 +25,7 @@ type Reporter interface {
 	// report an error on a VirtualMesh that has been applied to a Destination
 	ReportVirtualMeshToDestination(destination *discoveryv1.Destination, virtualMesh ezkube.ResourceId, err error)
 
-	// report an error on a VirtualMesh that has been applied to a Destination
+	// report an error on a PeerAuthentication that has been applied to a Mesh
 	ReportPeerAuthenticationToMesh(mesh *discoveryv1.Mesh, err error)
 }
 
