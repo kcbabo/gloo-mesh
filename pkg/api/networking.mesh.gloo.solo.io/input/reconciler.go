@@ -410,24 +410,25 @@ func (r *remoteInputReconciler) ReconcileAuthorizationPolicyDeletion(clusterName
 	_, err := r.base.ReconcileRemoteGeneric(ref)
 	return err
 }
+
 func (r *remoteInputReconciler) ReconcilePeerAuthentication(clusterName string, obj *security_istio_io_v1beta1.PeerAuthentication) (reconcile.Result, error) {
 	obj.ClusterName = clusterName
 	return r.base.ReconcileRemoteGeneric(obj)
 }
 
-func (r *remoteInputReconciler) ReconcileRateLimitConfig(clusterName string, obj *ratelimit_solo_io_v1alpha1.RateLimitConfig) (reconcile.Result, error) {
-	obj.ClusterName = clusterName
-	return r.base.ReconcileRemoteGeneric(obj)
-}
-
 func (r *remoteInputReconciler) ReconcilePeerAuthenticationDeletion(clusterName string, obj reconcile.Request) error {
-  	ref := &sk_core_v1.ClusterObjectRef{
+	ref := &sk_core_v1.ClusterObjectRef{
 		Name:        obj.Name,
 		Namespace:   obj.Namespace,
 		ClusterName: clusterName,
 	}
 	_, err := r.base.ReconcileRemoteGeneric(ref)
 	return err
+}
+
+func (r *remoteInputReconciler) ReconcileRateLimitConfig(clusterName string, obj *ratelimit_solo_io_v1alpha1.RateLimitConfig) (reconcile.Result, error) {
+	obj.ClusterName = clusterName
+	return r.base.ReconcileRemoteGeneric(obj)
 }
 
 func (r *remoteInputReconciler) ReconcileRateLimitConfigDeletion(clusterName string, obj reconcile.Request) error {

@@ -932,7 +932,7 @@ func (mr *MockLabeledAuthorizationPolicySetMockRecorder) Set() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockLabeledAuthorizationPolicySet)(nil).Set))
 }
- 
+
 // MockLabeledPeerAuthenticationSet is a mock of LabeledPeerAuthenticationSet interface.
 type MockLabeledPeerAuthenticationSet struct {
 	ctrl     *gomock.Controller
@@ -947,24 +947,7 @@ type MockLabeledPeerAuthenticationSetMockRecorder struct {
 // NewMockLabeledPeerAuthenticationSet creates a new mock instance.
 func NewMockLabeledPeerAuthenticationSet(ctrl *gomock.Controller) *MockLabeledPeerAuthenticationSet {
 	mock := &MockLabeledPeerAuthenticationSet{ctrl: ctrl}
-  mock.recorder = &MockLabeledPeerAuthenticationSetMockRecorder{mock}
-	return mock
-}
-// MockLabeledRateLimitConfigSet is a mock of LabeledRateLimitConfigSet interface.
-type MockLabeledRateLimitConfigSet struct {
-	ctrl     *gomock.Controller
-	recorder *MockLabeledRateLimitConfigSetMockRecorder
-}
-
-// MockLabeledRateLimitConfigSetMockRecorder is the mock recorder for MockLabeledRateLimitConfigSet.
-type MockLabeledRateLimitConfigSetMockRecorder struct {
-	mock *MockLabeledRateLimitConfigSet
-}
-
-// NewMockLabeledRateLimitConfigSet creates a new mock instance.
-func NewMockLabeledRateLimitConfigSet(ctrl *gomock.Controller) *MockLabeledRateLimitConfigSet {
-	mock := &MockLabeledRateLimitConfigSet{ctrl: ctrl}
-	mock.recorder = &MockLabeledRateLimitConfigSetMockRecorder{mock}
+	mock.recorder = &MockLabeledPeerAuthenticationSetMockRecorder{mock}
 	return mock
 }
 
@@ -973,21 +956,8 @@ func (m *MockLabeledPeerAuthenticationSet) EXPECT() *MockLabeledPeerAuthenticati
 	return m.recorder
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockLabeledRateLimitConfigSet) EXPECT() *MockLabeledRateLimitConfigSetMockRecorder {
-	return m.recorder
-}
-
 // Generic mocks base method.
 func (m *MockLabeledPeerAuthenticationSet) Generic() output.ResourceList {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Generic")
-	ret0, _ := ret[0].(output.ResourceList)
-	return ret0
-}
-
-// Generic mocks base method.
-func (m *MockLabeledRateLimitConfigSet) Generic() output.ResourceList {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Generic")
 	ret0, _ := ret[0].(output.ResourceList)
@@ -1008,7 +978,58 @@ func (m *MockLabeledPeerAuthenticationSet) Labels() map[string]string {
 	return ret0
 }
 
-// Generic indicates an expected call of Generic.  
+// Labels indicates an expected call of Labels.
+func (mr *MockLabeledPeerAuthenticationSetMockRecorder) Labels() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Labels", reflect.TypeOf((*MockLabeledPeerAuthenticationSet)(nil).Labels))
+}
+
+// Set mocks base method.
+func (m *MockLabeledPeerAuthenticationSet) Set() v1beta1sets.PeerAuthenticationSet {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Set")
+	ret0, _ := ret[0].(v1beta1sets.PeerAuthenticationSet)
+	return ret0
+}
+
+// Set indicates an expected call of Set.
+func (mr *MockLabeledPeerAuthenticationSetMockRecorder) Set() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockLabeledPeerAuthenticationSet)(nil).Set))
+}
+
+// MockLabeledRateLimitConfigSet is a mock of LabeledRateLimitConfigSet interface.
+type MockLabeledRateLimitConfigSet struct {
+	ctrl     *gomock.Controller
+	recorder *MockLabeledRateLimitConfigSetMockRecorder
+}
+
+// MockLabeledRateLimitConfigSetMockRecorder is the mock recorder for MockLabeledRateLimitConfigSet.
+type MockLabeledRateLimitConfigSetMockRecorder struct {
+	mock *MockLabeledRateLimitConfigSet
+}
+
+// NewMockLabeledRateLimitConfigSet creates a new mock instance.
+func NewMockLabeledRateLimitConfigSet(ctrl *gomock.Controller) *MockLabeledRateLimitConfigSet {
+	mock := &MockLabeledRateLimitConfigSet{ctrl: ctrl}
+	mock.recorder = &MockLabeledRateLimitConfigSetMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockLabeledRateLimitConfigSet) EXPECT() *MockLabeledRateLimitConfigSetMockRecorder {
+	return m.recorder
+}
+
+// Generic mocks base method.
+func (m *MockLabeledRateLimitConfigSet) Generic() output.ResourceList {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Generic")
+	ret0, _ := ret[0].(output.ResourceList)
+	return ret0
+}
+
+// Generic indicates an expected call of Generic.
 func (mr *MockLabeledRateLimitConfigSetMockRecorder) Generic() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Generic", reflect.TypeOf((*MockLabeledRateLimitConfigSet)(nil).Generic))
@@ -1023,20 +1044,6 @@ func (m *MockLabeledRateLimitConfigSet) Labels() map[string]string {
 }
 
 // Labels indicates an expected call of Labels.
-func (mr *MockLabeledPeerAuthenticationSetMockRecorder) Labels() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Labels", reflect.TypeOf((*MockLabeledPeerAuthenticationSet)(nil).Labels))
-}
-
-// Set mocks base method.
-func (m *MockLabeledPeerAuthenticationSet) Set() v1beta1sets.PeerAuthenticationSet {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Set")
-	ret0, _ := ret[0].(v1beta1sets.PeerAuthenticationSet)
-	return ret0
-}
-  
-// Labels indicates an expected call of Labels.
 func (mr *MockLabeledRateLimitConfigSetMockRecorder) Labels() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Labels", reflect.TypeOf((*MockLabeledRateLimitConfigSet)(nil).Labels))
@@ -1048,12 +1055,6 @@ func (m *MockLabeledRateLimitConfigSet) Set() v1alpha1sets.RateLimitConfigSet {
 	ret := m.ctrl.Call(m, "Set")
 	ret0, _ := ret[0].(v1alpha1sets.RateLimitConfigSet)
 	return ret0
-}
-
-// Set indicates an expected call of Set.
-func (mr *MockLabeledPeerAuthenticationSetMockRecorder) Set() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockLabeledPeerAuthenticationSet)(nil).Set))
 }
 
 // Set indicates an expected call of Set.

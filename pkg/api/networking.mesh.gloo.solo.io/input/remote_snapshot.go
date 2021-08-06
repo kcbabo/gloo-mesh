@@ -119,12 +119,11 @@ var RemoteSnapshotGVKs = []schema.GroupVersionKind{
 		Version: "v1beta1",
 		Kind:    "AuthorizationPolicy",
 	},
-  
 	schema.GroupVersionKind{
 		Group:   "security.istio.io",
 		Version: "v1beta1",
 		Kind:    "PeerAuthentication",
-
+	},
 
 	schema.GroupVersionKind{
 		Group:   "ratelimit.solo.io",
@@ -161,6 +160,7 @@ type RemoteSnapshot interface {
 	AuthorizationPolicies() security_istio_io_v1beta1_sets.AuthorizationPolicySet
 	// return the set of input PeerAuthentications
 	PeerAuthentications() security_istio_io_v1beta1_sets.PeerAuthenticationSet
+
 	// return the set of input RateLimitConfigs
 	RateLimitConfigs() ratelimit_solo_io_v1alpha1_sets.RateLimitConfigSet
 	// update the status of all input objects which support
@@ -472,6 +472,8 @@ func (s snapshotRemote) AuthorizationPolicies() security_istio_io_v1beta1_sets.A
 
 func (s snapshotRemote) PeerAuthentications() security_istio_io_v1beta1_sets.PeerAuthenticationSet {
 	return s.peerAuthentications
+}
+
 func (s snapshotRemote) RateLimitConfigs() ratelimit_solo_io_v1alpha1_sets.RateLimitConfigSet {
 	return s.rateLimitConfigs
 }
@@ -710,13 +712,15 @@ func (s snapshotRemote) ForEachObject(handleObject func(cluster string, gvk sche
 		}
 		handleObject(cluster, gvk, obj)
 	}
-  
 	for _, obj := range s.peerAuthentications.List() {
 		cluster := obj.GetClusterName()
 		gvk := schema.GroupVersionKind{
 			Group:   "security.istio.io",
 			Version: "v1beta1",
 			Kind:    "PeerAuthentication",
+		}
+		handleObject(cluster, gvk, obj)
+	}
 
 	for _, obj := range s.rateLimitConfigs.List() {
 		cluster := obj.GetClusterName()
@@ -1460,9 +1464,9 @@ func (b *singleClusterRemoteBuilder) BuildSnapshot(ctx context.Context, name str
 	}
 	if err := b.insertAuthorizationPolicies(ctx, authorizationPolicies, opts.AuthorizationPolicies); err != nil {
 		errs = multierror.Append(errs, err)
-  }
-	if err := b.insertPeerAuthentications(ctx, peerAuthentications, opts.PeerAuthentications); err != nil {	
-    errs = multierror.Append(errs, err)
+	}
+	if err := b.insertPeerAuthentications(ctx, peerAuthentications, opts.PeerAuthentications); err != nil {
+		errs = multierror.Append(errs, err)
 	}
 	if err := b.insertRateLimitConfigs(ctx, rateLimitConfigs, opts.RateLimitConfigs); err != nil {
 		errs = multierror.Append(errs, err)
@@ -2287,6 +2291,27 @@ func (i *inMemoryRemoteBuilder) insertPeerAuthentication(
 
 	opts := buildOpts.PeerAuthentications.ListOptions
 
+	listOpts := &client.ListOptions{}
+	for _, opt := range opts {
+		opt.ApplyToList(listOpts)
+	}
+
+	filteredOut := false
+	if listOpts.Namespace != "" {
+		filteredOut = peerAuthentication.Namespace != listOpts.Namespace
+	}
+	if listOpts.LabelSelector != nil {
+		filteredOut = !listOpts.LabelSelector.Matches(labels.Set(peerAuthentication.Labels))
+	}
+	if listOpts.FieldSelector != nil {
+		contextutils.LoggerFrom(ctx).DPanicf("field selector is not implemented for in-memory remote snapshot")
+	}
+
+	if !filteredOut {
+		peerAuthenticationSet.Insert(peerAuthentication)
+	}
+}
+
 func (i *inMemoryRemoteBuilder) insertRateLimitConfig(
 	ctx context.Context,
 	rateLimitConfig *ratelimit_solo_io_v1alpha1_types.RateLimitConfig,
@@ -2303,10 +2328,6 @@ func (i *inMemoryRemoteBuilder) insertRateLimitConfig(
 
 	filteredOut := false
 	if listOpts.Namespace != "" {
-		filteredOut = peerAuthentication.Namespace != listOpts.Namespace
-	}
-	if listOpts.LabelSelector != nil {
-		filteredOut = !listOpts.LabelSelector.Matches(labels.Set(peerAuthentication.Labels))
 		filteredOut = rateLimitConfig.Namespace != listOpts.Namespace
 	}
 	if listOpts.LabelSelector != nil {
@@ -2317,7 +2338,6 @@ func (i *inMemoryRemoteBuilder) insertRateLimitConfig(
 	}
 
 	if !filteredOut {
-		peerAuthenticationSet.Insert(peerAuthentication)
 		rateLimitConfigSet.Insert(rateLimitConfig)
 	}
 }
