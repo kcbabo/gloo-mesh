@@ -39,20 +39,19 @@ require (
 	github.com/cncf/udpa/go v0.0.0-20210322005330-6414d713912e // indirect
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v1.13.1 // indirect
-	github.com/envoyproxy/go-control-plane v0.9.9-0.20210217033140-668b12f5399d
+	github.com/envoyproxy/go-control-plane v0.9.9-0.20210511190911-87d352569d55
 	github.com/evanphx/json-patch v4.9.0+incompatible
 	github.com/evanphx/json-patch/v5 v5.2.0 // indirect
 	github.com/fatih/color v1.10.0
 	github.com/gertd/go-pluralize v0.1.1
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
-	github.com/go-openapi/swag v0.19.6
+	github.com/go-openapi/swag v0.19.7
 	github.com/go-test/deep v1.0.2
 	github.com/gobuffalo/packr v1.30.1
 	github.com/gobuffalo/packr/v2 v2.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
-	github.com/google/go-cmp v0.5.5
 	github.com/google/go-github/v32 v32.0.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.2.1
@@ -83,11 +82,11 @@ require (
 	github.com/solo-io/external-apis v0.1.7
 	github.com/solo-io/go-list-licenses v0.1.3
 	github.com/solo-io/go-utils v0.21.9
-	github.com/solo-io/k8s-utils v0.0.3
+	github.com/solo-io/k8s-utils v0.0.8
 	github.com/solo-io/protoc-gen-ext v0.0.15
 	github.com/solo-io/skv2 v0.19.1
-	github.com/solo-io/solo-apis v1.6.30
-	github.com/solo-io/solo-kit v0.16.0
+	github.com/solo-io/solo-apis v1.6.31
+	github.com/solo-io/solo-kit v0.21.0
 	github.com/spf13/afero v1.6.0
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
