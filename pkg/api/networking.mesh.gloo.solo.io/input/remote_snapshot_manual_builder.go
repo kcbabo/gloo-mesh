@@ -17,6 +17,9 @@ import (
 
 	security_istio_io_v1beta1_sets "github.com/solo-io/external-apis/pkg/api/istio/security.istio.io/v1beta1/sets"
 	security_istio_io_v1beta1 "istio.io/client-go/pkg/apis/security/v1beta1"
+
+	ratelimit_solo_io_v1alpha1 "github.com/solo-io/solo-apis/pkg/api/ratelimit.solo.io/v1alpha1"
+	ratelimit_solo_io_v1alpha1_sets "github.com/solo-io/solo-apis/pkg/api/ratelimit.solo.io/v1alpha1/sets"
 )
 
 type InputRemoteSnapshotManualBuilder struct {
@@ -36,6 +39,7 @@ type InputRemoteSnapshotManualBuilder struct {
 
 	authorizationPolicies security_istio_io_v1beta1_sets.AuthorizationPolicySet
 	peerAuthentications   security_istio_io_v1beta1_sets.PeerAuthenticationSet
+	rateLimitConfigs ratelimit_solo_io_v1alpha1_sets.RateLimitConfigSet
 }
 
 func NewInputRemoteSnapshotManualBuilder(name string) *InputRemoteSnapshotManualBuilder {
@@ -56,6 +60,8 @@ func NewInputRemoteSnapshotManualBuilder(name string) *InputRemoteSnapshotManual
 
 		authorizationPolicies: security_istio_io_v1beta1_sets.NewAuthorizationPolicySet(),
 		peerAuthentications:   security_istio_io_v1beta1_sets.NewPeerAuthenticationSet(),
+
+		rateLimitConfigs: ratelimit_solo_io_v1alpha1_sets.NewRateLimitConfigSet(),
 	}
 }
 
@@ -75,8 +81,10 @@ func (i *InputRemoteSnapshotManualBuilder) Build() RemoteSnapshot {
 		i.virtualServices,
 		i.sidecars,
 
-		i.authorizationPolicies,
-		i.peerAuthentications,
+		i.authorizationPolicies, 
+		i.peerAuthentications, 
+
+		i.rateLimitConfigs, 
 	)
 }
 func (i *InputRemoteSnapshotManualBuilder) AddIssuedCertificates(issuedCertificates []*certificates_mesh_gloo_solo_io_v1.IssuedCertificate) *InputRemoteSnapshotManualBuilder {
@@ -118,8 +126,10 @@ func (i *InputRemoteSnapshotManualBuilder) AddSidecars(sidecars []*networking_is
 func (i *InputRemoteSnapshotManualBuilder) AddAuthorizationPolicies(authorizationPolicies []*security_istio_io_v1beta1.AuthorizationPolicy) *InputRemoteSnapshotManualBuilder {
 	i.authorizationPolicies.Insert(authorizationPolicies...)
 	return i
-}
+} 
 func (i *InputRemoteSnapshotManualBuilder) AddPeerAuthentications(peerAuthentications []*security_istio_io_v1beta1.PeerAuthentication) *InputRemoteSnapshotManualBuilder {
-	i.peerAuthentications.Insert(peerAuthentications...)
+	i.peerAuthentications.Insert(peerAuthentications...) 
+func (i *InputRemoteSnapshotManualBuilder) AddRateLimitConfigs(rateLimitConfigs []*ratelimit_solo_io_v1alpha1.RateLimitConfig) *InputRemoteSnapshotManualBuilder {
+	i.rateLimitConfigs.Insert(rateLimitConfigs...) 
 	return i
 }
