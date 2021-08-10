@@ -71,37 +71,23 @@ func (t *translator) Translate(
 		contextutils.LoggerFrom(t.ctx).Debugf("ignoring non istio mesh %v %T", sets.Key(mesh), mesh.Spec.Type)
 		return
 	}
-	// Todo Double check that there aren't any other skip conditions
-
-	if err := t.updatePeerAuthValues(mesh, istioOutputs); err != nil {
-		reporter.ReportPeerAuthenticationToMesh(mesh, err)
+	if auth, err := t.updatePeerAuthValues(mesh, istioOutputs); err != nil {
+		reporter.ReportPeerAuthenticationToMesh(mesh, auth, err)
 	}
 }
 
 func (t *translator) updatePeerAuthValues(
 	mesh *discoveryv1.Mesh,
 	istioOutputs istio.Builder,
-) error {
-
-	newPeerAuth, err := t.constructPeerAuthentication(mesh)
-	if err != nil {
-		return err
-	}
-
-	istioOutputs.AddPeerAuthentications(newPeerAuth)
-	return nil
-}
-
-func (t *translator) constructPeerAuthentication(
-	mesh *discoveryv1.Mesh,
 ) (*security_istio_io_v1beta1.PeerAuthentication, error) {
+	istioTlsMode, err := tls.MapIstioTlsModeToPeerAuth(t.settings.Spec.GetPeerAuth().GetPeerAuthTlsMode())
 
-	istioTlsMode, err := tls.MapIstioTlsModeToPeerAuth(t.settings.Spec.GetPeerAuth().GetTls())
 	if err != nil {
 		return nil, err
 	}
-
-	return &security_istio_io_v1beta1.PeerAuthentication{
+	// note: if 'mode' is set to the UNSET enum, then the resulting yaml will simply not set this value.
+	// Which I found unintuitive, but it does make literal sense.
+	newPeerAuth := &security_istio_io_v1beta1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        defaultPeerName,
 			Namespace:   mesh.Spec.AgentInfo.AgentNamespace,
@@ -111,5 +97,9 @@ func (t *translator) constructPeerAuthentication(
 			Mtls: &v1beta1.PeerAuthentication_MutualTLS{
 				Mode: istioTlsMode,
 			},
-		}}, nil
+		},
+	}
+
+	istioOutputs.AddPeerAuthentications(newPeerAuth)
+	return newPeerAuth, nil
 }

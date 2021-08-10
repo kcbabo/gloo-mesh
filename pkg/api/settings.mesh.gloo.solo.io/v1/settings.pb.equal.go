@@ -131,7 +131,7 @@ func (m *PeerAuthenticationSettings) Equal(that interface{}) bool {
 		return false
 	}
 
-	if m.GetTls() != target.GetTls() {
+	if m.GetPeerAuthTlsMode() != target.GetPeerAuthTlsMode() {
 		return false
 	}
 

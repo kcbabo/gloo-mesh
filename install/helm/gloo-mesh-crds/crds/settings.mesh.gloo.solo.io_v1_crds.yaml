@@ -105,7 +105,7 @@ spec:
                     Enable the creation of PeerAuthentications on meshes to manage TLS connections.
                     Defaults to true.
                   type: boolean
-                tls:
+                peerAuthTlsMode:
                   description: |-
                     The default mutualTls mode for automatically generated Peer Authentications to use.
                     The enum values correspond to the values listed [by istio](https://istio.io/latest/docs/reference/config/security/peer_authentication/#PeerAuthentication-MutualTLS-Mode)

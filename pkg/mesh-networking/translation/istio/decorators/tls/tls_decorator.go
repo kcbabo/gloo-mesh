@@ -96,7 +96,7 @@ func MapIstioTlsModeToPeerAuth(tlsMode settingsv1.PeerAuthenticationSettings_Mut
 		return v1beta1.PeerAuthentication_MutualTLS_PERMISSIVE, nil
 	case settingsv1.PeerAuthenticationSettings_STRICT:
 		return v1beta1.PeerAuthentication_MutualTLS_STRICT, nil
-	default: // todo: determine if we just want to return PeerAuthentication_MutualTLS_UNSET instead?
+	default:
 		return 0, eris.Errorf("unrecognized Istio MutualTLS mode for peerAuth: %s", tlsMode)
 	}
 }

@@ -58,6 +58,10 @@ func DefaultValues() ChartValues {
 				Enabled: false,
 				Server:  &settingsv1.GrpcServer{},
 			},
+			PeerAuth: &settingsv1.PeerAuthenticationSettings{
+				Enabled:         true,
+				PeerAuthTlsMode: settingsv1.PeerAuthenticationSettings_UNSET,
+			},
 		},
 		DefaultMetricsPort:         defaults.MetricsPort,
 		DisallowIntersectingConfig: false,
