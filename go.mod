@@ -54,7 +54,6 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-github/v32 v32.0.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/go-version v1.2.1
 	github.com/iancoleman/strcase v0.1.3
 	github.com/kr/pretty v0.2.1
 	github.com/linkerd/linkerd2 v0.5.1-0.20200402173539-fee70c064bc0
@@ -107,6 +106,7 @@ require (
 	k8s.io/api v0.21.0
 	k8s.io/apiextensions-apiserver v0.21.0
 	k8s.io/apimachinery v0.21.0
+	k8s.io/cli-runtime v0.20.4
 	k8s.io/client-go v8.0.0+incompatible
 	k8s.io/kubernetes v1.13.0
 	k8s.io/utils v0.0.0-20210305010621-2afb4311ab10
