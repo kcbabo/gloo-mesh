@@ -3,6 +3,8 @@ package peerAuth
 import (
 	"context"
 
+	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/utils/metautils"
+
 	settingsv1 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/decorators/tls"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -90,8 +92,9 @@ func (t *translator) updatePeerAuthValues(
 	newPeerAuth := &security_istio_io_v1beta1.PeerAuthentication{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        defaultPeerName,
-			Namespace:   mesh.Spec.AgentInfo.AgentNamespace,
+			Namespace:   mesh.Spec.GetIstio().GetInstallation().GetNamespace(),
 			ClusterName: mesh.Spec.GetIstio().GetInstallation().GetCluster(),
+			Labels:      metautils.TranslatedObjectLabels(),
 		},
 		Spec: v1beta1.PeerAuthentication{
 			Mtls: &v1beta1.PeerAuthentication_MutualTLS{

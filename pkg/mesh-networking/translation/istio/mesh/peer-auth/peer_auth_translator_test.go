@@ -73,8 +73,11 @@ var _ = Describe("PeerAuthTranslator", func() {
 		expectedPeerAuth = &security_istio_io_v1beta1.PeerAuthentication{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        "default",
-				Namespace:   "gloo-mesh",
+				Namespace:   "istio-system-2",
 				ClusterName: "cluster-name",
+				Labels: map[string]string{
+					"owner.networking.mesh.gloo.solo.io": "gloo-mesh",
+				},
 			},
 			Spec: v1beta1.PeerAuthentication{
 				Mtls: &v1beta1.PeerAuthentication_MutualTLS{
