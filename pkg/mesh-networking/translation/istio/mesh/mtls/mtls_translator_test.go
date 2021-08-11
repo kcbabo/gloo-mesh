@@ -6,7 +6,7 @@ import (
 
 	settingsv1 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
 	"github.com/solo-io/gloo-mesh/pkg/common/defaults"
-
+	commonv1 "github.com/solo-io/gloo-mesh/pkg/api/common.mesh.gloo.solo.io/v1"
 	"istio.io/istio/security/pkg/pki/util"
 
 	"github.com/golang/mock/gomock"
@@ -46,6 +46,8 @@ var _ = Describe("MtlsTranslator", func() {
 				Namespace: defaults.DefaultPodNamespace,
 			},
 		}
+    
+		ingressDestination *discoveryv1.Destination
 	)
 
 	BeforeEach(func() {
@@ -53,6 +55,25 @@ var _ = Describe("MtlsTranslator", func() {
 		mockIstioBuilder = mock_istio.NewMockBuilder(ctrl)
 		mockLocalBuilder = mock_local.NewMockBuilder(ctrl)
 		mockReporter = mock_reporting.NewMockReporter(ctrl)
+
+		ingressDestination = &discoveryv1.Destination{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "istio-ingressgateway",
+				Namespace: "istio-system",
+			},
+			Spec: discoveryv1.DestinationSpec{
+				Type: &discoveryv1.DestinationSpec_KubeService_{
+					KubeService: &discoveryv1.DestinationSpec_KubeService{
+						Ref: &skv2corev1.ClusterObjectRef{
+							Name:        "istio-ingressgateway",
+							Namespace:   "istio-system",
+							ClusterName: "cluster-name",
+						},
+						WorkloadSelectorLabels: map[string]string{"gateway": "selector"},
+					},
+				},
+			},
+		}
 
 		istioMesh = &discoveryv1.Mesh{
 			ObjectMeta: metav1.ObjectMeta{
@@ -71,6 +92,13 @@ var _ = Describe("MtlsTranslator", func() {
 				},
 				AgentInfo: &discoveryv1.MeshSpec_AgentInfo{
 					AgentNamespace: "gloo-mesh",
+				},
+			},
+			Status: discoveryv1.MeshStatus{
+				AppliedEastWestIngressGateways: []*commonv1.AppliedIngressGateway{
+					{
+						DestinationRef: ezkube.MakeObjectRef(ingressDestination),
+					},
 				},
 			},
 		}
@@ -227,18 +255,23 @@ var _ = Describe("MtlsTranslator", func() {
 			},
 		}
 
-		gateway := &discoveryv1.MeshSpec_Istio_IngressGatewayInfo{
-			WorkloadLabels: map[string]string{
-				"hello": "world",
+		workload := &discoveryv1.Workload{
+			Spec: discoveryv1.WorkloadSpec{
+				Mesh: ezkube.MakeObjectRef(istioMesh),
+				Type: &discoveryv1.WorkloadSpec_Kubernetes{
+					Kubernetes: &discoveryv1.WorkloadSpec_KubernetesWorkload{
+						Controller: &skv2corev1.ClusterObjectRef{
+							Namespace: "namespace",
+						},
+						PodLabels: map[string]string{
+							"pod": "labels",
+						},
+					},
+				},
 			},
 		}
 
-		// Add gateways to istioMesh
-		istioMesh.Spec.GetIstio().IngressGateways = []*discoveryv1.MeshSpec_Istio_IngressGatewayInfo{
-			gateway,
-		}
-
-		pbd := &certificatesv1.PodBounceDirective{
+		expectedPbd := &certificatesv1.PodBounceDirective{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        istioMesh.GetName(),
 				Namespace:   istioMesh.Spec.AgentInfo.GetAgentNamespace(),
@@ -253,8 +286,8 @@ var _ = Describe("MtlsTranslator", func() {
 						WaitForReplicas: 1,
 					},
 					{
-						Namespace: istioMesh.Spec.GetIstio().Installation.GetNamespace(),
-						Labels:    gateway.WorkloadLabels,
+						Namespace: workload.Spec.GetKubernetes().GetController().GetNamespace(),
+						Labels:    workload.Spec.GetKubernetes().GetPodLabels(),
 						RootCertSync: &certificatesv1.PodBounceDirectiveSpec_PodSelector_RootCertSync{
 							SecretRef: &skv2corev1.ObjectRef{
 								Name:      "cacerts",
@@ -264,14 +297,14 @@ var _ = Describe("MtlsTranslator", func() {
 							ConfigMapKey: secrets.RootCertID,
 							ConfigMapRef: &skv2corev1.ObjectRef{
 								Name:      "istio-ca-root-cert",
-								Namespace: istioMesh.Spec.GetIstio().GetInstallation().GetNamespace(),
+								Namespace: workload.Spec.GetKubernetes().GetController().GetNamespace(),
 							},
 						},
 					},
 				},
 			},
 		}
-		metautils.AppendParent(ctx, pbd, vm.GetRef(), networkingv1.VirtualMesh{}.GVK())
+		metautils.AppendParent(ctx, expectedPbd, vm.GetRef(), networkingv1.VirtualMesh{}.GVK())
 
 		mockIstioBuilder.EXPECT().
 			AddIssuedCertificates(gomock.Any()).
@@ -301,7 +334,7 @@ var _ = Describe("MtlsTranslator", func() {
 								},
 							},
 						},
-						PodBounceDirective: ezkube.MakeObjectRef(pbd),
+						PodBounceDirective: ezkube.MakeObjectRef(expectedPbd),
 						IssuedCertificateSecret: &skv2corev1.ObjectRef{
 							Name:      "cacerts",
 							Namespace: istioMesh.Spec.GetIstio().GetInstallation().GetNamespace(),
@@ -315,14 +348,14 @@ var _ = Describe("MtlsTranslator", func() {
 		mockIstioBuilder.EXPECT().
 			AddPodBounceDirectives(gomock.Any()).
 			Do(func(podBounceDirective *certificatesv1.PodBounceDirective) {
-				Expect(pbd).To(Equal(podBounceDirective))
+				Expect(podBounceDirective).To(Equal(expectedPbd))
 			})
 
 		translator := mtls.NewTranslator(
 			ctx,
 			settings,
 			v1sets.NewSecretSet(generatedSecret),
-			discoveryv1sets.NewWorkloadSet(),
+			discoveryv1sets.NewWorkloadSet(workload),
 		)
 
 		translator.Translate(istioMesh, vm, mockIstioBuilder, mockLocalBuilder, mockReporter)

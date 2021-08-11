@@ -79,8 +79,6 @@ func (t *translator) Translate(
 	if appliedVirtualMesh != nil {
 		t.mtlsTranslator.Translate(mesh, appliedVirtualMesh, istioOutputs, localOutputs, reporter)
 		t.federationTranslator.Translate(in, mesh, appliedVirtualMesh, istioOutputs, reporter)
-		t.accessTranslator.Translate(mesh, appliedVirtualMesh, istioOutputs)
-	} else {
-		contextutils.LoggerFrom(t.ctx).Debugf("skipping translation elements that require an applied virtual mesh")
+		t.accessTranslator.Translate(in, mesh, appliedVirtualMesh, istioOutputs, reporter)
 	}
 }

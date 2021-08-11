@@ -183,7 +183,6 @@ func (t *translator) configureSharedTrust(
 	issuedCertificate, podBounceDirective := t.constructIssuedCertificate(
 		mesh,
 		sharedTrust,
-		agentInfo.AgentNamespace,
 		autoRestartPods,
 	)
 
@@ -298,7 +297,6 @@ func (t *translator) getOrCreateGeneratedCaSecret(
 func (t *translator) constructIssuedCertificate(
 	mesh *discoveryv1.Mesh,
 	sharedTrust *networkingv1.SharedTrust,
-	agentNamespace string,
 	autoRestartPods bool,
 ) (*certificatesv1.IssuedCertificate, *certificatesv1.PodBounceDirective) {
 	istioMesh := mesh.Spec.GetIstio()
@@ -442,33 +440,13 @@ func getPodsToBounce(
 		})
 	}
 
-	// bounce the ingress gateway pods
-	for _, gateway := range istioMesh.IngressGateways {
-		podsToBounce = append(podsToBounce, &certificatesv1.PodBounceDirectiveSpec_PodSelector{
-			Namespace: istioInstall.Namespace,
-			Labels:    gateway.WorkloadLabels,
-			RootCertSync: &certificatesv1.PodBounceDirectiveSpec_PodSelector_RootCertSync{
-				SecretRef: &skv2corev1.ObjectRef{
-					Name:      istioCaSecretName,
-					Namespace: istioInstall.Namespace,
-				},
-				SecretKey: secrets.RootCertID,
-				ConfigMapRef: &skv2corev1.ObjectRef{
-					Name:      istioCaConfigMapName,
-					Namespace: istioInstall.Namespace,
-				},
-				ConfigMapKey: secrets.RootCertID,
-			},
-		})
-	}
-
-	// collect selectors from workloads matching this mesh
+	// bounce all workloads controlled by the mesh
 	allWorkloads.List(func(workload *discoveryv1.Workload) bool {
 		kubeWorkload := workload.Spec.GetKubernetes()
-
+		workloadNamespace := kubeWorkload.Controller.GetNamespace()
 		if kubeWorkload != nil && ezkube.RefsMatch(workload.Spec.Mesh, mesh) {
 			podsToBounce = append(podsToBounce, &certificatesv1.PodBounceDirectiveSpec_PodSelector{
-				Namespace: kubeWorkload.Controller.GetNamespace(),
+				Namespace: workloadNamespace,
 				Labels:    kubeWorkload.PodLabels,
 				RootCertSync: &certificatesv1.PodBounceDirectiveSpec_PodSelector_RootCertSync{
 					SecretRef: &skv2corev1.ObjectRef{
@@ -478,7 +456,7 @@ func getPodsToBounce(
 					SecretKey: secrets.RootCertID,
 					ConfigMapRef: &skv2corev1.ObjectRef{
 						Name:      istioCaConfigMapName,
-						Namespace: kubeWorkload.Controller.GetNamespace(),
+						Namespace: workloadNamespace,
 					},
 					ConfigMapKey: secrets.RootCertID,
 				},

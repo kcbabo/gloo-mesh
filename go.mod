@@ -83,7 +83,7 @@ require (
 	github.com/solo-io/go-utils v0.21.9
 	github.com/solo-io/k8s-utils v0.0.8
 	github.com/solo-io/protoc-gen-ext v0.0.15
-	github.com/solo-io/skv2 v0.19.1
+	github.com/solo-io/skv2 v0.19.2
 	github.com/solo-io/solo-apis v1.6.31
 	github.com/solo-io/solo-kit v0.21.0
 	github.com/spf13/afero v1.6.0
@@ -106,7 +106,6 @@ require (
 	k8s.io/api v0.21.0
 	k8s.io/apiextensions-apiserver v0.21.0
 	k8s.io/apimachinery v0.21.0
-	k8s.io/cli-runtime v0.20.4
 	k8s.io/client-go v8.0.0+incompatible
 	k8s.io/kubernetes v1.13.0
 	k8s.io/utils v0.0.0-20210305010621-2afb4311ab10
