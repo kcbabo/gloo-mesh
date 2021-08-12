@@ -40,7 +40,8 @@ var _ = Describe("IstioMeshTranslator", func() {
 		mockAccessTranslator = mock_access.NewMockTranslator(ctrl)
 		mockPeerAuthTranslator = mock_peerAuth.NewMockTranslator(ctrl)
 		mockReporter = mock_reporting.NewMockReporter(ctrl)
-		istioMeshTranslator = mesh.NewTranslator(ctx, mockMtlsTranslator, mockFederationTranslator, mockAccessTranslator)
+		in = input.NewInputLocalSnapshotManualBuilder("").Build()
+		istioMeshTranslator = mesh.NewTranslator(ctx, mockMtlsTranslator, mockFederationTranslator, mockAccessTranslator, mockPeerAuthTranslator)
 	})
 
 	AfterEach(func() {
