@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
+	commonv1 "github.com/solo-io/gloo-mesh/pkg/api/common.mesh.gloo.solo.io/v1"
 	settingsv1 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
 	"github.com/solo-io/gloo-mesh/pkg/common/defaults"
-	commonv1 "github.com/solo-io/gloo-mesh/pkg/api/common.mesh.gloo.solo.io/v1"
 	"istio.io/istio/security/pkg/pki/util"
 
 	"github.com/golang/mock/gomock"
@@ -46,7 +46,7 @@ var _ = Describe("MtlsTranslator", func() {
 				Namespace: defaults.DefaultPodNamespace,
 			},
 		}
-    
+
 		ingressDestination *discoveryv1.Destination
 	)
 
