@@ -11,6 +11,7 @@ import (
 
 	v1alpha3sets "github.com/solo-io/external-apis/pkg/api/istio/networking.istio.io/v1alpha3/sets"
 	discoveryv1sets "github.com/solo-io/gloo-mesh/pkg/api/discovery.mesh.gloo.solo.io/v1/sets"
+	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/decorators/tls"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/destination/utils"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/utils/selectorutils"
 	"github.com/solo-io/go-utils/contextutils"
@@ -97,7 +98,7 @@ func (t *translator) Translate(
 		sourceClusterName = sourceMeshInstallation.Cluster
 	}
 
-	destinationRule, err := t.initializeDestinationRule(destination, sourceMeshInstallation)
+	destinationRule, err := t.initializeDestinationRule(destination, t.settings.Spec.Mtls, sourceMeshInstallation)
 	if err != nil {
 		contextutils.LoggerFrom(ctx).Error(err)
 		return nil
@@ -154,17 +155,6 @@ func (t *translator) Translate(
 		return nil
 	}
 
-	// make sure the resulting traffic policy is non-nil before returning it
-	// todo is there an easier way to check if apointer value is an empty struct?
-	tp := destinationRule.Spec.GetTrafficPolicy()
-	if tp == nil || (tp.ConnectionPool == nil &&
-		tp.LoadBalancer == nil &&
-		tp.OutlierDetection == nil &&
-		tp.PortLevelSettings == nil &&
-		tp.Tls == nil) {
-		return nil
-	}
-
 	return destinationRule
 }
 
@@ -195,6 +185,7 @@ func registerFieldFunc(
 
 func (t *translator) initializeDestinationRule(
 	destination *discoveryv1.Destination,
+	mtlsDefault *v1.TrafficPolicySpec_Policy_MTLS,
 	sourceMeshInstallation *discoveryv1.MeshInstallation,
 ) (*networkingv1alpha3.DestinationRule, error) {
 	var meta metav1.ObjectMeta
@@ -219,6 +210,15 @@ func (t *translator) initializeDestinationRule(
 			TrafficPolicy: &networkingv1alpha3spec.TrafficPolicy{},
 			Subsets:       routeutils.MakeDestinationRuleSubsets(destination.Status.GetRequiredSubsets()),
 		},
+	}
+
+	// Initialize Istio TLS mode with default declared in Settings
+	istioTlsMode, err := tls.MapIstioTlsMode(mtlsDefault.GetIstio().GetTlsMode())
+	if err != nil {
+		return nil, err
+	}
+	destinationRule.Spec.TrafficPolicy.Tls = &networkingv1alpha3spec.ClientTLSSettings{
+		Mode: istioTlsMode,
 	}
 
 	return destinationRule, nil
