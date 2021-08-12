@@ -3,7 +3,6 @@ package robustness_test
 import (
 	"context"
 
-	"log"
 	"os"
 	"testing"
 	"time"

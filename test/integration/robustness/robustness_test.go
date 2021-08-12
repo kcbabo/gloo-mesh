@@ -1,8 +1,9 @@
 package robustness_test
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -17,7 +18,7 @@ import (
 var _ = Describe("Robustness", func() {
 	var (
 		// upsert an obj
-		upsert = func (mgr manager.Manager, obj client.Object) {
+		upsert = func(mgr manager.Manager, obj client.Object) {
 			_, err := controllerutils.Upsert(ctx, mgr.GetClient(), obj.DeepCopyObject().(client.Object))
 			ExpectWithOffset(1, err).NotTo(HaveOccurred())
 		}
