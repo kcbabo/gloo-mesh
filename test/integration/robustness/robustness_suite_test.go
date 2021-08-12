@@ -2,8 +2,14 @@ package robustness_test
 
 import (
 	"context"
-
+	"fmt"
+	"github.com/ghodss/yaml"
+	"github.com/solo-io/go-utils/contextutils"
+	"github.com/solo-io/skv2/contrib/pkg/sets"
+	"github.com/solo-io/skv2/pkg/controllerutils"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
 
@@ -27,34 +33,27 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-/*
-todo:
-- reproduce the issue by deleting workloads in the cluster and watching the issuedcert get recreated. can also watch the vmesh status.
-- write integration test (maybe e2e?) to repro it. run both discovery and networking components in the test in memory with fake clients
-- solutions to implement:
-   - workload discovery decouple from pods
-   - destionation discovery decouple from workload
-   - persist last known good mesh config
-
-*/
-
-//NOTE: set USE_EXISTING_CLUSTER=1 to use a real k8s cluster. Otherwise envtest will use controller-runtime's envtest to spin up a local apiserver.
-
 func TestRobustness(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Robustness Suite")
 }
 
-// paths to the directories containing networking and agent crds
 var (
-	ctx     = context.TODO()
+	// how long the test will wait for state to become consistent with expectation
+	testCaseTimeout = time.Second * 5
+
+	rootCtx = context.TODO()
+
+	// paths to the directories containing networking and agent crds
 	crdDirs = []string{
+		utils.GetModulePath("istio.io/istio") + "/manifests/charts/base/crds",
 		util.MustGetThisDir() + "/../../../install/helm/agent-crds/crds",
 		util.MustGetThisDir() + "/../../../install/helm/gloo-mesh-crds/crds",
 	}
 
-	mgmtMgr   manager.Manager
-	remoteMgr manager.Manager
+	mgmtMgr       manager.Manager
+	remoteEastMgr manager.Manager
+	remoteWestMgr manager.Manager
 
 	params bootstrap.StartParameters
 )
@@ -65,18 +64,18 @@ var _ = BeforeSuite(func() {
 		Fail("KUBEBUILDER_ASSETS not set. Run `make install-test-tools` to install integration test assets")
 	}
 
-	mgmtMgr, remoteMgr = runManager(), runManager()
+	mgmtMgr, remoteEastMgr, remoteWestMgr = runManager(), runManager(), runManager()
 
-	managers := map[string]manager.Manager{
-		"mgmt-cluster":   mgmtMgr,
-		"remote-cluster": remoteMgr,
+	remoteManagers := map[string]manager.Manager{
+		"remote-east": remoteEastMgr,
+		"remote-west": remoteWestMgr,
 	}
 	mcWatcher := utils.FakeClusterWatcher{
-		RootCtx:            ctx,
-		PerClusterManagers: managers,
+		RootCtx:            rootCtx,
+		PerClusterManagers: remoteManagers,
 	}
 	mcClient := utils.FakeMulticlusterClient{
-		PerClusterManagers: managers,
+		PerClusterManagers: remoteManagers,
 	}
 
 	params = bootstrap.StartParameters{
@@ -91,7 +90,7 @@ var _ = BeforeSuite(func() {
 		VerboseMode: true,
 	}
 
-	startGlooMeshComponents()
+	startGlooMeshComponents(rootCtx)
 })
 
 func runManager() manager.Manager {
@@ -111,70 +110,171 @@ func runManager() manager.Manager {
 
 	go func() {
 		defer GinkgoRecover()
-		err = mgr.Start(ctx)
+		err = mgr.Start(rootCtx)
 		Expect(err).NotTo(HaveOccurred())
 	}()
 
 	return mgr
 }
 
-func startGlooMeshComponents() {
+func startGlooMeshComponents(ctx context.Context) {
 
-	ctx := context.TODO()
+	netOpts := &mesh_networking.NetworkingOpts{
+		Options: &bootstrap.Options{},
+	}
+	netOpts.AddToFlags(&pflag.FlagSet{}) // just to set defaults
 
-	eg, ctx := errgroup.WithContext(ctx)
-
-	// start networking
-	eg.Go(func() error {
-		netOpts := &mesh_networking.NetworkingOpts{
-			Options: &bootstrap.Options{},
-		}
-		netOpts.AddToFlags(&pflag.FlagSet{}) // just to set defaults
-
-		return mesh_networking.NetworkingStarter{
-			NetworkingOpts: netOpts,
-			MakeExtensions: func(ctx context.Context, parameters bootstrap.StartParameters) mesh_networking.ExtensionOpts {
-				// no extensions
-				return mesh_networking.ExtensionOpts{}
-			},
-		}.StartReconciler(ctx, params)
-	})
+	err := mesh_networking.NetworkingStarter{
+		NetworkingOpts: netOpts,
+		MakeExtensions: func(ctx context.Context, parameters bootstrap.StartParameters) mesh_networking.ExtensionOpts {
+			// no extensions
+			return mesh_networking.ExtensionOpts{}
+		},
+	}.StartReconciler(ctx, params)
+	Expect(err).NotTo(HaveOccurred())
 
 	// start discovery
-	eg.Go(func() error {
-		discOpts := &mesh_discovery.DiscoveryOpts{
-			Options: &bootstrap.Options{},
-		}
-		discOpts.AddToFlags(&pflag.FlagSet{}) // just to set defaults
+	discOpts := &mesh_discovery.DiscoveryOpts{
+		Options: &bootstrap.Options{},
+	}
+	discOpts.AddToFlags(&pflag.FlagSet{}) // just to set defaults
 
-		return reconciliation.Start(
-			ctx,
-			"",
-			params.MasterManager,
-			params.Clusters,
-			params.McClient,
-			params.SnapshotHistory,
-			params.VerboseMode,
-			&params.SettingsRef,
-		)
-	})
+	err = reconciliation.Start(
+		ctx,
+		"",
+		params.MasterManager,
+		params.Clusters,
+		params.McClient,
+		params.SnapshotHistory,
+		params.VerboseMode,
+		&params.SettingsRef,
+	)
+	Expect(err).NotTo(HaveOccurred())
 
-	// start cert agent on mgmt cluster
-	eg.Go(func() error {
-		return agent.StartWithManager(ctx, mgmtMgr, agent.CertAgentReconcilerExtensionOpts{})
-	})
+	// start cert agent on remote-east cluster
+	err = agent.StartWithManager(ctx, remoteEastMgr, agent.CertAgentReconcilerExtensionOpts{})
+	Expect(err).NotTo(HaveOccurred())
 
-	// start cert agent on remote cluster
-	eg.Go(func() error {
-		return agent.StartWithManager(ctx, remoteMgr, agent.CertAgentReconcilerExtensionOpts{})
-	})
-
-	go func() {
-		defer GinkgoRecover()
-		err := eg.Wait()
-		Expect(err).NotTo(HaveOccurred())
-	}()
+	// start cert agent on remote-west cluster
+	err = agent.StartWithManager(ctx, remoteWestMgr, agent.CertAgentReconcilerExtensionOpts{})
+	Expect(err).NotTo(HaveOccurred())
 
 	// give components 3 sec to start
 	time.Sleep(time.Second * 3)
+}
+
+// Test case definition
+type testCase struct {
+	// the sequence of expected states to test. each state will define a set of inputs on each cluster
+	// and the expected outputs to see on that cluster after Gloo Mesh components eventually reconcile.
+	// We may also want to verify that some things *consistently* are true, for example, never incorrectly garbage collecting (even temporarily) a resource.
+	states []testState
+}
+
+// runs through each of the test states, applies them to the cluster
+// should be run inside an It() block.
+func (c testCase) execute(ctx context.Context) {
+	for _, state := range c.states {
+		state.execute(ctx)
+	}
+}
+
+// state of the test at a given point in time
+type testState struct {
+	description string
+	// state expected in each cluster
+	clusterStates map[manager.Manager]configState
+}
+
+// applies the input resources of the state to each cluster and verifies eventually they are consistent
+func (s testState) execute(ctx context.Context) {
+	eg, ctx := errgroup.WithContext(ctx)
+	for mgr, state := range s.clusterStates {
+		for _, obj := range state.clusterInputs {
+			// upsert all objects
+			upsert(ctx, mgr, obj)
+		}
+
+		// start watching for expected outputs
+		for _, expectedObj := range state.clusterExpectedOutputs {
+			mgr := mgr // pike
+			expectedObj := expectedObj // pike
+			// begin checking the object eventually exists and matches the expected state
+			eg.Go(func() error {
+				defer GinkgoRecover()
+				Eventually(func() (client.Object, error) {
+					return getLatest(ctx, mgr, expectedObj)
+				}, testCaseTimeout).Should(matchKubeObject{objToMatch: expectedObj}, s.description)
+				contextutils.LoggerFrom(ctx).Infof("expected object %v matched", sets.TypedKey(expectedObj))
+				return nil
+			})
+		}
+	}
+	err := eg.Wait()
+	Expect(err).NotTo(HaveOccurred())
+}
+
+// the expected state of the cluster given the provided inputs.
+// it is expected that when the inputs are removed the outputs will also be removed.
+type configState struct {
+	clusterInputs          []client.Object
+	clusterExpectedOutputs []client.Object
+}
+
+// shared test funcs
+
+// upsert an obj
+func upsert(ctx context.Context, mgr manager.Manager, obj client.Object) {
+	_, err := controllerutils.Upsert(ctx, mgr.GetClient(), obj.DeepCopyObject().(client.Object))
+	ExpectWithOffset(3, err).NotTo(HaveOccurred())
+}
+
+// fetch latest version of an obj from the manager
+func getLatest(ctx context.Context, mgr manager.Manager, obj client.Object) (client.Object, error) {
+
+	key := client.ObjectKeyFromObject(obj)
+
+	// Always valid because obj is client.Object
+	existing := obj.DeepCopyObject().(client.Object)
+
+	if err := mgr.GetClient().Get(ctx, key, existing); err != nil {
+		if !errors.IsNotFound(err) {
+			ExpectWithOffset(3, err).NotTo(HaveOccurred())
+		}
+		return nil, err
+	}
+	return existing, nil
+}
+
+type matchKubeObject struct {
+	objToMatch client.Object
+}
+
+func (m matchKubeObject) Match(actual interface{}) (success bool, err error) {
+	obj, ok := actual.(client.Object)
+	if !ok {
+		return false, nil
+	}
+	return controllerutils.ObjectsEqual(m.objToMatch, obj), nil
+}
+
+func (m matchKubeObject) FailureMessage(actual interface{}) (message string) {
+	obj, ok := actual.(client.Object)
+	if !ok {
+		return fmt.Sprintf("expected object %T, got %T", m.objToMatch, actual)
+	}
+	return fmt.Sprintf("expected obj %v, got %v", sprintObj(m.objToMatch), sprintObj(obj))
+}
+
+func (m matchKubeObject) NegatedFailureMessage(actual interface{}) (message string) {
+	return fmt.Sprintf("expected obj not to match %T/%v", m.objToMatch, m.objToMatch)
+}
+
+// print an object as a human readable string
+func sprintObj(obj client.Object) string {
+	y, err := yaml.Marshal(obj)
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("%v<yaml:\n%s\n>", sets.TypedKey(obj), y)
 }
