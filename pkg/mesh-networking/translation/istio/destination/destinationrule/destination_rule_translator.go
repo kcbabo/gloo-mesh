@@ -154,6 +154,17 @@ func (t *translator) Translate(
 		return nil
 	}
 
+	// make sure the resulting traffic policy is non-nil before returning it
+	// todo is there an easier way to check if apointer value is an empty struct?
+	tp := destinationRule.Spec.GetTrafficPolicy()
+	if tp == nil || (tp.ConnectionPool == nil &&
+		tp.LoadBalancer == nil &&
+		tp.OutlierDetection == nil &&
+		tp.PortLevelSettings == nil &&
+		tp.Tls == nil) {
+		return nil
+	}
+
 	return destinationRule
 }
 

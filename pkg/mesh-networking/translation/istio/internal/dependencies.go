@@ -62,7 +62,7 @@ func (d dependencyFactoryImpl) MakeMeshTranslator(
 	workloads discoveryv1sets.WorkloadSet,
 ) mesh.Translator {
 	federationTranslator := federation.NewTranslator(ctx)
-	mtlsTranslator := mtls.NewTranslator(ctx, settingsutils.SettingsFromContext(ctx), secrets, workloads)
+	mtlsTranslator := mtls.NewTranslator(ctx, secrets, workloads)
 	accessTranslator := access.NewTranslator(ctx)
 	peerAuthTranslator := peerAuth.NewTranslator(ctx, settingsutils.SettingsFromContext(ctx), workloads)
 

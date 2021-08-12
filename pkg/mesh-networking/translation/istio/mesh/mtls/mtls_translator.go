@@ -14,7 +14,6 @@ import (
 	"github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/output/istio"
 	"github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/output/local"
 	networkingv1 "github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/v1"
-	settingsv1 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
 	"github.com/solo-io/gloo-mesh/pkg/certificates/common/secrets"
 	"github.com/solo-io/gloo-mesh/pkg/common/defaults"
 	"github.com/solo-io/gloo-mesh/pkg/common/version"
@@ -90,20 +89,17 @@ type Translator interface {
 
 type translator struct {
 	ctx       context.Context
-	settings  *settingsv1.Settings
 	secrets   corev1sets.SecretSet
 	workloads discoveryv1sets.WorkloadSet
 }
 
 func NewTranslator(
 	ctx context.Context,
-	settings *settingsv1.Settings,
 	secrets corev1sets.SecretSet,
 	workloads discoveryv1sets.WorkloadSet,
 ) Translator {
 	return &translator{
 		ctx:       ctx,
-		settings:  settings,
 		secrets:   secrets,
 		workloads: workloads,
 	}
