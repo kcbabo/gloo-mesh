@@ -188,6 +188,7 @@ type testState struct {
 
 // applies the input resources of the state to each cluster and verifies eventually they are consistent
 func (s testState) execute(ctx context.Context) {
+	By(s.description)
 	eg, ctx := errgroup.WithContext(ctx)
 	for mgr, state := range s.clusterStates {
 		for _, obj := range state.clusterInputs {
