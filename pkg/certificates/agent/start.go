@@ -3,6 +3,8 @@ package agent
 import (
 	"context"
 
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
 	corev1clients "github.com/solo-io/external-apis/pkg/api/k8s/core/v1"
 	"github.com/solo-io/gloo-mesh/pkg/api/certificates.mesh.gloo.solo.io/agent/input"
 	"github.com/solo-io/gloo-mesh/pkg/certificates/agent/reconciliation"
@@ -33,25 +35,31 @@ func StartFuncExt(makeExtensionOpts MakeExtensionOpts) bootstrap.StartFunc {
 	return func(ctx context.Context, parameters bootstrap.StartParameters) error {
 
 		extOpts := makeExtensionOpts(ctx, parameters)
-		extOpts.initDefaults(parameters)
 
-		snapshotBuilder := input.NewSingleClusterBuilder(parameters.MasterManager)
-
-		translator := translation.NewCertAgentTranslator()
-
-		podBounder := podbouncer.NewPodBouncer(
-			corev1clients.NewPodClient(parameters.MasterManager.GetClient()),
-			extOpts.RootCertMatcher,
-		)
-
-		return reconciliation.Start(
-			ctx,
-			snapshotBuilder,
-			parameters.MasterManager,
-			podBounder,
-			extOpts.MakeTranslator(translator),
-		)
+		return StartWithManager(ctx, parameters.MasterManager, extOpts)
 	}
+}
+
+// exported for test
+func StartWithManager(ctx context.Context, mgr manager.Manager, extOpts CertAgentReconcilerExtensionOpts) error {
+	extOpts.initDefaults()
+
+	snapshotBuilder := input.NewSingleClusterBuilder(mgr)
+
+	translator := translation.NewCertAgentTranslator()
+
+	podBounder := podbouncer.NewPodBouncer(
+		corev1clients.NewPodClient(mgr.GetClient()),
+		extOpts.RootCertMatcher,
+	)
+
+	return reconciliation.Start(
+		ctx,
+		snapshotBuilder,
+		mgr,
+		podBounder,
+		extOpts.MakeTranslator(translator),
+	)
 }
 
 // Options for extending the functionality of the Networking controller
@@ -67,7 +75,7 @@ type CertAgentReconcilerExtensionOpts struct {
 	RootCertMatcher podbouncer.RootCertMatcher
 }
 
-func (opts *CertAgentReconcilerExtensionOpts) initDefaults(parameters bootstrap.StartParameters) {
+func (opts *CertAgentReconcilerExtensionOpts) initDefaults() {
 
 	if opts.MakeTranslator == nil {
 		// use default translator

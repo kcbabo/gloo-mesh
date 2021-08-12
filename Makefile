@@ -55,6 +55,17 @@ mod-download:
 clear-vendor-any:
 	rm -rf vendor_any
 
+# Dependencies for testing
+K8S_VERSION=1.19.2
+.PHONY: install-test-tools
+install-test-tools: mod-download
+	# documented here: https://book.kubebuilder.io/reference/envtest.html
+
+	curl -sSLo envtest-bins.tar.gz "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-$(K8S_VERSION)-$(shell go env GOOS)-$(shell go env GOARCH).tar.gz"
+	tar -C $(DEPSGOBIN) --strip-components=1 -zvxf envtest-bins.tar.gz
+	rm envtest-bins.tar.gz
+	export KUBEBUILDER_ASSETS=$(DEPSGOBIN)/bin
+
 # Dependencies for code generation
 .PHONY: install-go-tools
 install-go-tools: mod-download

@@ -52,23 +52,24 @@ func Start(ctx context.Context, opts *NetworkingOpts) error {
 // custom entryoint for the Networking Reconciler. Used to allow running a customized/extended version of the Networking Reconciler.
 // disableMultiCluster - disable multi cluster manager and clientset from being initialized
 func StartFunc(opts *NetworkingOpts, makeExtensions MakeExtensionOpts) bootstrap.StartFunc {
-	starter := networkingStarter{
+	starter := NetworkingStarter{
 		NetworkingOpts: opts,
-		makeExtensions: makeExtensions,
+		MakeExtensions: makeExtensions,
 	}
-	return starter.startReconciler
+	return starter.StartReconciler
 }
 
-type networkingStarter struct {
+// exported for tests
+type NetworkingStarter struct {
 	*NetworkingOpts
 
 	// callback to configure extensions
-	makeExtensions MakeExtensionOpts
+	MakeExtensions MakeExtensionOpts
 }
 
 // start the main reconcile loop
-func (s networkingStarter) startReconciler(ctx context.Context, parameters bootstrap.StartParameters) error {
-	extensionOpts := s.makeExtensions(ctx, parameters)
+func (s NetworkingStarter) StartReconciler(ctx context.Context, parameters bootstrap.StartParameters) error {
+	extensionOpts := s.MakeExtensions(ctx, parameters)
 	extensionOpts.initDefaults(parameters)
 
 	baseTranslator := certissuertranslation.NewTranslator(corev1clients.NewSecretClient(parameters.MasterManager.GetClient()))
