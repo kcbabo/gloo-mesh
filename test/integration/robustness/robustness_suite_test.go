@@ -3,15 +3,16 @@ package robustness_test
 import (
 	"context"
 	"fmt"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/ghodss/yaml"
 	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/skv2/contrib/pkg/sets"
 	"github.com/solo-io/skv2/pkg/controllerutils"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -40,7 +41,7 @@ func TestRobustness(t *testing.T) {
 
 var (
 	// how long the test will wait for state to become consistent with expectation
-	testCaseTimeout = time.Second * 5
+	testCaseTimeout = time.Second * 2
 
 	rootCtx = context.TODO()
 
@@ -50,6 +51,9 @@ var (
 		util.MustGetThisDir() + "/../../../install/helm/agent-crds/crds",
 		util.MustGetThisDir() + "/../../../install/helm/gloo-mesh-crds/crds",
 	}
+
+	remoteEast = "remote-east"
+	remoteWest = "remote-west"
 
 	mgmtMgr       manager.Manager
 	remoteEastMgr manager.Manager
@@ -67,8 +71,8 @@ var _ = BeforeSuite(func() {
 	mgmtMgr, remoteEastMgr, remoteWestMgr = runManager(), runManager(), runManager()
 
 	remoteManagers := map[string]manager.Manager{
-		"remote-east": remoteEastMgr,
-		"remote-west": remoteWestMgr,
+		remoteEast: remoteEastMgr,
+		remoteWest: remoteWestMgr,
 	}
 	mcWatcher := utils.FakeClusterWatcher{
 		RootCtx:            rootCtx,
@@ -198,7 +202,7 @@ func (s testState) execute(ctx context.Context) {
 
 		// start watching for expected outputs
 		for _, expectedObj := range state.clusterExpectedOutputs {
-			mgr := mgr // pike
+			mgr := mgr                 // pike
 			expectedObj := expectedObj // pike
 			// begin checking the object eventually exists and matches the expected state
 			eg.Go(func() error {

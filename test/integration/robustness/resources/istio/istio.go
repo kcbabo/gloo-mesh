@@ -9,11 +9,14 @@ import (
 )
 
 var (
-	IstioNamespace = "istio-namespace"
-	IstioRevsion = "best-revision-ever"
-	IstioServiceAccount = "service-account-name"
-	IstiodDeploymentName = "istiod"
-	IstioTrustDomain = "cluster.suffix"
+	IstioNamespace            = "istio-namespace"
+	IstioRevsion              = "best-revision-ever"
+	IstioServiceAccount       = "service-account-name"
+	IstiodDeploymentName      = "istiod"
+	IstioTrustDomain          = "cluster.suffix"
+	IstioIngressName          = "istio-ingress"
+	IstiodLabels              = map[string]string{"app": "istiod"}
+	IstioIngressGatewayLabels = map[string]string{"istio": "ingressgateway"}
 
 	// istio namespace
 	IstioNamespaceObj = &corev1.Namespace{
@@ -31,7 +34,7 @@ var (
 		Spec: appsv1.DeploymentSpec{
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app": "istiod"},
+					Labels: IstiodLabels,
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -44,7 +47,7 @@ var (
 				},
 			},
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": "istiod"},
+				MatchLabels: IstiodLabels,
 			},
 		},
 	}
@@ -56,7 +59,7 @@ var (
 			Namespace: IstioNamespace,
 		},
 		Data: map[string]string{
-			"mesh": func()string {
+			"mesh": func() string {
 				meshConfig := &istiov1alpha1.MeshConfig{
 					TrustDomain: IstioTrustDomain,
 				}
@@ -72,7 +75,7 @@ var (
 	// istio ingress gateway
 	IstioIngressGatewayServiceObj = &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "istio-ingress",
+			Name:      IstioIngressName,
 			Namespace: IstioNamespace,
 		},
 		Spec: corev1.ServiceSpec{
@@ -82,7 +85,7 @@ var (
 				Protocol: "TCP",
 				Port:     1234,
 			}},
-			Selector: map[string]string{"istio": "ingressgateway"},
+			Selector: IstioIngressGatewayLabels,
 			Type:     corev1.ServiceTypeLoadBalancer,
 		},
 	}

@@ -6,6 +6,7 @@ import (
 	settingsv1 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
 	"github.com/solo-io/gloo-mesh/pkg/common/defaults"
 	"github.com/solo-io/gloo-mesh/test/integration/robustness/resources/istio"
+	skv1 "github.com/solo-io/skv2/pkg/api/core.skv2.solo.io/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,7 +42,7 @@ var _ = Describe("Robustness", func() {
 									Name:      "istiod-istio-namespace-remote-east",
 									Namespace: "gloo-mesh",
 									Labels: map[string]string{
-										"cluster.discovery.mesh.gloo.solo.io": "remote-east",
+										"cluster.discovery.mesh.gloo.solo.io": remoteEast,
 										"cluster.multicluster.solo.io":        "",
 										"owner.discovery.mesh.gloo.solo.io":   "gloo-mesh",
 									},
@@ -50,12 +51,10 @@ var _ = Describe("Robustness", func() {
 									Type: &v1.MeshSpec_Istio_{Istio: &v1.MeshSpec_Istio{
 										Installation: &v1.MeshInstallation{
 											Namespace: istio.IstioNamespace,
-											Cluster:   "remote-east",
-											PodLabels: map[string]string{
-												"app": "istiod",
-											},
-											Version: "latest",
-											Region:  "",
+											Cluster:   remoteEast,
+											PodLabels: istio.IstiodLabels,
+											Version:   "latest",
+											Region:    "",
 										},
 										TrustDomain:          istio.IstioTrustDomain,
 										IstiodServiceAccount: istio.IstioServiceAccount,
@@ -72,13 +71,78 @@ var _ = Describe("Robustness", func() {
 									}},
 								},
 							},
+							// discovered productpage workload
+							&v1.Workload{
+								ObjectMeta: metav1.ObjectMeta{
+									Namespace: "gloo-mesh",
+									Name:      "productpage-bookinfo-remote-east-deployment",
+									Labels: map[string]string{
+										"owner.discovery.mesh.gloo.solo.io":   "gloo-mesh",
+										"cluster.discovery.mesh.gloo.solo.io": "remote-east",
+										"cluster.multicluster.solo.io":        "",
+									},
+								},
+								Spec: v1.WorkloadSpec{
+									Type: &v1.WorkloadSpec_Kubernetes{
+										Kubernetes: &v1.WorkloadSpec_KubernetesWorkload{
+											Controller: &skv1.ClusterObjectRef{
+												Name:        istio.ProductpageName,
+												Namespace:   istio.BookinfoNamespace,
+												ClusterName: remoteEast,
+											},
+											PodLabels:          istio.ProductpageLabels,
+											ServiceAccountName: istio.ProductpageName,
+										},
+									},
+									Mesh: &skv1.ObjectRef{
+										Name:      "istiod-istio-namespace-remote-east",
+										Namespace: "gloo-mesh",
+									},
+								},
+							},
+							// discovered productpage destination
+							&v1.Destination{
+								ObjectMeta: metav1.ObjectMeta{
+									Namespace: "gloo-mesh",
+									Name:      "productpage-bookinfo-remote-east",
+									Labels: map[string]string{
+										"owner.discovery.mesh.gloo.solo.io":   "gloo-mesh",
+										"cluster.discovery.mesh.gloo.solo.io": "remote-east",
+										"cluster.multicluster.solo.io":        "",
+									},
+								},
+								Spec: v1.DestinationSpec{
+									Type: &v1.DestinationSpec_KubeService_{
+										KubeService: &v1.DestinationSpec_KubeService{
+											Ref: &skv1.ClusterObjectRef{
+												Name:        istio.ProductpageName,
+												Namespace:   istio.BookinfoNamespace,
+												ClusterName: remoteEast,
+											},
+											WorkloadSelectorLabels: istio.ProductpageLabels,
+											Ports: []*v1.DestinationSpec_KubeService_KubeServicePort{{
+												Port:       9080,
+												Name:       "http",
+												Protocol:   "TCP",
+												TargetPort: &v1.DestinationSpec_KubeService_KubeServicePort_TargetPortNumber{TargetPortNumber: 9080},
+											}},
+											ServiceType: v1.DestinationSpec_KubeService_CLUSTER_IP,
+										},
+									},
+									Mesh: &skv1.ObjectRef{
+										Name:      "istiod-istio-namespace-remote-east",
+										Namespace: "gloo-mesh",
+									},
+								},
+							},
+
 							// discovered west mesh
 							&v1.Mesh{
 								ObjectMeta: metav1.ObjectMeta{
 									Name:      "istiod-istio-namespace-remote-west",
 									Namespace: "gloo-mesh",
 									Labels: map[string]string{
-										"cluster.discovery.mesh.gloo.solo.io": "remote-west",
+										"cluster.discovery.mesh.gloo.solo.io": remoteWest,
 										"cluster.multicluster.solo.io":        "",
 										"owner.discovery.mesh.gloo.solo.io":   "gloo-mesh",
 									},
@@ -87,12 +151,10 @@ var _ = Describe("Robustness", func() {
 									Type: &v1.MeshSpec_Istio_{Istio: &v1.MeshSpec_Istio{
 										Installation: &v1.MeshInstallation{
 											Namespace: istio.IstioNamespace,
-											Cluster:   "remote-west",
-											PodLabels: map[string]string{
-												"app": "istiod",
-											},
-											Version: "latest",
-											Region:  "",
+											Cluster:   remoteWest,
+											PodLabels: istio.IstiodLabels,
+											Version:   "latest",
+											Region:    "",
 										},
 										TrustDomain:          istio.IstioTrustDomain,
 										IstiodServiceAccount: istio.IstioServiceAccount,
@@ -109,14 +171,83 @@ var _ = Describe("Robustness", func() {
 									}},
 								},
 							},
+							// discovered productpage workload
+							&v1.Workload{
+								ObjectMeta: metav1.ObjectMeta{
+									Namespace: "gloo-mesh",
+									Name:      "productpage-bookinfo-remote-west-deployment",
+									Labels: map[string]string{
+										"owner.discovery.mesh.gloo.solo.io":   "gloo-mesh",
+										"cluster.discovery.mesh.gloo.solo.io": "remote-west",
+										"cluster.multicluster.solo.io":        "",
+									},
+								},
+								Spec: v1.WorkloadSpec{
+									Type: &v1.WorkloadSpec_Kubernetes{
+										Kubernetes: &v1.WorkloadSpec_KubernetesWorkload{
+											Controller: &skv1.ClusterObjectRef{
+												Name:        istio.ProductpageName,
+												Namespace:   istio.BookinfoNamespace,
+												ClusterName: remoteWest,
+											},
+											PodLabels:          istio.ProductpageLabels,
+											ServiceAccountName: istio.ProductpageName,
+										},
+									},
+									Mesh: &skv1.ObjectRef{
+										Name:      "istiod-istio-namespace-remote-west",
+										Namespace: "gloo-mesh",
+									},
+								},
+							},
+							// discovered productpage destination
+							&v1.Destination{
+								ObjectMeta: metav1.ObjectMeta{
+									Namespace: "gloo-mesh",
+									Name:      "productpage-bookinfo-remote-west",
+									Labels: map[string]string{
+										"owner.discovery.mesh.gloo.solo.io":   "gloo-mesh",
+										"cluster.discovery.mesh.gloo.solo.io": "remote-west",
+										"cluster.multicluster.solo.io":        "",
+									},
+								},
+								Spec: v1.DestinationSpec{
+									Type: &v1.DestinationSpec_KubeService_{
+										KubeService: &v1.DestinationSpec_KubeService{
+											Ref: &skv1.ClusterObjectRef{
+												Name:        istio.ProductpageName,
+												Namespace:   istio.BookinfoNamespace,
+												ClusterName: remoteWest,
+											},
+											WorkloadSelectorLabels: istio.ProductpageLabels,
+											Ports: []*v1.DestinationSpec_KubeService_KubeServicePort{{
+												Port:       9080,
+												Name:       "http",
+												Protocol:   "TCP",
+												TargetPort: &v1.DestinationSpec_KubeService_KubeServicePort_TargetPortNumber{TargetPortNumber: 9080},
+											}},
+											ServiceType: v1.DestinationSpec_KubeService_CLUSTER_IP,
+										},
+									},
+									Mesh: &skv1.ObjectRef{
+										Name:      "istiod-istio-namespace-remote-west",
+										Namespace: "gloo-mesh",
+									},
+								},
+							},
 						},
 					},
 					remoteEastMgr: {
 						clusterInputs: []client.Object{
+							// istio
 							istio.IstioNamespaceObj,
 							istio.IstiodDeploymentObj,
 							istio.IstioMeshConfigConfigMapObj,
 							istio.IstioIngressGatewayServiceObj,
+							// bookinfo
+							istio.BookinfoNamespaceObj,
+							istio.ProductpageDeploymentObj,
+							istio.ProductpageServiceObj,
 						},
 						clusterExpectedOutputs: nil,
 					},
@@ -126,6 +257,10 @@ var _ = Describe("Robustness", func() {
 							istio.IstiodDeploymentObj,
 							istio.IstioMeshConfigConfigMapObj,
 							istio.IstioIngressGatewayServiceObj,
+							// bookinfo
+							istio.BookinfoNamespaceObj,
+							istio.ProductpageDeploymentObj,
+							istio.ProductpageServiceObj,
 						},
 						clusterExpectedOutputs: nil,
 					},
