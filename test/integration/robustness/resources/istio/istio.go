@@ -15,7 +15,6 @@ var (
 	IstiodDeploymentName = "istiod"
 	IstioTrustDomain = "cluster.suffix"
 
-
 	// istio namespace
 	IstioNamespaceObj = &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
