@@ -1,4 +1,0 @@
-changelog:
-  - type: NEW_FEATURE
-    issueLink: https://github.com/solo-io/gloo-mesh-enterprise/issues/833
-    description: Replace creation of mtls destination rules for each route with peer authentication objects for the route's mesh.
