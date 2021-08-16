@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	appsv1sets "github.com/solo-io/external-apis/pkg/api/k8s/apps/v1/sets"
+
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/mesh/mtls"
 
 	"github.com/hashicorp/go-multierror"
@@ -90,7 +92,9 @@ func (d *meshDetector) detectMesh(
 		return nil, nil
 	}
 
-	meshConfig, err := getMeshConfig(in.ConfigMaps(), deployment.ClusterName, deployment.Namespace)
+	revisionSuffix := getIstioRevisionSuffix(deployment)
+
+	meshConfig, err := getMeshConfig(in.ConfigMaps(), deployment.ClusterName, deployment.Namespace, revisionSuffix)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +118,7 @@ func (d *meshDetector) detectMesh(
 
 	agent := getAgent(
 		deployment.ClusterName,
-		in.Pods(),
+		in.Deployments(),
 	)
 
 	region, err := localityutils.GetClusterRegion(deployment.ClusterName, in.Nodes())
@@ -363,6 +367,10 @@ func (d *meshDetector) getIstiodVersion(deployment *appsv1.Deployment) (string, 
 	return "", nil
 }
 
+func getIstioRevisionSuffix(deployment *appsv1.Deployment) string {
+	return strings.Replace(deployment.GetName(), istiodDeploymentName, "", 1)
+}
+
 // Return true if deployment is inferred to be an Istiod deployment
 func isIstiod(deployment *appsv1.Deployment, container *corev1.Container) bool {
 	// Istio revision deployments may take the form `istiod-<revision-name>`
@@ -374,10 +382,10 @@ func isIstiod(deployment *appsv1.Deployment, container *corev1.Container) bool {
 func getMeshConfig(
 	configMaps corev1sets.ConfigMapSet,
 	cluster,
-	namespace string,
+	namespace, revisionSuffix string,
 ) (*istiov1alpha1.MeshConfig, error) {
 	istioConfigMap, err := configMaps.Find(&skv1.ClusterObjectRef{
-		Name:        istioConfigMapName,
+		Name:        istioConfigMapName + revisionSuffix,
 		Namespace:   namespace,
 		ClusterName: cluster,
 	})
@@ -413,9 +421,9 @@ type Agent struct {
 
 func getAgent(
 	cluster string,
-	pods corev1sets.PodSet,
+	deployments appsv1sets.DeploymentSet,
 ) *discoveryv1.MeshSpec_AgentInfo {
-	agentNamespace := getCertAgentNamespace(cluster, pods)
+	agentNamespace := getCertAgentNamespace(cluster, deployments)
 	if agentNamespace == "" {
 		return nil
 	}
@@ -426,20 +434,19 @@ func getAgent(
 
 func getCertAgentNamespace(
 	cluster string,
-	pods corev1sets.PodSet,
+	deployments appsv1sets.DeploymentSet,
 ) string {
 	if defaults.GetAgentCluster() != "" {
 		// discovery is running as the agent, assume the cert agent runs in the same namespace
 		return defaults.GetPodNamespace()
 	}
-	agentPods := pods.List(func(pod *corev1.Pod) bool {
-
-		return pod.ClusterName != cluster ||
-			!labels.SelectorFromSet(agentLabels).Matches(labels.Set(pod.Labels))
+	agentDeployments := deployments.List(func(deployment *appsv1.Deployment) bool {
+		return deployment.ClusterName != cluster ||
+			!labels.SelectorFromSet(agentLabels).Matches(labels.Set(deployment.Spec.Template.Labels))
 	})
-	if len(agentPods) == 0 {
+	if len(agentDeployments) == 0 {
 		return ""
 	}
 	// currently assume only one agent installed per cluster/mesh
-	return agentPods[0].Namespace
+	return agentDeployments[0].Namespace
 }

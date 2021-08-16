@@ -27,6 +27,9 @@ function create_kind_cluster() {
   # This value will be used to cordon off, and later join the different pod subnets of the multiple clusters.
   ((net=$port1%32000+1))
 
+  # SSL port will beb either 32443 or 32444
+  ((sslport=$port1+443))
+
   echo "creating cluster ${cluster} with ingress port ${port1}"
 
   K="kubectl --context=kind-${cluster}"
@@ -57,6 +60,9 @@ nodes:
     protocol: TCP
   - containerPort: ${port2}
     hostPort: ${port2}
+    protocol: TCP
+  - containerPort: ${sslport}
+    hostPort: ${sslport}
     protocol: TCP
   kubeadmConfigPatches:
   - |
@@ -388,6 +394,7 @@ EOF
 function install_istio_1_8() {
   cluster=$1
   eastWestIngressPort=$2
+  istioRevision=$3
 
   K="kubectl --context=kind-${cluster}"
 
@@ -402,6 +409,7 @@ metadata:
 spec:
   hub: gcr.io/istio-release
   profile: preview
+  revision: ${istioRevision}
   meshConfig:
     enableAutoMtls: true
     defaultConfig:
@@ -497,6 +505,8 @@ EOF
 function install_istio() {
   cluster=$1
   eastWestIngressPort=$2
+  northSouthIngressPort=$3
+  istioRevision=$4
   K="kubectl --context=kind-${cluster}"
 
   if istioctl version | grep -E -- '1.7'
@@ -505,13 +515,13 @@ function install_istio() {
     install_istio_coredns $cluster $eastWestIngressPort
   elif istioctl version | grep -E -- '1.8'
   then
-    install_istio_1_8 $cluster $eastWestIngressPort
+    install_istio_1_8 $cluster $eastWestIngressPort $istioRevision
   elif istioctl version | grep -E -- '1.9'
   then
-    install_istio_1_8 $cluster $eastWestIngressPort
+    install_istio_1_8 $cluster $eastWestIngressPort $istioRevision
   elif istioctl version | grep -E -- '1.10'
   then
-    install_istio_1_8 $cluster $eastWestIngressPort
+    install_istio_1_8 $cluster $eastWestIngressPort $istioRevision
   else
     echo "Encountered unsupported version of Istio: $(istioctl version)"
     exit 1
