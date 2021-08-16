@@ -4,7 +4,6 @@ metadata:
   name: virtual-mesh
   namespace: gloo-mesh
 spec:
-  globalAccessPolicy: ENABLED
   federation:
     selectors:
       - { }
@@ -22,14 +21,27 @@ metadata:
 spec:
   hostname: http-backend.solo.io
   port:
-    number: 8090
+    # matches port on an ingress gateway
+    number: 8080
     protocol: http
     targetNumber: 8090
   localized:
+    failoverDirectives:
+      - from:
+          region: us-east-1
+        to:
+          - region: us-west-1
+      - from:
+          region: us-west-1
+        to:
+          - region: us-east-1
+    outlierDetection:
+      consecutiveErrors: 1
+      maxEjectionPercent: 100
+      interval: 5s
+      baseEjectionTime: 30s
     destinationSelectors:
       - kubeServiceMatcher:
-          clusters:
-            - cluster-0
           labels:
             app: backend
   virtualMesh:
@@ -44,8 +56,6 @@ metadata:
 spec:
   destinationSelector:
     - kubeServiceMatcher:
-        clusters:
-          - cluster-0
         labels:
           app: backend
   policy:
@@ -54,22 +64,3 @@ spec:
         - virtualDestination:
             name: backend
             namespace: gloo-mesh
----
-# allow access from frontend in same cluster but not other
-apiVersion: networking.mesh.gloo.solo.io/v1
-kind: AccessPolicy
-metadata:
-  name: frontend-cluster0
-  namespace: gloo-mesh
-spec:
-  sourceSelector:
-  - kubeServiceAccountRefs:
-      serviceAccounts:
-        - name: frontend
-          clusterName: cluster-0
-  destinationSelector:
-    - kubeServiceMatcher:
-        labels:
-          app: backend
-  allowedPaths:
-    - "/info"
