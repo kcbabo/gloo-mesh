@@ -179,6 +179,10 @@ var _ = Describe("DestinationRuleTranslator", func() {
 			},
 		})
 
+		sourceMeshInstallation := &discoveryv1.MeshInstallation{
+			Cluster: "source-cluster",
+		}
+
 		mockDecoratorFactory.
 			EXPECT().
 			MakeDecorators(decorators.Parameters{
@@ -189,16 +193,17 @@ var _ = Describe("DestinationRuleTranslator", func() {
 
 		mockClusterDomainRegistry.
 			EXPECT().
-			GetDestinationFQDN(destination.Spec.GetKubeService().Ref.ClusterName, destination.Spec.GetKubeService().Ref).
-			Return("local-hostname")
+			GetDestinationFQDN(sourceMeshInstallation.Cluster, destination.Spec.GetKubeService().Ref).
+			Return(sourceMeshInstallation.Cluster)
 
 		initializedDestinatonRule := &networkingv1alpha3.DestinationRule{
-			ObjectMeta: metautils.TranslatedObjectMeta(
+			ObjectMeta: metautils.FederatedObjectMeta(
 				destination.Spec.GetKubeService().Ref,
+				sourceMeshInstallation,
 				destination.Annotations,
 			),
 			Spec: networkingv1alpha3spec.DestinationRule{
-				Host: "local-hostname",
+				Host: "source-cluster",
 				TrafficPolicy: &networkingv1alpha3spec.TrafficPolicy{
 					Tls: &networkingv1alpha3spec.ClientTLSSettings{
 						Mode: networkingv1alpha3spec.ClientTLSSettings_ISTIO_MUTUAL,
@@ -223,7 +228,7 @@ var _ = Describe("DestinationRuleTranslator", func() {
 			).
 			Return(nil)
 
-		destinationRule := destinationRuleTranslator.Translate(ctx, in, destination, nil, mockReporter)
+		destinationRule := destinationRuleTranslator.Translate(ctx, in, destination, sourceMeshInstallation, mockReporter)
 		Expect(destinationRule).To(Equal(initializedDestinatonRule))
 	})
 
@@ -580,7 +585,7 @@ var _ = Describe("DestinationRuleTranslator", func() {
 		Expect(destinationRule).To(Equal(expectedDestinatonRule))
 	})
 
-	FIt("should report error if translated DestinationRule applies to host already configured by existing DestinationRule", func() {
+	It("should report error if translated DestinationRule applies to host already configured by existing DestinationRule", func() {
 		settings.Spec = settingsv1.SettingsSpec{}
 
 		existingDestinationRules := v1alpha3sets.NewDestinationRuleSet(
@@ -613,19 +618,6 @@ var _ = Describe("DestinationRuleTranslator", func() {
 				},
 			},
 			Status: discoveryv1.DestinationStatus{
-				AppliedFederation: &discoveryv1.DestinationStatus_AppliedFederation{
-					TcpKeepalive: &commonv1.TCPKeepalive{
-						Probes: 1,
-						Time: &duration.Duration{
-							Seconds: 2,
-							Nanos:   3,
-						},
-						Interval: &duration.Duration{
-							Seconds: 4,
-							Nanos:   5,
-						},
-					},
-				},
 				AppliedTrafficPolicies: []*v1.AppliedTrafficPolicy{
 					{
 						Ref: &skv2corev1.ObjectRef{

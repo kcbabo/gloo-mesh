@@ -195,7 +195,7 @@ func (t *translator) initializeDestinationRule(
 			sourceMeshInstallation,
 			destination.Annotations,
 		)
-	} else {
+	} else { // todo - if we formally decide that there's never a case for non-federated DRs, we can remove this
 		meta = metautils.TranslatedObjectMeta(
 			destination.Spec.GetKubeService().Ref,
 			destination.Annotations,
@@ -264,7 +264,7 @@ func addKeepaliveToDestinationRule(destination *discoveryv1.Destination, sourceM
 	// If we also have a non-nil keepalive and this is a federated destination, then extract and apply the keepalive value
 	// to the resulting destination rule.
 	// If the destination is in a different mesh than the sourceMeshInstallation, then it's a federated destination.
-	if isDestinationFederated(destination, sourceMeshInstallation) {
+	if isDestinationFederated(destination, sourceMeshInstallation) && keepalive != nil {
 		// ensure the entire chain of values in the resulting dest rule is instantiated.
 		trafficPolicy := destinationRule.Spec.GetTrafficPolicy()
 		if trafficPolicy == nil {
@@ -290,7 +290,7 @@ func addKeepaliveToDestinationRule(destination *discoveryv1.Destination, sourceM
 	}
 }
 
-// A Federated destinat = a cross-cluster destination
+// A Federated destination = a cross-cluster destination
 func isDestinationFederated(destination *discoveryv1.Destination, sourceMeshInstallation *discoveryv1.MeshInstallation) bool {
-	return sourceMeshInstallation != nil && destination.Spec.GetKubeService().GetRef().GetClusterName() != sourceMeshInstallation.GetCluster() && destination.Status.GetAppliedFederation().GetTcpKeepalive() != nil
+	return sourceMeshInstallation != nil && destination.Spec.GetKubeService().GetRef().GetClusterName() != sourceMeshInstallation.GetCluster()
 }
