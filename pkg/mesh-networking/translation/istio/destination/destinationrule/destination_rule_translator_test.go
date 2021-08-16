@@ -4,13 +4,17 @@ import (
 	"context"
 	"sort"
 
+	"github.com/rotisserie/eris"
+	"github.com/solo-io/go-utils/testutils"
+	"github.com/solo-io/skv2/contrib/pkg/sets"
+	"github.com/solo-io/skv2/pkg/ezkube"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/rotisserie/eris"
 	v1alpha3sets "github.com/solo-io/external-apis/pkg/api/istio/networking.istio.io/v1alpha3/sets"
 	commonv1 "github.com/solo-io/gloo-mesh/pkg/api/common.mesh.gloo.solo.io/v1"
 	discoveryv1 "github.com/solo-io/gloo-mesh/pkg/api/discovery.mesh.gloo.solo.io/v1"
@@ -27,10 +31,7 @@ import (
 	mock_hostutils "github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/utils/hostutils/mocks"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/utils/metautils"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/utils/routeutils"
-	"github.com/solo-io/go-utils/testutils"
-	"github.com/solo-io/skv2/contrib/pkg/sets"
 	skv2corev1 "github.com/solo-io/skv2/pkg/api/core.skv2.solo.io/v1"
-	"github.com/solo-io/skv2/pkg/ezkube"
 	networkingv1alpha3spec "istio.io/api/networking/v1alpha3"
 	networkingv1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -579,7 +580,7 @@ var _ = Describe("DestinationRuleTranslator", func() {
 		Expect(destinationRule).To(Equal(expectedDestinatonRule))
 	})
 
-	It("should report error if translated DestinationRule applies to host already configured by existing DestinationRule", func() {
+	FIt("should report error if translated DestinationRule applies to host already configured by existing DestinationRule", func() {
 		settings.Spec = settingsv1.SettingsSpec{}
 
 		existingDestinationRules := v1alpha3sets.NewDestinationRuleSet(
@@ -588,10 +589,10 @@ var _ = Describe("DestinationRuleTranslator", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "user-provided-dr",
 					Namespace:   "foo",
-					ClusterName: "traffic-target-cluster",
+					ClusterName: "source-cluster",
 				},
 				Spec: networkingv1alpha3spec.DestinationRule{
-					Host: "*-hostname",
+					Host: "*-cluster",
 				},
 			},
 		)
@@ -612,6 +613,19 @@ var _ = Describe("DestinationRuleTranslator", func() {
 				},
 			},
 			Status: discoveryv1.DestinationStatus{
+				AppliedFederation: &discoveryv1.DestinationStatus_AppliedFederation{
+					TcpKeepalive: &commonv1.TCPKeepalive{
+						Probes: 1,
+						Time: &duration.Duration{
+							Seconds: 2,
+							Nanos:   3,
+						},
+						Interval: &duration.Duration{
+							Seconds: 4,
+							Nanos:   5,
+						},
+					},
+				},
 				AppliedTrafficPolicies: []*v1.AppliedTrafficPolicy{
 					{
 						Ref: &skv2corev1.ObjectRef{
@@ -622,7 +636,7 @@ var _ = Describe("DestinationRuleTranslator", func() {
 							SourceSelector: []*commonv1.WorkloadSelector{
 								{
 									KubeWorkloadMatcher: &commonv1.WorkloadSelector_KubeWorkloadMatcher{
-										Clusters: []string{"traffic-target-cluster"},
+										Clusters: []string{"source-cluster"},
 									},
 								},
 							},
@@ -637,6 +651,10 @@ var _ = Describe("DestinationRuleTranslator", func() {
 			},
 		}
 
+		sourceMeshInstallation := &discoveryv1.MeshInstallation{
+			Cluster: "source-cluster",
+		}
+
 		mockDecoratorFactory.
 			EXPECT().
 			MakeDecorators(decorators.Parameters{
@@ -647,8 +665,8 @@ var _ = Describe("DestinationRuleTranslator", func() {
 
 		mockClusterDomainRegistry.
 			EXPECT().
-			GetDestinationFQDN(destination.Spec.GetKubeService().Ref.ClusterName, destination.Spec.GetKubeService().Ref).
-			Return("local-hostname")
+			GetDestinationFQDN(sourceMeshInstallation.Cluster, destination.Spec.GetKubeService().Ref).
+			Return(sourceMeshInstallation.Cluster)
 
 		mockDecorator.
 			EXPECT().
@@ -679,7 +697,7 @@ var _ = Describe("DestinationRuleTranslator", func() {
 			DoAndReturn(func(destination *discoveryv1.Destination, trafficPolicy ezkube.ResourceId, err error) {
 				Expect(err).To(testutils.HaveInErrorChain(
 					eris.Errorf("Unable to translate AppliedTrafficPolicies to DestinationRule, applies to host %s that is already configured by the existing DestinationRule %s",
-						"local-hostname",
+						"source-cluster",
 						sets.Key(existingDestinationRules.List()[0])),
 				),
 				)
@@ -693,6 +711,6 @@ var _ = Describe("DestinationRuleTranslator", func() {
 			destinations,
 		)
 
-		_ = destinationRuleTranslator.Translate(ctx, in, destination, nil, mockReporter)
+		_ = destinationRuleTranslator.Translate(ctx, in, destination, sourceMeshInstallation, mockReporter)
 	})
 })

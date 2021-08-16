@@ -212,13 +212,17 @@ func (t *translator) initializeDestinationRule(
 		},
 	}
 
-	// Initialize Istio TLS mode with default declared in Settings
-	istioTlsMode, err := tls.MapIstioTlsMode(mtlsDefault.GetIstio().GetTlsMode())
-	if err != nil {
-		return nil, err
-	}
-	destinationRule.Spec.TrafficPolicy.Tls = &networkingv1alpha3spec.ClientTLSSettings{
-		Mode: istioTlsMode,
+	// Only create DRs to specify TLS for cross-cluster/Federated DRs, since those aren't
+	// covered by Istio's default mutual-TLS behavior.
+	if isDestinationFederated(destination, sourceMeshInstallation) {
+		// Initialize Istio TLS mode with default declared in Settings
+		istioTlsMode, err := tls.MapIstioTlsMode(mtlsDefault.GetIstio().GetTlsMode())
+		if err != nil {
+			return nil, err
+		}
+		destinationRule.Spec.TrafficPolicy.Tls = &networkingv1alpha3spec.ClientTLSSettings{
+			Mode: istioTlsMode,
+		}
 	}
 
 	return destinationRule, nil
@@ -260,7 +264,7 @@ func addKeepaliveToDestinationRule(destination *discoveryv1.Destination, sourceM
 	// If we also have a non-nil keepalive and this is a federated destination, then extract and apply the keepalive value
 	// to the resulting destination rule.
 	// If the destination is in a different mesh than the sourceMeshInstallation, then it's a federated destination.
-	if sourceMeshInstallation != nil && destination.Spec.GetKubeService().GetRef().GetClusterName() != sourceMeshInstallation.GetCluster() && keepalive != nil {
+	if isDestinationFederated(destination, sourceMeshInstallation) {
 		// ensure the entire chain of values in the resulting dest rule is instantiated.
 		trafficPolicy := destinationRule.Spec.GetTrafficPolicy()
 		if trafficPolicy == nil {
@@ -284,4 +288,9 @@ func addKeepaliveToDestinationRule(destination *discoveryv1.Destination, sourceM
 			Interval: gogoInterval,
 		}
 	}
+}
+
+// A Federated destinat = a cross-cluster destination
+func isDestinationFederated(destination *discoveryv1.Destination, sourceMeshInstallation *discoveryv1.MeshInstallation) bool {
+	return sourceMeshInstallation != nil && destination.Spec.GetKubeService().GetRef().GetClusterName() != sourceMeshInstallation.GetCluster() && destination.Status.GetAppliedFederation().GetTcpKeepalive() != nil
 }
