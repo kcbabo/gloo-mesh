@@ -1,0 +1,94 @@
+apiVersion: networking.enterprise.mesh.gloo.solo.io/v1beta1
+kind: VirtualGateway
+metadata:
+  name: prefix
+  namespace: gloo-mesh
+spec:
+  ingressGatewaySelectors:
+  - portName: http2
+    destinationSelectors:
+    - kubeServiceMatcher:
+        labels:
+          istio: ingressgateway
+        namespaces:
+        - istio-system
+  connectionHandlers:
+  - http:
+      routeConfig:
+      - virtualHostSelector:
+          labels:
+            gateway: prefix
+---
+apiVersion: networking.enterprise.mesh.gloo.solo.io/v1beta1
+kind: VirtualHost
+metadata:
+  name: frontend
+  namespace: gloo-mesh
+  labels:
+    gateway: prefix
+spec:
+  domains:
+  - api.solo.io
+  routes:
+  - delegateAction:
+      selector:
+        labels:
+          v-host: frontend
+---
+apiVersion: networking.enterprise.mesh.gloo.solo.io/v1beta1
+kind: VirtualHost
+metadata:
+  name: backend
+  namespace: gloo-mesh
+  labels:
+    gateway: prefix
+spec:
+  domains:
+  - api.solo.io
+  routes:
+  - delegateAction:
+      selector:
+        labels:
+          v-host: backend
+---
+apiVersion: networking.enterprise.mesh.gloo.solo.io/v1beta1
+kind: RouteTable
+metadata:
+  name: backend
+  namespace: gloo-mesh
+  labels:
+    v-host: backend
+spec:
+  routes:
+  - matchers:
+    - uri:
+        prefix: /backend
+    name: backend
+    routeAction:
+      destinations:
+      - kubeService:
+          clusterName: cluster-0
+          name: backend
+          namespace: {{.EchoContext.AppNamespace.Name}}
+          port: 8090
+---
+apiVersion: networking.enterprise.mesh.gloo.solo.io/v1beta1
+kind: RouteTable
+metadata:
+  name: frontend
+  namespace: gloo-mesh
+  labels:
+    v-host: frontend
+spec:
+  routes:
+  - matchers:
+    - uri:
+        prefix: /frontend
+    name: frontend
+    routeAction:
+      destinations:
+      - kubeService:
+          clusterName: cluster-0
+          name: frontend
+          namespace: {{.EchoContext.AppNamespace.Name}}
+          port: 8090
