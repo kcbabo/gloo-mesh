@@ -1,0 +1,5 @@
+changelog:
+  - type: NON_USER_FACING
+    description: Wait for pods to be running before executing the meshctl check.
+    issueLink: https://github.com/solo-io/gloo-mesh/issues/1816
+    resolvesIssue: false
