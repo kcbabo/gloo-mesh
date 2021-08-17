@@ -40,7 +40,7 @@ jobs:
       - run:
           name: install deps
           command: |
-            make install-go-tools install-test-tools
+            make install-go-tools
       - run:
           name: e2e istio 1.5 tests
           no_output_timeout: 30m

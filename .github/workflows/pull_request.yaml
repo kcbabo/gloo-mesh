@@ -67,7 +67,7 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Unit Tests
         run: |
-          make install-go-tools install-test-tools run-tests
+          make install-go-tools run-tests
       - uses: testspace-com/setup-testspace@v1
         with:
           domain: solo-io.testspace.com
@@ -136,7 +136,7 @@ jobs:
           export PATH=$PWD/_output/$ISTIO_VERSION/bin:/opt/hostedtoolcache/kubectl/1.18.0/x64:$PATH
           istioctl version
 
-          make run-tests TEST_PKG=test/e2e/istio RUN_E2E=1 GINKGOFLAGS=-v
+          make install-test-tools run-tests TEST_PKG=test/e2e/istio RUN_E2E=1 GINKGOFLAGS=-v
       - uses: testspace-com/setup-testspace@v1
         with:
           domain: solo-io.testspace.com
