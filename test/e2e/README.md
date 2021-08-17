@@ -14,4 +14,4 @@ RUN_E2E=true TEST_PKG=test/e2e make run-tests
 The e2e suite will automatically run `ci/setup-kind.sh` and teardown the cluster on test teardown.
 
 To reuse an existing cluster (note that the tests attempt to reach the ingress on `localhost:32000`) and skip the 
-setup/teardown steps, set env `USE_EXISTING=<name of kuybe context>`
+setup/teardown steps, set env `USE_EXISTING=<name of kube context>`
