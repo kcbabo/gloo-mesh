@@ -26,6 +26,7 @@ type GlooMeshInstance interface {
 	IsManagementPlane() bool
 	// for management plane only
 	GetRelayServerAddress() (string, error)
+	GetIngressGatewayAddress(serviceName, namespace, portName string) (string, error)
 	GetCluster() cluster.Cluster
 }
 

@@ -188,7 +188,18 @@ func (i *glooMeshInstance) GetRelayServerAddress() (string, error) {
 	}
 
 	// This probably wont work in all situations
-	return serviceIngressToAddress(svc)
+	return serviceIngressToAddress(svc, "grpc")
+}
+
+func (i *glooMeshInstance) GetIngressGatewayAddress(serviceName, namespace, portName string) (string, error) {
+
+	svc, err := i.instanceConfig.cluster.CoreV1().Services(namespace).Get(context.TODO(), serviceName, kubeApiMeta.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	// This probably wont work in all situations
+	return serviceIngressToAddress(svc, portName)
 }
 
 func (i *glooMeshInstance) IsManagementPlane() bool {
@@ -269,9 +280,23 @@ func (i *glooMeshInstance) Close() error {
 	return nil
 }
 
-func serviceIngressToAddress(svc *v1.Service) (string, error) {
+func serviceIngressToAddress(svc *v1.Service, portName string) (string, error) {
 
-	port := "9900"
+	// find port
+	var port string
+	if portName != "" {
+		for _, p := range svc.Spec.Ports {
+			if p.Name == portName {
+				port = fmt.Sprintf("%v", p.Port)
+			}
+		}
+		if port == "" {
+			log.Warnf("no port found for [%v], skipping adding it to service address", portName)
+		} else {
+
+		}
+	}
+
 	var address string
 	ingress := svc.Status.LoadBalancer.Ingress
 	if len(ingress) == 0 {
@@ -291,7 +316,10 @@ func serviceIngressToAddress(svc *v1.Service) (string, error) {
 			address = ingress[0].Hostname
 		}
 	}
-	return fmt.Sprintf("%s:%s", address, port), nil
+	if port != "" {
+		return fmt.Sprintf("%s:%s", address, port), nil
+	}
+	return address, nil
 }
 
 // wait until secrets are created before returning

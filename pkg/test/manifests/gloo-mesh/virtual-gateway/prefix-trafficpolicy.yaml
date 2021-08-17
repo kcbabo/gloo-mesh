@@ -1,0 +1,72 @@
+apiVersion: networking.enterprise.mesh.gloo.solo.io/v1beta1
+kind: VirtualGateway
+metadata:
+  name: demo-gateway
+  namespace: gloo-mesh
+spec:
+  connectionHandlers:
+  - http:
+      routeConfig:
+      - virtualHostSelector:
+          namespaces:
+          - gloo-mesh
+  ingressGatewaySelectors:
+  - portName: http2
+    destinationSelectors:
+    - kubeServiceMatcher:
+        clusters:
+        - cluster-1
+        labels:
+          istio: ingressgateway
+        namespaces:
+        - istio-system
+---
+apiVersion: networking.enterprise.mesh.gloo.solo.io/v1beta1
+kind: VirtualHost
+metadata:
+  name: demo-virtualhost
+  namespace: gloo-mesh
+spec:
+  domains:
+  - www.example.com
+  routes:
+  - matchers:
+    - uri:
+        prefix: /
+    delegateAction:
+      selector:
+        namespaces:
+        - gloo-mesh
+---
+apiVersion: networking.enterprise.mesh.gloo.solo.io/v1beta1
+kind: RouteTable
+metadata:
+  name: demo-routetable
+  namespace: gloo-mesh
+spec:
+  routes:
+  - matchers:
+    - uri:
+        prefix: /ratings
+    name: ratings
+    routeAction:
+      destinations:
+      - kubeService:
+          clusterName: mgmt-cluster
+          name: ratings
+          namespace: bookinfo
+---
+apiVersion: networking.mesh.gloo.solo.io/v1
+kind: TrafficPolicy
+metadata:
+  namespace: gloo-mesh
+  name: add-header-policy
+spec:
+  routeSelector:
+  - routeTableRefs:
+    - name: demo-routetable
+      namespace: gloo-mesh
+  policy:
+    headerManipulation:
+      appendResponseHeaders:
+        "x-my-custom-header": "example"
