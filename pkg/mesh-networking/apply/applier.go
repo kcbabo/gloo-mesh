@@ -798,7 +798,7 @@ func getAppliedEastWestIngressGateways(
 
 	// if no specified ingress gateway selectors, fall back on defaults
 	if len(virtualMesh.Spec.GetFederation().GetIngressGatewaySelectors()) == 0 {
-		return getDefaultEastWestIngressGateways(mesh, destinations, virtualMesh)
+		return getDefaultEastWestIngressGateways(ctx, mesh, destinations, virtualMesh)
 	}
 
 	// look up selected ingress gateways
@@ -848,6 +848,7 @@ func getAppliedEastWestIngressGateways(
 // 1. respect deprecated Mesh.spec.IngressGateways field
 // 2. use istio ingress gateway config defaults
 func getDefaultEastWestIngressGateways(
+	ctx context.Context,
 	mesh *discoveryv1.Mesh,
 	destinations discoveryv1sets.DestinationSet,
 	virtualMesh *networkingv1.VirtualMesh,
@@ -866,7 +867,8 @@ func getDefaultEastWestIngressGateways(
 			ClusterName: mesh.Spec.GetIstio().GetInstallation().GetCluster(),
 		})
 		if err != nil {
-			// should never happen
+			// can happen if the service exists but there's no backing workload
+			contextutils.LoggerFrom(ctx).Warnf("ensure that mesh %v has deployed ingress workloads for federation: %v", sets.Key(mesh), err)
 			continue
 		}
 

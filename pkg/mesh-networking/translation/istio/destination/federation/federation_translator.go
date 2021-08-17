@@ -96,16 +96,17 @@ func (t *translator) Translate(
 		return nil, nil, nil
 	}
 
-	destinationVirtualMesh, err := in.VirtualMeshes().Find(destination.Status.AppliedFederation.GetVirtualMeshRef())
+	virtualMeshRef := destination.Status.AppliedFederation.GetVirtualMeshRef()
+	destinationVirtualMesh, err := in.VirtualMeshes().Find(virtualMeshRef)
 	if err != nil {
-		contextutils.LoggerFrom(t.ctx).Errorf("Could not find parent VirtualMesh %v for Destination %v", destination.Status.AppliedFederation.GetVirtualMeshRef(), ezkube.MakeObjectRef(destination))
+		reporter.ReportVirtualMeshToDestination(destination, virtualMeshRef, eris.Wrap(err, "could not find parent VirtualMesh"))
 		return nil, nil, nil
 	}
 
 	// translate ServiceEntry template
 	remoteServiceEntryTemplate, err := t.translateRemoteServiceEntryTemplate(destination, destinationMesh)
 	if err != nil {
-		contextutils.LoggerFrom(t.ctx).Errorf("Encountered error while translating ServiceEntry template for Destination %v: %v", ezkube.MakeObjectRef(destination), err)
+		reporter.ReportVirtualMeshToDestination(destination, virtualMeshRef, eris.Wrap(err, "error while translating ServiceEntry"))
 		return nil, nil, nil
 	}
 
@@ -132,9 +133,9 @@ func (t *translator) Translate(
 		)
 
 		// Append the VirtualMesh as a parent to the outputs
-		metautils.AppendParent(t.ctx, serviceEntry, destination.Status.AppliedFederation.GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
-		metautils.AppendParent(t.ctx, virtualService, destination.Status.AppliedFederation.GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
-		metautils.AppendParent(t.ctx, destinationRule, destination.Status.AppliedFederation.GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
+		metautils.AppendParent(t.ctx, serviceEntry, virtualMeshRef, networkingv1.VirtualMesh{}.GVK())
+		metautils.AppendParent(t.ctx, virtualService, virtualMeshRef, networkingv1.VirtualMesh{}.GVK())
+		metautils.AppendParent(t.ctx, destinationRule, virtualMeshRef, networkingv1.VirtualMesh{}.GVK())
 
 		serviceEntries = append(serviceEntries, serviceEntry)
 		virtualServices = append(virtualServices, virtualService)
@@ -160,8 +161,8 @@ func (t *translator) Translate(
 	}
 
 	// Append the VirtualMesh as a parent to the outputs
-	metautils.AppendParent(t.ctx, localServiceEntry, destination.Status.AppliedFederation.GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
-	metautils.AppendParent(t.ctx, localDestinationRule, destination.Status.AppliedFederation.GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
+	metautils.AppendParent(t.ctx, localServiceEntry, virtualMeshRef, networkingv1.VirtualMesh{}.GVK())
+	metautils.AppendParent(t.ctx, localDestinationRule, virtualMeshRef, networkingv1.VirtualMesh{}.GVK())
 	serviceEntries = append(serviceEntries, localServiceEntry)
 	destinationRules = append(destinationRules, localDestinationRule)
 
