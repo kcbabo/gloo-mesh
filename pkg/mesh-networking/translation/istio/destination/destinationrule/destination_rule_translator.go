@@ -88,7 +88,7 @@ func (t *translator) Translate(
 ) *networkingv1alpha3.DestinationRule {
 	kubeService := destination.Spec.GetKubeService()
 
-	if kubeService == nil {
+	if kubeService == nil || !isDestinationFederated(destination, sourceMeshInstallation) {
 		// TODO(ilackarms): non kube services currently unsupported
 		return nil
 	}
