@@ -214,7 +214,8 @@ func (t *translator) initializeDestinationRule(
 
 	// Only create DRs to specify TLS for cross-cluster/Federated DRs, since those aren't
 	// covered by Istio's default mutual-TLS behavior.
-	if isDestinationFederated(destination, sourceMeshInstallation) {
+	//if isDestinationFederated(destination, sourceMeshInstallation) {
+	if sourceMeshInstallation != nil {
 		// Initialize Istio TLS mode with default declared in Settings
 		istioTlsMode, err := tls.MapIstioTlsMode(mtlsDefault.GetIstio().GetTlsMode())
 		if err != nil {
