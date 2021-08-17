@@ -1,42 +1,54 @@
 apiVersion: networking.enterprise.mesh.gloo.solo.io/v1beta1
 kind: VirtualGateway
 metadata:
-  name: demo-gateway
+  name: prefix
   namespace: gloo-mesh
 spec:
-  connectionHandlers:
-  - http:
-      routeConfig:
-      - virtualHostSelector:
-          namespaces:
-          - "gloo-mesh"
   ingressGatewaySelectors:
   - portName: http2
     destinationSelectors:
     - kubeServiceMatcher:
-        clusters:
-        - cluster-1
         labels:
           istio: ingressgateway
         namespaces:
         - istio-system
+  connectionHandlers:
+  - http:
+      routeConfig:
+      - virtualHostSelector:
+          labels:
+            gateway: prefix
 ---
 apiVersion: networking.enterprise.mesh.gloo.solo.io/v1beta1
 kind: VirtualHost
 metadata:
-  name: demo-virtualhost
+  name: prefix
   namespace: gloo-mesh
+  labels:
+    gateway: prefix
 spec:
   domains:
-  - www.example.com
+  - api.solo.io
   routes:
   - matchers:
     - uri:
-        prefix: /ratings
-    name: ratings
+        prefix: /frontend
+    name: frontend
     routeAction:
       destinations:
       - kubeService:
-          clusterName: cluster-1
-          name: ratings
-          namespace: bookinfo
+          clusterName: cluster-0
+          name: frontend
+          namespace: {{.EchoContext.AppNamespace.Name}}
+          port: 8090
+  - matchers:
+    - uri:
+        prefix: /backend
+    name: backend
+    routeAction:
+      destinations:
+      - kubeService:
+          clusterName: cluster-0
+          name: backend
+          namespace: {{.EchoContext.AppNamespace.Name}}
+          port: 8090
