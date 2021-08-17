@@ -1,14 +1,30 @@
 package robustness_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/rotisserie/eris"
+	"github.com/solo-io/gloo-mesh/pkg/api/discovery.mesh.gloo.solo.io/output/discovery"
+	"github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/output/istio"
+	"github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/output/local"
+	"github.com/solo-io/skv2/pkg/ezkube"
+	"github.com/solo-io/skv2/pkg/resource"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+
 	"github.com/ghodss/yaml"
-	"github.com/solo-io/go-utils/contextutils"
 	"github.com/solo-io/skv2/contrib/pkg/sets"
 	"github.com/solo-io/skv2/pkg/controllerutils"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -34,14 +50,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+const (
+	yamlSeparator = "\n---\n"
+	yamlDir       = "test_yamls"
+)
+
 func TestRobustness(t *testing.T) {
-	RegisterFailHandler(Fail)
+	RegisterFailHandler(func(message string, callerSkip ...int) {
+		failurePrintMessage()
+		Fail(message, callerSkip...)
+	})
 	RunSpecs(t, "Robustness Suite")
 }
 
 var (
 	// how long the test will wait for state to become consistent with expectation
-	testCaseTimeout = time.Second * 2
+	testCaseTimeout = time.Second * 5
 
 	rootCtx = context.TODO()
 
@@ -52,6 +76,8 @@ var (
 		util.MustGetThisDir() + "/../../../install/helm/gloo-mesh-crds/crds",
 	}
 
+	// cluster names
+	mgmt       = "mgmt"
 	remoteEast = "remote-east"
 	remoteWest = "remote-west"
 
@@ -59,7 +85,14 @@ var (
 	remoteEastMgr manager.Manager
 	remoteWestMgr manager.Manager
 
+	mgrNames map[manager.Manager]string
+
+	// parameters for networking + discovery
 	params bootstrap.StartParameters
+
+	// used to print debug info on failure
+	currentTest     testState
+	currentTestLock *sync.RWMutex
 )
 
 var _ = BeforeSuite(func() {
@@ -68,7 +101,15 @@ var _ = BeforeSuite(func() {
 		Fail("KUBEBUILDER_ASSETS not set. Run `make install-test-tools` to install integration test assets")
 	}
 
+	currentTest = testState{}
+	currentTestLock = &sync.RWMutex{}
+
 	mgmtMgr, remoteEastMgr, remoteWestMgr = runManager(), runManager(), runManager()
+	mgrNames = map[manager.Manager]string{
+		mgmtMgr:       mgmt,
+		remoteEastMgr: remoteEast,
+		remoteWestMgr: remoteWest,
+	}
 
 	remoteManagers := map[string]manager.Manager{
 		remoteEast: remoteEastMgr,
@@ -127,6 +168,7 @@ func startGlooMeshComponents(ctx context.Context) {
 		Options: &bootstrap.Options{},
 	}
 	netOpts.AddToFlags(&pflag.FlagSet{}) // just to set defaults
+	netOpts.VerboseMode = true
 
 	err := mesh_networking.NetworkingStarter{
 		NetworkingOpts: netOpts,
@@ -142,6 +184,7 @@ func startGlooMeshComponents(ctx context.Context) {
 		Options: &bootstrap.Options{},
 	}
 	discOpts.AddToFlags(&pflag.FlagSet{}) // just to set defaults
+	discOpts.VerboseMode = true
 
 	err = reconciliation.Start(
 		ctx,
@@ -185,23 +228,53 @@ func (c testCase) execute(ctx context.Context) {
 
 // state of the test at a given point in time
 type testState struct {
+	name        string
 	description string
-	// state expected in each cluster
-	clusterStates map[manager.Manager]configState
 }
 
 // applies the input resources of the state to each cluster and verifies eventually they are consistent
 func (s testState) execute(ctx context.Context) {
+	currentTestLock.Lock()
+	currentTest = s
+	currentTestLock.Unlock()
 	By(s.description)
 	eg, ctx := errgroup.WithContext(ctx)
-	for mgr, state := range s.clusterStates {
-		for _, obj := range state.clusterInputs {
+	for mgr, cluster := range mgrNames {
+		var inputYamls []string
+
+		clusterInputs, err := readTestManifest(
+			s.name,
+			cluster,
+			manifestType_inputs,
+			mgr.GetScheme(),
+		)
+		Expect(err).NotTo(HaveOccurred())
+		for _, obj := range clusterInputs {
+			gvk, err := apiutil.GVKForObject(obj, mgr.GetScheme())
+			Expect(err).NotTo(HaveOccurred())
+			obj.(resource.TypedObject).SetGroupVersionKind(gvk)
+
 			// upsert all objects
 			upsert(ctx, mgr, obj)
+
+			inputYamls = append(inputYamls, sprintObj(obj))
 		}
 
+		clusterExpectedOutputs, err := readTestManifest(
+			s.name,
+			cluster,
+			manifestType_outputs,
+			mgr.GetScheme(),
+		)
+		Expect(err).NotTo(HaveOccurred())
 		// start watching for expected outputs
-		for _, expectedObj := range state.clusterExpectedOutputs {
+		var outputYamls []string
+		for _, expectedObj := range clusterExpectedOutputs {
+
+			gvk, err := apiutil.GVKForObject(expectedObj, mgr.GetScheme())
+			Expect(err).NotTo(HaveOccurred())
+			expectedObj.(resource.TypedObject).SetGroupVersionKind(gvk)
+
 			mgr := mgr                 // pike
 			expectedObj := expectedObj // pike
 			// begin checking the object eventually exists and matches the expected state
@@ -209,14 +282,94 @@ func (s testState) execute(ctx context.Context) {
 				defer GinkgoRecover()
 				Eventually(func() (client.Object, error) {
 					return getLatest(ctx, mgr, expectedObj)
-				}, testCaseTimeout).Should(matchKubeObject{objToMatch: expectedObj}, s.description)
-				contextutils.LoggerFrom(ctx).Infof("expected object %v matched", sets.TypedKey(expectedObj))
+				}, testCaseTimeout).Should(matchKubeObject{objToMatch: expectedObj}, s.description+" on test cluster "+cluster)
+				fmt.Fprintf(GinkgoWriter, "expected object %v matched", sets.TypedKey(expectedObj))
 				return nil
 			})
+			outputYamls = append(outputYamls, sprintObj(expectedObj))
 		}
+
+		err = writeTestYamls(s.name, mgrNames[mgr], inputYamls, outputYamls)
+		Expect(err).NotTo(HaveOccurred())
 	}
 	err := eg.Wait()
 	Expect(err).NotTo(HaveOccurred())
+}
+
+type manifestType string
+
+const (
+	manifestType_inputs  manifestType = "inputs"
+	manifestType_outputs manifestType = "outputs"
+	manifestType_actual  manifestType = "actual"
+)
+
+func testStateDir(testState string) string {
+	return filepath.Join(util.MustGetThisDir(), yamlDir, testState)
+}
+
+func getTestManifestPath(testCase, cluster string, t manifestType) string {
+	return filepath.Join(testStateDir(testCase), cluster+"_"+string(t)+".yaml")
+}
+
+func readTestManifest(testCase, cluster string, t manifestType, s *runtime.Scheme) ([]client.Object, error) {
+	raw, err := ioutil.ReadFile(getTestManifestPath(testCase, cluster, t))
+	if err != nil {
+		return nil, err
+	}
+	objYamls := bytes.Split(raw, []byte(yamlSeparator))
+	var objs []client.Object
+	for _, objYam := range objYamls {
+		typeOnly := &metav1.TypeMeta{}
+		err := yaml.Unmarshal(objYam, typeOnly)
+		if err != nil {
+			return nil, err
+		}
+		if typeOnly.Kind == "" {
+			// empty yaml
+			continue
+		}
+		gvk := typeOnly.GetObjectKind().GroupVersionKind()
+		obj, err := s.New(gvk)
+		if err != nil {
+			return nil, err
+		}
+		err = yaml.Unmarshal(objYam, obj)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, obj.(client.Object))
+	}
+	return objs, nil
+}
+
+func writeTestYamls(testCase, cluster string, inputs, outputs []string) error {
+	if err := os.MkdirAll(testStateDir(testCase), 0777); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(
+		getTestManifestPath(testCase, cluster, manifestType_inputs),
+		[]byte(strings.Join(inputs, yamlSeparator)),
+		0644,
+	); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(
+		getTestManifestPath(testCase, cluster, manifestType_outputs),
+		[]byte(strings.Join(outputs, yamlSeparator)),
+		0644,
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+func writeActualYamls(testCase, cluster string, actualObjs map[schema.GroupVersionKind][]client.Object) error {
+	if err := ioutil.WriteFile(
+		getTestManifestPath(testCase, cluster, manifestType_actual), []byte(sprintAllObjs(actualObjs)), 0644); err != nil {
+		return err
+	}
+	return nil
 }
 
 // the expected state of the cluster given the provided inputs.
@@ -231,7 +384,7 @@ type configState struct {
 // upsert an obj
 func upsert(ctx context.Context, mgr manager.Manager, obj client.Object) {
 	_, err := controllerutils.Upsert(ctx, mgr.GetClient(), obj.DeepCopyObject().(client.Object))
-	ExpectWithOffset(3, err).NotTo(HaveOccurred())
+	ExpectWithOffset(2, err).NotTo(HaveOccurred())
 }
 
 // fetch latest version of an obj from the manager
@@ -281,5 +434,135 @@ func sprintObj(obj client.Object) string {
 	if err != nil {
 		panic(err)
 	}
-	return fmt.Sprintf("%v<yaml:\n%s\n>", sets.TypedKey(obj), y)
+	return fmt.Sprintf("# %v :\n%s\n", sets.TypedKey(obj), sanitizeObjString(y))
+}
+
+// removes server-set metadata fields
+func sanitizeObjString(yamObj []byte) []byte {
+	m := map[string]interface{}{}
+	err := yaml.Unmarshal(yamObj, &m)
+	if err != nil {
+		panic(err)
+	}
+	meta, ok := m["metadata"]
+	if !ok {
+		panic("metadata does not exist in obj")
+	}
+
+	metaMap, ok := meta.(map[string]interface{})
+	if !ok {
+		panic("metadata not map[string]interface{}")
+	}
+
+	sanitizedMetaMap := map[string]interface{}{
+		"name": metaMap["name"],
+	}
+
+	if namespace, ok := metaMap["namespace"]; ok {
+		sanitizedMetaMap["namespace"] = namespace
+	}
+	if labels, ok := metaMap["labels"]; ok {
+		sanitizedMetaMap["labels"] = labels
+	}
+	if annotations, ok := metaMap["annotations"]; ok {
+		sanitizedMetaMap["annotations"] = annotations
+	}
+
+	if status, ok := m["status"].(map[string]interface{}); ok && len(status) == 0 {
+		delete(m, "status")
+	}
+
+	m["metadata"] = sanitizedMetaMap
+
+	y, err := yaml.Marshal(m)
+	if err != nil {
+		panic(err)
+	}
+
+	return y
+}
+
+func failurePrintMessage() {
+	if mgrNames != nil {
+		for _, mgr := range []manager.Manager{
+			mgmtMgr,
+			remoteEastMgr,
+			remoteWestMgr,
+		} {
+			name := mgrNames[mgr]
+			objsForMgr, err := getAllObjs(rootCtx, mgr)
+			if err != nil {
+				fmt.Fprintf(GinkgoWriter, "failed getting snapshot in failure state for %v", name)
+			} else {
+				currentTestLock.RLock()
+				t := currentTest
+				currentTestLock.RUnlock()
+				err := writeActualYamls(t.name, name, objsForMgr)
+				if err != nil {
+					panic(err)
+				}
+			}
+		}
+	}
+}
+
+var gvksToPrint = func() []schema.GroupVersionKind {
+	var gvks []schema.GroupVersionKind
+	gvks = append(gvks, istio.SnapshotGVKs...)
+	gvks = append(gvks, local.SnapshotGVKs...)
+	gvks = append(gvks, discovery.SnapshotGVKs...)
+	return gvks
+}()
+
+func sprintAllObjs(allObjs map[schema.GroupVersionKind][]client.Object) string {
+	var allObsStr []string
+	for _, gvk := range gvksToPrint {
+		var gvkStr []string
+		for _, obj := range allObjs[gvk] {
+			gvkStr = append(gvkStr, sprintObj(obj))
+		}
+		if len(gvkStr) == 0 {
+			continue
+		}
+		allObsStr = append(allObsStr, fmt.Sprintf("### %v:\n\n%v\n\n", gvk.String(), strings.Join(gvkStr, yamlSeparator)))
+	}
+	return strings.Join(allObsStr, yamlSeparator)
+}
+
+func getAllObjs(ctx context.Context, mgr manager.Manager) (map[schema.GroupVersionKind][]client.Object, error) {
+	objsByGvk := map[schema.GroupVersionKind][]client.Object{}
+	for _, gvk := range gvksToPrint {
+		metaList := &metav1.PartialObjectMetadataList{}
+		metaList.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   gvk.Group,
+			Version: gvk.Version,
+			Kind:    gvk.Kind + "List",
+		})
+		err := mgr.GetClient().List(ctx, metaList)
+		if err != nil && !meta.IsNoMatchError(err) {
+			return nil, err
+		}
+		var items []client.Object
+		for _, item := range metaList.Items {
+			item := item // pike
+			obj, err := mgr.GetScheme().New(gvk)
+			if err != nil {
+				return nil, err
+			}
+			typedObj, ok := obj.(resource.TypedObject)
+			if !ok {
+				return nil, eris.Errorf("not a typed obj %T", obj)
+			}
+			err = mgr.GetClient().Get(ctx, ezkube.MakeClientObjectKey(&item), typedObj)
+			if err != nil {
+				return nil, err
+			}
+			items = append(items, typedObj)
+		}
+		if len(items) == 0 {
+			continue
+		}
+		objsByGvk[gvk] = items
+	}
+	return objsByGvk, nil
 }

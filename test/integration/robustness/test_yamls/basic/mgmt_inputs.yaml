@@ -1,0 +1,50 @@
+# gloo-mesh...*v1.Namespace :
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gloo-mesh
+spec: {}
+
+
+---
+# settings.gloo-mesh..*v1.Settings :
+apiVersion: settings.mesh.gloo.solo.io/v1
+kind: Settings
+metadata:
+  name: settings
+  namespace: gloo-mesh
+spec: {}
+
+
+---
+# my-mesh-polices...*v1.Namespace :
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-mesh-polices
+spec: {}
+
+
+---
+# my-virtual-mesh.my-mesh-polices..*v1.VirtualMesh :
+apiVersion: networking.mesh.gloo.solo.io/v1
+kind: VirtualMesh
+metadata:
+  name: my-virtual-mesh
+  namespace: my-mesh-polices
+spec:
+  federation:
+    hostnameSuffix: solo.io
+    selectors:
+    - {}
+  meshes:
+  - name: istiod-istio-namespace-remote-east
+    namespace: gloo-mesh
+  - name: istiod-istio-namespace-remote-west
+    namespace: gloo-mesh
+  mtlsConfig:
+    autoRestartPods: true
+    shared:
+      rootCertificateAuthority:
+        generated: {}
+

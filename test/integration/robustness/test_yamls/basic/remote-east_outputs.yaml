@@ -1,0 +1,234 @@
+# istio-ingress.istio-namespace..*v1alpha3.DestinationRule :
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  annotations:
+    parents.networking.mesh.gloo.solo.io: '{"discovery.mesh.gloo.solo.io/v1, Kind=Destination":[{"name":"istio-ingress-istio-namespace-remote-east","namespace":"gloo-mesh"}]}'
+  labels:
+    cluster.multicluster.solo.io: remote-east
+    owner.networking.mesh.gloo.solo.io: gloo-mesh
+  name: istio-ingress
+  namespace: istio-namespace
+spec:
+  host: istio-ingress.istio-namespace.svc.cluster.local
+  trafficPolicy:
+    tls: {}
+
+
+---
+# istio-ingress.istio-namespace.svc.remote-east.solo.io.istio-namespace..*v1alpha3.DestinationRule :
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  annotations:
+    parents.networking.mesh.gloo.solo.io: '{"networking.mesh.gloo.solo.io/v1, Kind=VirtualMesh":[{"name":"my-virtual-mesh","namespace":"my-mesh-polices"}]}'
+  labels:
+    cluster.multicluster.solo.io: remote-east
+    owner.networking.mesh.gloo.solo.io: gloo-mesh
+  name: istio-ingress.istio-namespace.svc.remote-east.solo.io
+  namespace: istio-namespace
+spec:
+  host: istio-ingress.istio-namespace.svc.remote-east.solo.io
+  trafficPolicy:
+    tls: {}
+
+
+---
+# productpage.bookinfo..*v1alpha3.DestinationRule :
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  annotations:
+    parents.networking.mesh.gloo.solo.io: '{"discovery.mesh.gloo.solo.io/v1, Kind=Destination":[{"name":"productpage-bookinfo-remote-east","namespace":"gloo-mesh"}]}'
+  labels:
+    cluster.multicluster.solo.io: remote-east
+    owner.networking.mesh.gloo.solo.io: gloo-mesh
+  name: productpage
+  namespace: bookinfo
+spec:
+  host: productpage.bookinfo.svc.cluster.local
+  trafficPolicy:
+    tls: {}
+
+
+---
+# productpage.bookinfo.svc.remote-east.solo.io.istio-namespace..*v1alpha3.DestinationRule :
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  annotations:
+    parents.networking.mesh.gloo.solo.io: '{"networking.mesh.gloo.solo.io/v1, Kind=VirtualMesh":[{"name":"my-virtual-mesh","namespace":"my-mesh-polices"}]}'
+  labels:
+    cluster.multicluster.solo.io: remote-east
+    owner.networking.mesh.gloo.solo.io: gloo-mesh
+  name: productpage.bookinfo.svc.remote-east.solo.io
+  namespace: istio-namespace
+spec:
+  host: productpage.bookinfo.svc.remote-east.solo.io
+  trafficPolicy:
+    tls: {}
+
+
+---
+# istio-ingress-istio-namespace-remote-west.istio-namespace..*v1alpha3.DestinationRule :
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  annotations:
+    federation.networking.mesh.gloo.solo.io: istio-ingress.istio-namespace.remote-west
+    parents.networking.mesh.gloo.solo.io: '{"networking.mesh.gloo.solo.io/v1, Kind=VirtualMesh":[{"name":"my-virtual-mesh","namespace":"my-mesh-polices"}]}'
+  labels:
+    cluster.multicluster.solo.io: remote-east
+    owner.networking.mesh.gloo.solo.io: gloo-mesh
+  name: istio-ingress-istio-namespace-remote-west
+  namespace: istio-namespace
+spec:
+  host: istio-ingress.istio-namespace.svc.remote-west.solo.io
+  trafficPolicy:
+    tls: {}
+
+
+---
+# productpage-bookinfo-remote-west.istio-namespace..*v1alpha3.DestinationRule :
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  annotations:
+    federation.networking.mesh.gloo.solo.io: productpage.bookinfo.remote-west
+    parents.networking.mesh.gloo.solo.io: '{"networking.mesh.gloo.solo.io/v1, Kind=VirtualMesh":[{"name":"my-virtual-mesh","namespace":"my-mesh-polices"}]}'
+  labels:
+    cluster.multicluster.solo.io: remote-east
+    owner.networking.mesh.gloo.solo.io: gloo-mesh
+  name: productpage-bookinfo-remote-west
+  namespace: istio-namespace
+spec:
+  host: productpage.bookinfo.svc.remote-west.solo.io
+  trafficPolicy:
+    tls: {}
+
+
+---
+# istio-ingress-istio-namespace-remote-east-gloo-mesh.istio-namespace..*v1alpha3.Gateway :
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  annotations:
+    parents.networking.mesh.gloo.solo.io: '{"networking.mesh.gloo.solo.io/v1, Kind=VirtualMesh":[{"name":"my-virtual-mesh","namespace":"my-mesh-polices"}]}'
+  labels:
+    cluster.multicluster.solo.io: remote-east
+    owner.networking.mesh.gloo.solo.io: gloo-mesh
+  name: istio-ingress-istio-namespace-remote-east-gloo-mesh
+  namespace: istio-namespace
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - hosts:
+    - '*.solo.io'
+    port:
+      name: tls
+      number: 1234
+      protocol: TLS
+    tls:
+      mode: AUTO_PASSTHROUGH
+
+
+---
+# istio-ingress.istio-namespace.svc.remote-east.solo.io.istio-namespace..*v1alpha3.ServiceEntry :
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  annotations:
+    parents.networking.mesh.gloo.solo.io: '{"networking.mesh.gloo.solo.io/v1, Kind=VirtualMesh":[{"name":"my-virtual-mesh","namespace":"my-mesh-polices"}]}'
+  labels:
+    cluster.multicluster.solo.io: remote-east
+    owner.networking.mesh.gloo.solo.io: gloo-mesh
+  name: istio-ingress.istio-namespace.svc.remote-east.solo.io
+  namespace: istio-namespace
+spec:
+  exportTo:
+  - .
+  hosts:
+  - istio-ingress.istio-namespace.svc.remote-east.solo.io
+  location: MESH_INTERNAL
+  ports:
+  - name: tls
+    number: 1234
+    protocol: TLS
+  resolution: STATIC
+
+
+---
+# productpage.bookinfo.svc.remote-east.solo.io.istio-namespace..*v1alpha3.ServiceEntry :
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  annotations:
+    parents.networking.mesh.gloo.solo.io: '{"networking.mesh.gloo.solo.io/v1, Kind=VirtualMesh":[{"name":"my-virtual-mesh","namespace":"my-mesh-polices"}]}'
+  labels:
+    cluster.multicluster.solo.io: remote-east
+    owner.networking.mesh.gloo.solo.io: gloo-mesh
+  name: productpage.bookinfo.svc.remote-east.solo.io
+  namespace: istio-namespace
+spec:
+  exportTo:
+  - .
+  hosts:
+  - productpage.bookinfo.svc.remote-east.solo.io
+  location: MESH_INTERNAL
+  ports:
+  - name: http
+    number: 9080
+    protocol: HTTP
+  resolution: STATIC
+
+
+---
+# istio-ingress.istio-namespace.svc.remote-west.solo.io.istio-namespace..*v1alpha3.ServiceEntry :
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  annotations:
+    parents.networking.mesh.gloo.solo.io: '{"networking.mesh.gloo.solo.io/v1, Kind=VirtualMesh":[{"name":"my-virtual-mesh","namespace":"my-mesh-polices"}]}'
+  labels:
+    cluster.multicluster.solo.io: remote-east
+    owner.networking.mesh.gloo.solo.io: gloo-mesh
+  name: istio-ingress.istio-namespace.svc.remote-west.solo.io
+  namespace: istio-namespace
+spec:
+  addresses:
+  - 244.40.138.188
+  hosts:
+  - istio-ingress.istio-namespace.svc.remote-west.solo.io
+  location: MESH_INTERNAL
+  ports:
+  - name: tls
+    number: 1234
+    protocol: TLS
+  resolution: STATIC
+
+
+---
+# productpage.bookinfo.svc.remote-west.solo.io.istio-namespace..*v1alpha3.ServiceEntry :
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  annotations:
+    parents.networking.mesh.gloo.solo.io: '{"networking.mesh.gloo.solo.io/v1, Kind=VirtualMesh":[{"name":"my-virtual-mesh","namespace":"my-mesh-polices"}]}'
+  labels:
+    cluster.multicluster.solo.io: remote-east
+    owner.networking.mesh.gloo.solo.io: gloo-mesh
+  name: productpage.bookinfo.svc.remote-west.solo.io
+  namespace: istio-namespace
+spec:
+  addresses:
+  - 243.151.112.96
+  hosts:
+  - productpage.bookinfo.svc.remote-west.solo.io
+  location: MESH_INTERNAL
+  ports:
+  - name: http
+    number: 9080
+    protocol: HTTP
+  resolution: STATIC
+

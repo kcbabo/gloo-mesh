@@ -1,0 +1,150 @@
+# istio-namespace...*v1.Namespace :
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-namespace
+spec: {}
+
+
+---
+# istio.istio-namespace..*v1.ConfigMap :
+apiVersion: v1
+data:
+  mesh: |
+    defaultConfig:
+      proxyMetadata:
+        ISTIO_META_DNS_CAPTURE: "true"
+    trustDomain: cluster.suffix
+kind: ConfigMap
+metadata:
+  name: istio
+  namespace: istio-namespace
+
+
+---
+# istiod.istio-namespace..*v1.Deployment :
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: istiod
+  namespace: istio-namespace
+spec:
+  selector:
+    matchLabels:
+      app: istiod
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: istiod
+    spec:
+      containers:
+      - image: istio-pilot:latest
+        name: istiod
+        resources: {}
+      serviceAccountName: service-account-name
+
+
+---
+# istio-ingress.istio-namespace..*v1.Service :
+apiVersion: v1
+kind: Service
+metadata:
+  name: istio-ingress
+  namespace: istio-namespace
+spec:
+  externalIPs:
+  - 12.34.56.78
+  ports:
+  - name: tls
+    port: 1234
+    protocol: TCP
+    targetPort: 0
+  selector:
+    istio: ingressgateway
+  type: LoadBalancer
+status:
+  loadBalancer: {}
+
+
+---
+# istio-ingress.istio-namespace..*v1.Deployment :
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: istio-ingress
+  namespace: istio-namespace
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        istio: ingressgateway
+    spec:
+      containers:
+      - image: proxy-image
+        name: istio-proxy
+        resources: {}
+      serviceAccountName: service-account-name
+
+
+---
+# bookinfo...*v1.Namespace :
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    istio.io/rev: best-revision-ever
+  name: bookinfo
+spec: {}
+
+
+---
+# productpage.bookinfo..*v1.Deployment :
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productpage
+  namespace: bookinfo
+spec:
+  selector:
+    matchLabels:
+      app: productpage
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: productpage
+    spec:
+      containers:
+      - image: docker.io/productpage:latest
+        name: productpage
+        resources: {}
+      serviceAccountName: productpage
+
+
+---
+# productpage.bookinfo..*v1.Service :
+apiVersion: v1
+kind: Service
+metadata:
+  name: productpage
+  namespace: bookinfo
+spec:
+  ports:
+  - name: http
+    port: 9080
+    protocol: TCP
+    targetPort: 0
+  selector:
+    app: productpage
+  type: ClusterIP
+status:
+  loadBalancer: {}
+
