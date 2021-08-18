@@ -93,7 +93,7 @@ func TestTrafficPolicies(t *testing.T) {
 
 }
 func testRequestTimeout(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	cluster := ctx.Clusters()[0]
+	cluster := ctx.Clusters()[cluster0Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 	backendHost := fmt.Sprintf("backend.%s.svc.cluster.local", deploymentCtx.EchoContext.AppNamespace.Name())
@@ -127,7 +127,7 @@ func testRequestTimeout(ctx resource.Context, t *testing.T, deploymentCtx *conte
 	})
 
 	// cluster 2 test
-	cluster = ctx.Clusters()[1]
+	cluster = ctx.Clusters()[cluster1Index]
 	// frontend calling backend in cluster 2 with request timeout
 	src = deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 	// happy case
@@ -160,7 +160,7 @@ func testRequestTimeout(ctx resource.Context, t *testing.T, deploymentCtx *conte
 }
 
 func testRequestTimeoutMultiCluster(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	cluster := ctx.Clusters()[0]
+	cluster := ctx.Clusters()[cluster0Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 	backendHost := fmt.Sprintf("backend.%s.svc.cluster.local", deploymentCtx.EchoContext.AppNamespace.Name())
@@ -194,7 +194,7 @@ func testRequestTimeoutMultiCluster(ctx resource.Context, t *testing.T, deployme
 	})
 
 	// cluster 2 test
-	cluster = ctx.Clusters()[1]
+	cluster = ctx.Clusters()[cluster1Index]
 	// frontend calling backend in cluster 2 with no request timeout
 	src = deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 	// happy case
@@ -225,7 +225,7 @@ func testRequestTimeoutMultiCluster(ctx resource.Context, t *testing.T, deployme
 	})
 }
 func testAddRequestHeader(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	cluster := ctx.Clusters()[0]
+	cluster := ctx.Clusters()[cluster0Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 	backendHost := fmt.Sprintf("backend.%s.svc.cluster.local", deploymentCtx.EchoContext.AppNamespace.Name())
@@ -247,7 +247,7 @@ func testAddRequestHeader(ctx resource.Context, t *testing.T, deploymentCtx *con
 }
 
 func testRequestPathMatcher(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	cluster := ctx.Clusters()[0]
+	cluster := ctx.Clusters()[cluster0Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 	backendHost := fmt.Sprintf("backend.%s.svc.cluster.local", deploymentCtx.EchoContext.AppNamespace.Name())
@@ -263,7 +263,7 @@ func testRequestPathMatcher(ctx resource.Context, t *testing.T, deploymentCtx *c
 		Method:    http.MethodGet,
 		Path:      "/two",
 		Count:     1,
-		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(ctx.Clusters()[1].Name())),
+		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(ctx.Clusters()[cluster1Index].Name())),
 	})
 
 	// happy requests non /two should 404
@@ -283,7 +283,7 @@ func testRequestPathMatcher(ctx resource.Context, t *testing.T, deploymentCtx *c
 }
 
 func testRequestHeaderMatcher(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	cluster := ctx.Clusters()[0]
+	cluster := ctx.Clusters()[cluster0Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 	backendHost := fmt.Sprintf("backend.%s.svc.cluster.local", deploymentCtx.EchoContext.AppNamespace.Name())
@@ -301,7 +301,7 @@ func testRequestHeaderMatcher(ctx resource.Context, t *testing.T, deploymentCtx 
 		Headers:   header,
 		Path:      "/info",
 		Count:     1,
-		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(ctx.Clusters()[1].Name())),
+		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(ctx.Clusters()[cluster1Index].Name())),
 	})
 	header = http.Header{}
 	header.Add("color-header", "red")
@@ -336,7 +336,7 @@ func testRequestHeaderMatcher(ctx resource.Context, t *testing.T, deploymentCtx 
 }
 
 func testRequestPrefixAndHeaderMatcher(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	cluster := ctx.Clusters()[0]
+	cluster := ctx.Clusters()[cluster0Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 	backendHost := fmt.Sprintf("backend.%s.svc.cluster.local", deploymentCtx.EchoContext.AppNamespace.Name())
@@ -387,13 +387,13 @@ func testRequestPrefixAndHeaderMatcher(ctx resource.Context, t *testing.T, deplo
 		Method:    http.MethodGet,
 		Path:      "/two",
 		Count:     1,
-		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(ctx.Clusters()[1].Name())),
+		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(ctx.Clusters()[cluster1Index].Name())),
 	})
 
 }
 
 func testRequestPrefixOrHeaderMatcher(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	cluster := ctx.Clusters()[0]
+	cluster := ctx.Clusters()[cluster0Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 	backendHost := fmt.Sprintf("backend.%s.svc.cluster.local", deploymentCtx.EchoContext.AppNamespace.Name())
@@ -411,7 +411,7 @@ func testRequestPrefixOrHeaderMatcher(ctx resource.Context, t *testing.T, deploy
 		Headers:   header,
 		Path:      "/info",
 		Count:     1,
-		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(ctx.Clusters()[1].Name())),
+		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(ctx.Clusters()[cluster1Index].Name())),
 	})
 
 	// right path but wrong header. still should match
@@ -428,7 +428,7 @@ func testRequestPrefixOrHeaderMatcher(ctx resource.Context, t *testing.T, deploy
 		Headers:   header,
 		Path:      "/two",
 		Count:     1,
-		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(ctx.Clusters()[1].Name())),
+		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(ctx.Clusters()[cluster1Index].Name())),
 	})
 	// right path and right header
 	header = http.Header{}
@@ -444,7 +444,7 @@ func testRequestPrefixOrHeaderMatcher(ctx resource.Context, t *testing.T, deploy
 		Method:    http.MethodGet,
 		Path:      "/two",
 		Count:     1,
-		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(ctx.Clusters()[1].Name())),
+		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(ctx.Clusters()[cluster1Index].Name())),
 	})
 
 	// neither path nor header

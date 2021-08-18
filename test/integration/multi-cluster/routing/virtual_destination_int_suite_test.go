@@ -86,7 +86,7 @@ func TestVirtualDestinations(t *testing.T) {
 							Description: "Testing multi cluster weighted routing where only 1 cluster has apps",
 							Test:        testWeightedRouting,
 							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
-							FileName:    "weighted-routing-single-cluster.yaml",
+							FileName:    "weighted-routing-single-cluster-gateway.yaml",
 							Folder:      "gloo-mesh/virtual-destination",
 							Skip:        "Blocked https://github.com/solo-io/gloo-mesh-enterprise/issues/640 https://github.com/solo-io/gloo-mesh-enterprise/issues/589",
 						},
@@ -195,7 +195,7 @@ func TestVirtualDestinations(t *testing.T) {
 // testGlobalVirtualDestinationHTTP making http requests for a virtual destination
 // because of locality priority routing, we should see routing to local cluster first always
 func testGlobalVirtualDestinationHTTP(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	cluster := ctx.Clusters()[0]
+	cluster := ctx.Clusters()[cluster0Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 	backendHost := "http-backend.solo.io"
@@ -213,7 +213,7 @@ func testGlobalVirtualDestinationHTTP(ctx resource.Context, t *testing.T, deploy
 		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(cluster.Name())),
 	})
 	// cluster 2 test
-	cluster = ctx.Clusters()[1]
+	cluster = ctx.Clusters()[cluster1Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src = deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 	src.CallOrFail(t, echo.CallOptions{
@@ -233,7 +233,7 @@ func testGlobalVirtualDestinationHTTP(ctx resource.Context, t *testing.T, deploy
 // testGlobalVirtualDestinationHTTPS making https requests for a virtual destination
 // because of locality priority routing, we should see routing to local cluster first always
 func testGlobalVirtualDestinationHTTPS(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	cluster := ctx.Clusters()[0]
+	cluster := ctx.Clusters()[cluster0Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 	backendHost := "https-backend.solo.io"
@@ -253,7 +253,7 @@ func testGlobalVirtualDestinationHTTPS(ctx resource.Context, t *testing.T, deplo
 		CaCert:    echo2.GetEchoCACert(),
 	})
 
-	cluster = ctx.Clusters()[1]
+	cluster = ctx.Clusters()[cluster1Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src = deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 
@@ -276,7 +276,7 @@ func testGlobalVirtualDestinationHTTPS(ctx resource.Context, t *testing.T, deplo
 // testGlobalVirtualDestinationTCP making tcp requests for a virtual destination
 // because of locality priority routing, we should see routing to local cluster first always
 func testGlobalVirtualDestinationTCP(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	cluster := ctx.Clusters()[0]
+	cluster := ctx.Clusters()[cluster0Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 	backendHost := "tcp-backend.solo.io"
@@ -292,7 +292,7 @@ func testGlobalVirtualDestinationTCP(ctx resource.Context, t *testing.T, deploym
 		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(cluster.Name())),
 	})
 
-	cluster = ctx.Clusters()[1]
+	cluster = ctx.Clusters()[cluster1Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src = deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
 	src.CallOrFail(t, echo.CallOptions{
@@ -309,8 +309,8 @@ func testGlobalVirtualDestinationTCP(ctx resource.Context, t *testing.T, deploym
 
 // testSingleClusterVirtualDestinationHTTP making http requests for a virtual destination that only exists in 1 cluster
 func testSingleClusterVirtualDestinationHTTP(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	clientCluster := ctx.Clusters()[0]
-	expectedCluster := ctx.Clusters()[1]
+	clientCluster := ctx.Clusters()[cluster0Index]
+	expectedCluster := ctx.Clusters()[cluster1Index]
 	// frontend calling backend in mesh using virtual destination in different cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(clientCluster)))
 	backendHost := "http-backend.solo.io"
@@ -328,7 +328,7 @@ func testSingleClusterVirtualDestinationHTTP(ctx resource.Context, t *testing.T,
 		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(expectedCluster.Name())),
 	})
 	// cluster 2 test
-	clientCluster = ctx.Clusters()[1]
+	clientCluster = ctx.Clusters()[cluster1Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src = deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(clientCluster)))
 	src.CallOrFail(t, echo.CallOptions{
@@ -347,8 +347,8 @@ func testSingleClusterVirtualDestinationHTTP(ctx resource.Context, t *testing.T,
 
 // testSingleClusterVirtualDestinationHTTPS making https requests for a virtual destination that only exists in 1 cluster
 func testSingleClusterVirtualDestinationHTTPS(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	clientCluster := ctx.Clusters()[0]
-	expectedCluster := ctx.Clusters()[1]
+	clientCluster := ctx.Clusters()[cluster0Index]
+	expectedCluster := ctx.Clusters()[cluster1Index]
 	// frontend calling backend in mesh using virtual destination in different cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(clientCluster)))
 	backendHost := "https-backend.solo.io"
@@ -368,7 +368,7 @@ func testSingleClusterVirtualDestinationHTTPS(ctx resource.Context, t *testing.T
 		CaCert:    echo2.GetEchoCACert(),
 	})
 
-	clientCluster = ctx.Clusters()[1]
+	clientCluster = ctx.Clusters()[cluster1Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src = deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(clientCluster)))
 
@@ -390,8 +390,8 @@ func testSingleClusterVirtualDestinationHTTPS(ctx resource.Context, t *testing.T
 
 // testSingleClusterVirtualDestinationTCP making tcp requests for a virtual destination that only exists in 1 cluster
 func testSingleClusterVirtualDestinationTCP(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	clientCluster := ctx.Clusters()[0]
-	expectedCluster := ctx.Clusters()[1]
+	clientCluster := ctx.Clusters()[cluster0Index]
+	expectedCluster := ctx.Clusters()[cluster1Index]
 	// frontend calling backend in mesh using virtual destination in different cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(clientCluster)))
 	backendHost := "tcp-backend.solo.io"
@@ -407,7 +407,7 @@ func testSingleClusterVirtualDestinationTCP(ctx resource.Context, t *testing.T, 
 		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(expectedCluster.Name())),
 	})
 
-	clientCluster = ctx.Clusters()[1]
+	clientCluster = ctx.Clusters()[cluster1Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src = deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(clientCluster)))
 	src.CallOrFail(t, echo.CallOptions{
@@ -427,8 +427,8 @@ func testSingleClusterVirtualDestinationTCP(ctx resource.Context, t *testing.T, 
 // TODO there is a bug where if someone creates a standalone pod in mesh and tries to make http calls. the calls are successful but do not respect regionality
 // its like istio does not know what region they are in even though that comes from the node.
 func testFailoverHTTP(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	westCluster := ctx.Clusters()[0]
-	eastCluster := ctx.Clusters()[1]
+	westCluster := ctx.Clusters()[cluster0Index]
+	eastCluster := ctx.Clusters()[cluster1Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(westCluster)))
 	backendHost := "http-backend.solo.io"
@@ -466,8 +466,8 @@ func testFailoverHTTP(ctx resource.Context, t *testing.T, deploymentCtx *context
 // TODO there is a bug where if someone creates a standalone pod in mesh and tries to make http calls. the calls are successful but do not respect regionality
 // its like istio does not know what region they are in even though that comes from the node.
 func testFailoverHTTPS(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	westCluster := ctx.Clusters()[0]
-	eastCluster := ctx.Clusters()[1]
+	westCluster := ctx.Clusters()[cluster0Index]
+	eastCluster := ctx.Clusters()[cluster1Index]
 	// frontend calling backend in mesh using virtual destination in same cluster
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(westCluster)))
 	backendHost := "https-backend.solo.io"
@@ -502,7 +502,7 @@ func testFailoverHTTPS(ctx resource.Context, t *testing.T, deploymentCtx *contex
 
 // testWeightedRouting testing multi cluster weighted routing
 func testWeightedRouting(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
-	westCluster := ctx.Clusters()[0]
+	westCluster := ctx.Clusters()[cluster0Index]
 	// frontend calling subset in mesh using virtual destination in same cluster and different clusters
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(westCluster)))
 	backendHost := "http-subset.solo.io"
