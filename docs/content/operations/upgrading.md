@@ -52,21 +52,24 @@ Mesh you are upgrading to. This will prevent errors in the management plane and 
 the latest APIs on each Gloo Mesh are not rejected.
 
 Gloo Mesh CRDs can be updated by extracting the contents of the Helm chart, for example [https://storage.googleapis.com/gloo-mesh/gloo-mesh/gloo-mesh-0.11.3](https://storage.googleapis.com/gloo-mesh/gloo-mesh/gloo-mesh-0.11.3)
-where `0.11.3` is replaced by the version of Gloo Mesh to which you would like to upgrade. Alternatively, CRDs can be found
-on GitHub at [https://github.com/solo-io/gloo-mesh/tree/main/install/helm/gloo-mesh/crds](https://github.com/solo-io/gloo-mesh/tree/main/install/helm/gloo-mesh/crds).
+where `v1.0.0` is replaced by the version of Gloo Mesh to which you would like to upgrade. Alternatively, CRDs can be found
+on GitHub at [https://github.com/solo-io/gloo-mesh/tree/main/install/helm/gloo-mesh-crds/crds](https://github.com/solo-io/gloo-mesh/tree/main/install/helm/gloo-mesh-crds/crds).
 From there, you can either download the repository and apply the CRDs at the tag of your choosing, or apply the CRDs
 directly from GitHub with:
 
 ```shell
 # Add your desired version here
-UPGRADE_VERSION=v0.11.3
+UPGRADE_VERSION=v1.1.0-beta30
 
-kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh/crds/discovery.mesh.gloo.solo.io_v1alpha2_crds.yaml
-kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh/crds/multicluster.solo.io_v1alpha1_crds.yaml
-kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh/crds/networking.enterprise.mesh.gloo.solo.io_v1alpha1_crds.yaml
-kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh/crds/networking.mesh.gloo.solo.io_v1alpha2_crds.yaml
-kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh/crds/rbac.enterprise.mesh.gloo.solo.io_v1alpha1_crds.yaml
-kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh/crds/settings.mesh.gloo.solo.io_v1alpha2_crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh-crds/crds/admin.enterprise.mesh.gloo.solo.io_v1alpha1_crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh-crds/crds/discovery.mesh.gloo.solo.io_v1_crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh-crds/crds/multicluster.solo.io_v1alpha1_crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh-crds/crds/networking.enterprise.mesh.gloo.solo.io_v1beta1_crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh-crds/crds/networking.mesh.gloo.solo.io_v1_crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh-crds/crds/observability.enterprise.mesh.gloo.solo.io_v1_crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh-crds/crds/ratelimit.solo.io_v1alpha1_crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh-crds/crds/rbac.enterprise.mesh.gloo.solo.io_v1_crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/solo-io/gloo-mesh/$UPGRADE_VERSION/install/helm/gloo-mesh-crds/crds/settings.mesh.gloo.solo.io_v1_crds.yaml
 ```
 
 5\. Upgrade the Gloo Mesh management plane components using either Helm or `meshctl`, following the steps described in
