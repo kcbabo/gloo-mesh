@@ -57,7 +57,7 @@ func TestVirtualGateways(t *testing.T) {
 							Description: "testing prefix based routing using virtualgateway only",
 							Test:        prefixTest,
 							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
-							FileName:    "virtualgateway.yaml",
+							FileName:    "prefix-virtualgateway.yaml",
 							Folder:      "gloo-mesh/virtual-gateway/prefix",
 						},
 						{
@@ -65,7 +65,7 @@ func TestVirtualGateways(t *testing.T) {
 							Description: "testing prefix based routing using virtualhost",
 							Test:        prefixTest,
 							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
-							FileName:    "virtualhost.yaml",
+							FileName:    "prefix-virtualhost.yaml",
 							Folder:      "gloo-mesh/virtual-gateway/prefix",
 						},
 						{

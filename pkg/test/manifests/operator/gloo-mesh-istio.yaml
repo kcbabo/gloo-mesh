@@ -1,18 +1,29 @@
 # This value is required for Gloo Mesh Istio
 hub: gcr.io/istio-enterprise
 # This value can be any Gloo Mesh Istio tag
-tag: 1.9.2
+tag: 1.9.6
 profile: minimal
 meshConfig:
   accessLogFile: /dev/stdout
   enableAutoMtls: true
   defaultConfig:
+    # location of istiod service
+    # discoveryAddress: istiod-1-10-3.istio-system.svc:15012
+    # enable GlooMesh metrics service
+    envoyMetricsService:
+      address: enterprise-agent.gloo-mesh:9977
+     # enable GlooMesh accesslog service
+    envoyAccessLogService:
+      address: enterprise-agent.gloo-mesh:9977
     proxyMetadata:
       # Enable Istio agent to handle DNS requests for known hosts
       # Unknown hosts will automatically be resolved using upstream dns servers in resolv.conf
       ISTIO_META_DNS_CAPTURE: "true"
       # Enable automatic address allocation, optional
       ISTIO_META_DNS_AUTO_ALLOCATE: "true"
+      # Used for gloo mesh metrics aggregation
+      # should match trustDomain
+      GLOO_MESH_CLUSTER_NAME: production-cluster
 components:
   # Istio Gateway feature
   egressGateways:
@@ -40,3 +51,8 @@ components:
 values:
   global:
     pilotCertProvider: istiod
+    # needed for connecting VirtualMachines to the mesh
+    network: production-cluster-network
+    # needed for annotating istio metrics with cluster
+    multiCluster:
+      clusterName: production-cluster

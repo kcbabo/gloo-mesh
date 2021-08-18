@@ -180,26 +180,50 @@ func (i *glooMeshInstance) GetRelayServerAddress() (string, error) {
 	if !i.instanceConfig.managementPlane {
 		return "", fmt.Errorf("cluster does not have a management plane")
 	}
-	svcName := "enterprise-networking"
+	var serviceLBEndpoint string
 
-	svc, err := i.instanceConfig.cluster.CoreV1().Services(namespace).Get(context.TODO(), svcName, kubeApiMeta.GetOptions{})
-	if err != nil {
-		return "", err
+	if err := retry.UntilSuccess(func() error {
+		log.Info("attempting to get relay server address...")
+		svcName := "enterprise-networking"
+
+		svc, err := i.instanceConfig.cluster.CoreV1().Services(namespace).Get(context.TODO(), svcName, kubeApiMeta.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		serviceLBEndpoint, err = serviceIngressToAddress(svc, "grpc")
+		if err != nil {
+			return err
+		}
+		return nil
+	}, retry.Timeout(5*time.Minute), retry.Delay(5*time.Second)); err != nil {
+		return "", fmt.Errorf("failed to find relay ingress lb %s", err.Error())
 	}
 
-	// This probably wont work in all situations
-	return serviceIngressToAddress(svc, "grpc")
+	log.Infof("relay server address %v ", serviceLBEndpoint)
+
+	return serviceLBEndpoint, nil
 }
 
 func (i *glooMeshInstance) GetIngressGatewayAddress(serviceName, namespace, portName string) (string, error) {
 
-	svc, err := i.instanceConfig.cluster.CoreV1().Services(namespace).Get(context.TODO(), serviceName, kubeApiMeta.GetOptions{})
-	if err != nil {
-		return "", err
+	var serviceLBEndpoint string
+	if err := retry.UntilSuccess(func() error {
+		log.Info("attempting to ingress gateway address...")
+		svc, err := i.instanceConfig.cluster.CoreV1().Services(namespace).Get(context.TODO(), serviceName, kubeApiMeta.GetOptions{})
+		if err != nil {
+			return err
+		}
+		serviceLBEndpoint, err = serviceIngressToAddress(svc, portName)
+		if err != nil {
+			return err
+		}
+		return nil
+	}, retry.Timeout(time.Minute), retry.Delay(5*time.Second)); err != nil {
+		return "", fmt.Errorf("failed to find ingress gateway lb for cluster: %s %s", i.instanceConfig.cluster.Name(), err.Error())
 	}
-
-	// This probably wont work in all situations
-	return serviceIngressToAddress(svc, portName)
+	log.Infof("ingress gateway address for cluster %v: %v ", i.instanceConfig.cluster.Name(), serviceLBEndpoint)
+	return serviceLBEndpoint, nil
 }
 
 func (i *glooMeshInstance) IsManagementPlane() bool {
