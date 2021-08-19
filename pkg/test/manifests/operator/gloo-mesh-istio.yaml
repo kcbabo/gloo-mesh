@@ -1,11 +1,7 @@
-# This value is required for Gloo Mesh Istio
-hub: gcr.io/istio-enterprise
-# This value can be any Gloo Mesh Istio tag
-tag: 1.9.6
 profile: minimal
 meshConfig:
   accessLogFile: /dev/stdout
-  enableAutoMtls: true
+  accessLogEncoding: JSON
   defaultConfig:
     # location of istiod service
     # discoveryAddress: istiod-1-10-3.istio-system.svc:15012
@@ -48,11 +44,3 @@ components:
           - port: 15443
             targetPort: 15443
             name: tls
-values:
-  global:
-    pilotCertProvider: istiod
-    # needed for connecting VirtualMachines to the mesh
-    network: production-cluster-network
-    # needed for annotating istio metrics with cluster
-    multiCluster:
-      clusterName: production-cluster

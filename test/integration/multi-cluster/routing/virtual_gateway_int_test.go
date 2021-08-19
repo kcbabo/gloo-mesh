@@ -110,6 +110,15 @@ func TestVirtualGateways(t *testing.T) {
 
 }
 
+func getMeshForCluster(clusterName string, deploymentCtx *context.DeploymentContext) context.GlooMeshInstance {
+	for _, m := range deploymentCtx.Meshes {
+		if m.GetCluster().Name() == clusterName {
+			return m
+		}
+	}
+	return nil
+}
+
 // only the gateway in cluster-0 is configured to accept traffic
 func singleClusterGatewayTest(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
 	cluster := ctx.Clusters()[cluster0Index]
@@ -128,7 +137,7 @@ func singleClusterGatewayTest(ctx resource.Context, t *testing.T, deploymentCtx 
 	})
 
 	apiHost := "api.solo.io"
-	cluster0GatewayAddress, err := deploymentCtx.Meshes[0].GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
+	cluster0GatewayAddress, err := getMeshForCluster(cluster.Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -166,7 +175,8 @@ func singleClusterGatewayTest(ctx resource.Context, t *testing.T, deploymentCtx 
 		Validator: echo.ExpectCode("404"),
 	})
 
-	cluster1GatewayAddress, err := deploymentCtx.Meshes[1].GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
+	cluster1GatewayAddress, err := getMeshForCluster(ctx.Clusters()[cluster1Index].Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway",
+		"istio-system", "")
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -208,7 +218,8 @@ func multiClusterApplicationTest(ctx resource.Context, t *testing.T, deploymentC
 	})
 
 	apiHost := "api.solo.io"
-	cluster0GatewayAddress, err := deploymentCtx.Meshes[0].GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
+	cluster0GatewayAddress, err := getMeshForCluster(ctx.Clusters()[cluster0Index].Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway",
+		"istio-system", "")
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -243,7 +254,7 @@ func multiClusterApplicationTest(ctx resource.Context, t *testing.T, deploymentC
 		return nil
 	})
 
-	cluster1GatewayAddress, err := deploymentCtx.Meshes[1].GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
+	cluster1GatewayAddress, err := getMeshForCluster(ctx.Clusters()[cluster1Index].Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -272,7 +283,7 @@ func globalServiceTest(ctx resource.Context, t *testing.T, deploymentCtx *contex
 	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("no-mesh").And(echo.InCluster(cluster0)))
 
 	frontendHost := "http-frontend.solo.io"
-	cluster0GatewayAddress, err := deploymentCtx.Meshes[0].GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
+	cluster0GatewayAddress, err := getMeshForCluster(ctx.Clusters()[cluster0Index].Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -306,7 +317,7 @@ func globalServiceTest(ctx resource.Context, t *testing.T, deploymentCtx *contex
 	})
 
 	// calling cluster0 1 with the same host
-	cluster1GatewayAddress, err := deploymentCtx.Meshes[1].GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
+	cluster1GatewayAddress, err := getMeshForCluster(ctx.Clusters()[cluster1Index].Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -387,7 +398,7 @@ func prefixTest(ctx resource.Context, t *testing.T, deploymentCtx *context.Deplo
 	backend := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("backend").And(echo.InCluster(cluster)))
 
 	apiHost := "api.solo.io"
-	cluster0GatewayAddress, err := deploymentCtx.Meshes[0].GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
+	cluster0GatewayAddress, err := getMeshForCluster(ctx.Clusters()[cluster0Index].Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -491,7 +502,7 @@ func prefixTest(ctx resource.Context, t *testing.T, deploymentCtx *context.Deplo
 		Validator: echo.ExpectCode("404"),
 	})
 
-	cluster1GatewayAddress, err := deploymentCtx.Meshes[1].GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
+	cluster1GatewayAddress, err := getMeshForCluster(ctx.Clusters()[cluster1Index].Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
 	if err != nil {
 		t.Fatal(err)
 		return

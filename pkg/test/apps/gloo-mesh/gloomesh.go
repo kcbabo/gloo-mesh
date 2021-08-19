@@ -3,6 +3,7 @@ package gloo_mesh
 import (
 	"fmt"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/solo-io/gloo-mesh/pkg/test/apps/context"
@@ -15,7 +16,7 @@ type Config struct {
 	DeployControlPlaneToManagementPlane bool
 }
 
-const glooMeshVersion = "1.1.0-beta13"
+const glooMeshVersion = "1.1.0-rc1"
 
 func Deploy(deploymentCtx *context.DeploymentContext, cfg *Config, licenseKey string) resource.SetupFn {
 	return func(ctx resource.Context) error {
@@ -26,19 +27,27 @@ func Deploy(deploymentCtx *context.DeploymentContext, cfg *Config, licenseKey st
 		var i context.GlooMeshInstance
 		var err error
 
-		version := os.Getenv("GLOO_MESH_VERSION")
+		version := os.Getenv("GLOO_MESH_ENTERPRISE_VERSION")
 		if version == "" {
 			version = glooMeshVersion
 		}
+
+		// sort the keys so its always cluster-0 for mp
+		keys := make([]string, 0)
+		for k, _ := range cfg.ClusterKubeConfigs {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
 		// install management plane
 		// we need the MP to always be installed and added to the instance list first because
 		// istio uninstalls in reverse order meaning control planes unregister first before uninstalling MP
 		mpcfg := InstanceConfig{
 			managementPlane:               true,
-			managementPlaneKubeConfigPath: cfg.ClusterKubeConfigs[ctx.Clusters()[0].Name()],
+			managementPlaneKubeConfigPath: cfg.ClusterKubeConfigs[keys[0]],
 			version:                       version,
 			clusterDomain:                 "",
-			cluster:                       ctx.Clusters()[0],
+			cluster:                       ctx.Clusters().GetByName(keys[0]),
 		}
 		mpInstance, err := newInstance(ctx, mpcfg, licenseKey)
 		if err != nil {
@@ -60,9 +69,9 @@ func Deploy(deploymentCtx *context.DeploymentContext, cfg *Config, licenseKey st
 		}
 
 		// install control planes
-		var index = 0
-		for n, p := range cfg.ClusterKubeConfigs {
-			if n == ctx.Clusters()[index].Name() && !cfg.DeployControlPlaneToManagementPlane {
+		for index, key := range keys {
+			value := cfg.ClusterKubeConfigs[key]
+			if index == 0 && !cfg.DeployControlPlaneToManagementPlane {
 				// skip deploying CP to MP
 				index++
 				continue
@@ -70,10 +79,10 @@ func Deploy(deploymentCtx *context.DeploymentContext, cfg *Config, licenseKey st
 
 			cpcfg := InstanceConfig{
 				managementPlane:                   false,
-				controlPlaneKubeConfigPath:        p,
-				managementPlaneKubeConfigPath:     cfg.ClusterKubeConfigs[ctx.Clusters()[0].Name()],
+				controlPlaneKubeConfigPath:        value,
+				managementPlaneKubeConfigPath:     cfg.ClusterKubeConfigs[keys[0]],
 				version:                           version,
-				cluster:                           ctx.Clusters()[index],
+				cluster:                           ctx.Clusters().GetByName(key),
 				managementPlaneRelayServerAddress: relayAddress,
 				clusterDomain:                     "",
 			}
