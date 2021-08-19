@@ -189,7 +189,7 @@ func (t *translator) initializeDestinationRule(
 	sourceMeshInstallation *discoveryv1.MeshInstallation,
 ) (*networkingv1alpha3.DestinationRule, error) {
 	var meta metav1.ObjectMeta
-	if isDestinationFederated(destination, sourceMeshInstallation) {
+	if sourceMeshInstallation != nil {
 		meta = metautils.FederatedObjectMeta(
 			destination.Spec.GetKubeService().Ref,
 			sourceMeshInstallation,
