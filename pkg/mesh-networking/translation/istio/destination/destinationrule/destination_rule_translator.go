@@ -189,7 +189,7 @@ func (t *translator) initializeDestinationRule(
 	sourceMeshInstallation *discoveryv1.MeshInstallation,
 ) (*networkingv1alpha3.DestinationRule, error) {
 	var meta metav1.ObjectMeta
-	if sourceMeshInstallation != nil {
+	if isDestinationFederated(destination, sourceMeshInstallation) {
 		meta = metautils.FederatedObjectMeta(
 			destination.Spec.GetKubeService().Ref,
 			sourceMeshInstallation,
@@ -214,8 +214,8 @@ func (t *translator) initializeDestinationRule(
 
 	// Only create DRs to specify TLS for cross-cluster/Federated DRs, since those aren't
 	// covered by Istio's default mutual-TLS behavior.
-	//if isDestinationFederated(destination, sourceMeshInstallation) {
-	if sourceMeshInstallation != nil {
+	if isDestinationFederated(destination, sourceMeshInstallation) {
+		//if sourceMeshInstallation != nil {
 		// Initialize Istio TLS mode with default declared in Settings
 		istioTlsMode, err := tls.MapIstioTlsMode(mtlsDefault.GetIstio().GetTlsMode())
 		if err != nil {
@@ -293,5 +293,5 @@ func addKeepaliveToDestinationRule(destination *discoveryv1.Destination, sourceM
 
 // A Federated destination = a cross-cluster destination
 func isDestinationFederated(destination *discoveryv1.Destination, sourceMeshInstallation *discoveryv1.MeshInstallation) bool {
-	return sourceMeshInstallation != nil && destination.Spec.GetKubeService().GetRef().GetClusterName() != sourceMeshInstallation.GetCluster()
+	return len(destination.Status.AppliedFederation.GetFederatedToMeshes()) == 0 && sourceMeshInstallation != nil && destination.Spec.GetKubeService().GetRef().GetClusterName() != sourceMeshInstallation.GetCluster()
 }
