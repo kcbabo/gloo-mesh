@@ -237,7 +237,6 @@ func fakePortTest(ctx resource.Context, t *testing.T, deploymentCtx *context.Dep
 	})
 }
 
-
 // testGlobalVirtualDestinationHTTP making http requests for a virtual destination
 // because of locality priority routing, we should see routing to local cluster first always
 func testGlobalVirtualDestinationHTTP(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
