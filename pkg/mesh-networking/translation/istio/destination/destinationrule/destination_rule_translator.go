@@ -212,21 +212,16 @@ func (t *translator) initializeDestinationRule(
 		},
 	}
 
-	// TODO determine if we can avoid assigning TLS for some destinations rules
-	// In theory, we should only need manual TLS configuration for inter-cluster DRs
-	// (AKA when isDestinationFederated(destination, sourceMeshInstallation) == true)
-	// But e2e testing has stubbornly suggested otherwise.
-	// It's unclear if there is a second case among intra-cluster DR's where manual
-	// TLS is still required, or if the original assumption that Istio can automatically
-	// detect and apply TLS when it detects strict TLS on a destination's peerAuthentications was false.
-
 	// Initialize Istio TLS mode with default declared in Settings
-	istioTlsMode, err := tls.MapIstioTlsMode(mtlsDefault.GetIstio().GetTlsMode())
-	if err != nil {
-		return nil, err
-	}
-	destinationRule.Spec.TrafficPolicy.Tls = &networkingv1alpha3spec.ClientTLSSettings{
-		Mode: istioTlsMode,
+
+	if isDestinationFederated(destination, sourceMeshInstallation) {
+		istioTlsMode, err := tls.MapIstioTlsMode(mtlsDefault.GetIstio().GetTlsMode())
+		if err != nil {
+			return nil, err
+		}
+		destinationRule.Spec.TrafficPolicy.Tls = &networkingv1alpha3spec.ClientTLSSettings{
+			Mode: istioTlsMode,
+		}
 	}
 
 	return destinationRule, nil

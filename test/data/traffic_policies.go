@@ -31,8 +31,15 @@ func LocalTrafficShiftPolicy(
 					},
 				},
 			},
+
 			Policy: &v1.TrafficPolicySpec_Policy{
+				Mtls: &v1.TrafficPolicySpec_Policy_MTLS{
+					Istio: &v1.TrafficPolicySpec_Policy_MTLS_Istio{
+						TlsMode: v1.TrafficPolicySpec_Policy_MTLS_Istio_ISTIO_MUTUAL,
+					},
+				},
 				TrafficShift: &v1.TrafficPolicySpec_Policy_MultiDestination{
+
 					Destinations: []*v1.WeightedDestination{{
 						DestinationType: &v1.WeightedDestination_KubeService{
 							KubeService: &v1.WeightedDestination_KubeDestination{
