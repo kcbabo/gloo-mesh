@@ -90,7 +90,6 @@ func TestTrafficPolicies(t *testing.T) {
 				tg.Run(ctx, t, &deploymentCtx)
 			}
 		})
-
 }
 func testRequestTimeout(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
 	cluster := ctx.Clusters()[cluster0Index]

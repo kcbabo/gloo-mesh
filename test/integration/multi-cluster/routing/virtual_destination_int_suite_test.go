@@ -73,6 +73,14 @@ func TestVirtualDestinations(t *testing.T) {
 					Name: "virtual-destination",
 					Cases: []common.TestCase{
 						{
+							Name:        "fake-port",
+							Description: "simulating a port that does not exist on the app",
+							Test:        fakePortTest,
+							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
+							FileName:    "virtual-destination-fake-port.yaml",
+							Folder:      "gloo-mesh/virtual-destination",
+						},
+						{
 							Name:        "weighted-routing",
 							Description: "Testing multi cluster weighted routing",
 							Test:        testWeightedRouting,
@@ -191,6 +199,44 @@ func TestVirtualDestinations(t *testing.T) {
 		})
 
 }
+
+// fakePortTest making http requests for a virtual destination where the port is different from the app
+func fakePortTest(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
+	cluster := ctx.Clusters()[cluster0Index]
+	// frontend calling backend in mesh using virtual destination in same cluster
+	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
+	backendHost := "http-backend.solo.io"
+
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:    scheme.HTTP,
+		Address:   backendHost,
+		Method:    http.MethodGet,
+		Path:      "",
+		Count:     5,
+		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(cluster.Name())),
+	})
+	// cluster 2 test
+	cluster = ctx.Clusters()[cluster1Index]
+	// frontend calling backend in mesh using virtual destination in same cluster
+	src = deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:    scheme.HTTP,
+		Address:   backendHost,
+		Method:    http.MethodGet,
+		Path:      "",
+		Count:     5,
+		Validator: echo.And(echo.ExpectOK(), echo.ExpectCluster(cluster.Name())),
+	})
+}
+
 
 // testGlobalVirtualDestinationHTTP making http requests for a virtual destination
 // because of locality priority routing, we should see routing to local cluster first always

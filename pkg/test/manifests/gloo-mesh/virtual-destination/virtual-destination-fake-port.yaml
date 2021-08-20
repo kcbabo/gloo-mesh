@@ -21,8 +21,7 @@ metadata:
 spec:
   hostname: http-backend.solo.io
   port:
-    # matches port on an ingress gateway
-    number: 8080
+    number: 80
     protocol: http
     targetNumber: 8090
   localized:

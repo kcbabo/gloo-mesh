@@ -41,7 +41,7 @@ func TestVirtualGateways(t *testing.T) {
 							Description: "testing routing when the application exists in multiple clusters",
 							Test:        multiClusterApplicationTest,
 							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
-							FileName:    "single-cluster-gateway.yaml",
+							FileName:    "multi-cluster-app.yaml",
 							Folder:      "gloo-mesh/virtual-gateway",
 						},
 						{
@@ -49,7 +49,7 @@ func TestVirtualGateways(t *testing.T) {
 							Description: "routing internally and externally on the same dns name",
 							Test:        globalServiceTest,
 							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
-							FileName:    "multi-cluster-app.yaml",
+							FileName:    "global-service.yaml",
 							Folder:      "gloo-mesh/virtual-gateway",
 						},
 						{
@@ -195,7 +195,7 @@ func singleClusterGatewayTest(ctx resource.Context, t *testing.T, deploymentCtx 
 		Method:    http.MethodGet,
 		Path:      "/frontend",
 		Count:     5,
-		Validator: echo.ExpectCode("503"),
+		Validator: echo.ExpectError(),
 	})
 }
 
@@ -237,7 +237,7 @@ func multiClusterApplicationTest(ctx resource.Context, t *testing.T, deploymentC
 		},
 		Method:    http.MethodGet,
 		Path:      "/frontend",
-		Count:     15,
+		Count:     5,
 		Validator: echo.And(echo.ExpectOK(), frontend0IDValidator),
 	})
 
@@ -272,7 +272,7 @@ func multiClusterApplicationTest(ctx resource.Context, t *testing.T, deploymentC
 		},
 		Method:    http.MethodGet,
 		Path:      "/frontend",
-		Count:     15,
+		Count:     5,
 		Validator: echo.And(echo.ExpectOK(), frontend1IDValidator),
 	})
 }
@@ -358,7 +358,7 @@ func globalServiceTest(ctx resource.Context, t *testing.T, deploymentCtx *contex
 	backendSrc.CallOrFail(t, echo.CallOptions{
 		Port: &echo.Port{
 			Protocol:    "http",
-			ServicePort: 8090,
+			ServicePort: 80,
 		},
 		Scheme:    scheme.HTTP,
 		Address:   frontendHost,
@@ -374,7 +374,7 @@ func globalServiceTest(ctx resource.Context, t *testing.T, deploymentCtx *contex
 	backendSrc.CallOrFail(t, echo.CallOptions{
 		Port: &echo.Port{
 			Protocol:    "http",
-			ServicePort: 8090,
+			ServicePort: 80,
 		},
 		Scheme:    scheme.HTTP,
 		Address:   frontendHost,
@@ -398,7 +398,7 @@ func prefixTest(ctx resource.Context, t *testing.T, deploymentCtx *context.Deplo
 	backend := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("backend").And(echo.InCluster(cluster)))
 
 	apiHost := "api.solo.io"
-	cluster0GatewayAddress, err := getMeshForCluster(ctx.Clusters()[cluster0Index].Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
+	cluster0GatewayAddress, err := getMeshForCluster(cluster.Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -508,7 +508,7 @@ func prefixTest(ctx resource.Context, t *testing.T, deploymentCtx *context.Deplo
 		return
 	}
 
-	// happy requests from cluster-0
+	// happy requests from cluster-1
 	src.CallOrFail(t, echo.CallOptions{
 		Port: &echo.Port{
 			Protocol:    "http",

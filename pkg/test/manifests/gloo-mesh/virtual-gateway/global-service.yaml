@@ -102,10 +102,7 @@ spec:
           domains:
           - http-frontend.solo.io
           routes:
-          - matchers:
-            - uri:
-                prefix: /frontend
-            name: frontend
+          - name: frontend
             routeAction:
               destinations:
               - virtualDestination:
@@ -115,12 +112,43 @@ spec:
           domains:
           - http-backend.solo.io
           routes:
-          - matchers:
-            - uri:
-                prefix: /backend
-            name: backend
+          - name: backend
             routeAction:
               destinations:
               - virtualDestination:
                   name: backend
                   namespace: gloo-mesh
+---
+apiVersion: networking.mesh.gloo.solo.io/v1
+kind: TrafficPolicy
+metadata:
+  name: backend-failover
+  namespace: gloo-mesh
+spec:
+  destinationSelector:
+    - kubeServiceMatcher:
+        labels:
+          app: backend
+  policy:
+    trafficShift:
+      destinations:
+        - virtualDestination:
+            name: backend
+            namespace: gloo-mesh
+---
+apiVersion: networking.mesh.gloo.solo.io/v1
+kind: TrafficPolicy
+metadata:
+  name: frontend-failover
+  namespace: gloo-mesh
+spec:
+  destinationSelector:
+    - kubeServiceMatcher:
+        labels:
+          app: frontend
+  policy:
+    trafficShift:
+      destinations:
+        - virtualDestination:
+            name: frontend
+            namespace: gloo-mesh
