@@ -211,7 +211,7 @@ func (r *discoveryReconciler) reconcile(obj ezkube.ClusterResourceId) (bool, err
 		Settings: input.ResourceSettingsBuildOptions{
 			// Ensure that only declared Settings object exists in snapshot.
 			ListOptions: []client.ListOption{
-				client.InNamespace(r.settingsRef.Namespace),
+				client.InNamespace(r.settingsRef.GetNamespace()),
 			},
 		},
 	})

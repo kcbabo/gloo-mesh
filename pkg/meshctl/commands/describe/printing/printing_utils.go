@@ -27,8 +27,8 @@ func FormattedObjectRefs(refs []*v1.ObjectRef) string {
 	}
 	var s strings.Builder
 	for i, ref := range refs {
-		s.WriteString(FormattedField("Name", ref.Name))
-		s.WriteString(FormattedField("Namespace", ref.Namespace))
+		s.WriteString(FormattedField("Name", ref.GetName()))
+		s.WriteString(FormattedField("Namespace", ref.GetNamespace()))
 		if i < len(refs)-1 {
 			s.WriteString("\n")
 		}
@@ -49,9 +49,9 @@ func FormattedClusterObjectRefs(refs []*v1.ClusterObjectRef) string {
 	}
 	var s strings.Builder
 	for i, ref := range refs {
-		s.WriteString(FormattedField("Name", ref.Name))
-		s.WriteString(FormattedField("Namespace", ref.Namespace))
-		s.WriteString(FormattedField("Cluster", ref.ClusterName))
+		s.WriteString(FormattedField("Name", ref.GetName()))
+		s.WriteString(FormattedField("Namespace", ref.GetNamespace()))
+		s.WriteString(FormattedField("Cluster", ref.GetClusterName()))
 		if i < len(refs)-1 {
 			s.WriteString("\n")
 		}

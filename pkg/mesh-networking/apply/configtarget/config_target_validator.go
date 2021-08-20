@@ -68,7 +68,7 @@ func (c *configTargetValidator) ValidateVirtualMeshes(virtualMeshes v1.VirtualMe
 
 func (c *configTargetValidator) ValidateTrafficPolicies(trafficPolicies v1.TrafficPolicySlice) {
 	for _, trafficPolicy := range trafficPolicies {
-		errs := c.validateDestinationReferences(trafficPolicy.Spec.DestinationSelector)
+		errs := c.validateDestinationReferences(trafficPolicy.Spec.GetDestinationSelector())
 		if len(errs) == 0 {
 			continue
 		}
@@ -79,7 +79,7 @@ func (c *configTargetValidator) ValidateTrafficPolicies(trafficPolicies v1.Traff
 
 func (c *configTargetValidator) ValidateAccessPolicies(accessPolicies v1.AccessPolicySlice) {
 	for _, accessPolicy := range accessPolicies {
-		errs := c.validateDestinationReferences(accessPolicy.Spec.DestinationSelector)
+		errs := c.validateDestinationReferences(accessPolicy.Spec.GetDestinationSelector())
 		if len(errs) == 0 {
 			continue
 		}
@@ -108,7 +108,7 @@ func (c *configTargetValidator) validateDestinationReferences(serviceSelectors [
 		if kubeServiceRefs == nil {
 			continue
 		}
-		for _, ref := range kubeServiceRefs.Services {
+		for _, ref := range kubeServiceRefs.GetServices() {
 			if err := validateClusterObjectRef(ref); err != nil {
 				errs = append(errs, eris.Wrap(err, "malformed kubeServiceRef"))
 			} else if !c.kubeServiceExists(ref) {
@@ -125,7 +125,7 @@ func (c *configTargetValidator) kubeServiceExists(ref *skv2corev1.ClusterObjectR
 		if kubeService == nil {
 			continue
 		}
-		if ezkube.ClusterRefsMatch(ref, kubeService.Ref) {
+		if ezkube.ClusterRefsMatch(ref, kubeService.GetRef()) {
 			return true
 		}
 	}
@@ -134,7 +134,7 @@ func (c *configTargetValidator) kubeServiceExists(ref *skv2corev1.ClusterObjectR
 
 func (c *configTargetValidator) validateVirtualMesh(virtualMesh *v1.VirtualMesh) []error {
 	var errs []error
-	meshRefErrors := c.validateMeshReferences(virtualMesh.Spec.Meshes)
+	meshRefErrors := c.validateMeshReferences(virtualMesh.Spec.GetMeshes())
 	if meshRefErrors != nil {
 		errs = append(errs, meshRefErrors...)
 	}
@@ -161,11 +161,11 @@ func validateOneVirtualMeshPerMesh(virtualMeshes []*v1.VirtualMesh) {
 	var acceptedIndex uint32
 	// Invalidate VirtualMesh if it applies to a Mesh that already has an applied VirtualMesh.
 	for _, vMesh := range virtualMeshes {
-		if vMesh.Status.State != commonv1.ApprovalState_ACCEPTED {
+		if vMesh.Status.GetState() != commonv1.ApprovalState_ACCEPTED {
 			continue
 		}
 		vMesh := vMesh
-		for _, mesh := range vMesh.Spec.Meshes {
+		for _, mesh := range vMesh.Spec.GetMeshes() {
 			// Ignore VirtualMesh if previously invalidated.
 			if invalidVirtualMeshes.Has(vMesh) {
 				continue
@@ -179,9 +179,9 @@ func validateOneVirtualMeshPerMesh(virtualMeshes []*v1.VirtualMesh) {
 			} else {
 				vMesh.Status.State = commonv1.ApprovalState_INVALID
 				vMesh.Status.Errors = append(
-					vMesh.Status.Errors,
+					vMesh.Status.GetErrors(),
 					fmt.Sprintf("Includes a Mesh (%s.%s) that already is grouped in a VirtualMesh (%s.%s)",
-						mesh.Name, mesh.Namespace,
+						mesh.GetName(), mesh.GetNamespace(),
 						existingVirtualMesh.Name, existingVirtualMesh.Namespace,
 					),
 				)
@@ -194,7 +194,7 @@ func validateOneVirtualMeshPerMesh(virtualMeshes []*v1.VirtualMesh) {
 // For each VirtualMesh, if it has ingress gateway selectors, validate those selectors.
 func (c *configTargetValidator) validateVirtualMeshIngressGatewaySelectors(virtualMeshes v1.VirtualMeshSlice) {
 	for _, vMesh := range virtualMeshes {
-		if vMesh.Status.State != commonv1.ApprovalState_ACCEPTED {
+		if vMesh.Status.GetState() != commonv1.ApprovalState_ACCEPTED {
 			continue
 		}
 		for _, ingressGatewayServiceSelector := range vMesh.Spec.GetFederation().GetIngressGatewaySelectors() {
@@ -203,7 +203,7 @@ func (c *configTargetValidator) validateVirtualMeshIngressGatewaySelectors(virtu
 				vMesh.Status.State = commonv1.ApprovalState_INVALID
 				for _, err := range errs {
 					vMesh.Status.Errors = append(
-						vMesh.Status.Errors,
+						vMesh.Status.GetErrors(),
 						fmt.Sprintf("Invalid Destination selector: %v", err),
 					)
 				}
@@ -221,14 +221,14 @@ func (c *configTargetValidator) validateVirtualMeshIngressGatewaySelectors(virtu
 // Finally, vmeshes which are rejected and modified
 func sortVirtualMeshesByAcceptedDate(virtualMeshes v1.VirtualMeshSlice) {
 	isUpToDate := func(vm *v1.VirtualMesh) bool {
-		return vm.Status.ObservedGeneration == vm.Generation
+		return vm.Status.GetObservedGeneration() == vm.Generation
 	}
 
 	sort.SliceStable(virtualMeshes, func(i, j int) bool {
 		vMesh1, vMesh2 := virtualMeshes[i], virtualMeshes[j]
 
-		state1 := vMesh1.Status.State
-		state2 := vMesh2.Status.State
+		state1 := vMesh1.Status.GetState()
+		state2 := vMesh2.Status.GetState()
 
 		switch {
 		case state1 == commonv1.ApprovalState_ACCEPTED:
@@ -256,10 +256,10 @@ func sortVirtualMeshesByAcceptedDate(virtualMeshes v1.VirtualMeshSlice) {
 // return error if any field in ClusterObjectRef is empty
 func validateClusterObjectRef(ref *skv2corev1.ClusterObjectRef) error {
 	err := validateObjectRef(&skv2corev1.ObjectRef{
-		Name:      ref.Name,
-		Namespace: ref.Namespace,
+		Name:      ref.GetName(),
+		Namespace: ref.GetNamespace(),
 	})
-	if ref.ClusterName == "" {
+	if ref.GetClusterName() == "" {
 		err = multierror.Append(err, eris.New("'clusterName' must be specified'"))
 	}
 	return err
@@ -268,10 +268,10 @@ func validateClusterObjectRef(ref *skv2corev1.ClusterObjectRef) error {
 // return error if any field in ClusterObjectRef is empty
 func validateObjectRef(ref *skv2corev1.ObjectRef) error {
 	var err error
-	if ref.Name == "" {
+	if ref.GetName() == "" {
 		err = multierror.Append(err, eris.New("'name' must be specified'"))
 	}
-	if ref.Namespace == "" {
+	if ref.GetNamespace() == "" {
 		err = multierror.Append(err, eris.New("'namespace' must be specified'"))
 	}
 	return err

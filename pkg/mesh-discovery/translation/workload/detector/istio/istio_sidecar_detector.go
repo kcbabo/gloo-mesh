@@ -39,7 +39,7 @@ func (d sidecarDetector) DetectMeshSidecar(pod *corev1.Pod, meshes v1sets.MeshSe
 		// TODO(ilackarms): currently we assume one mesh per cluster,
 		// and that the control plane for a given sidecar is always
 		// the mesh
-		if istio.Installation.GetCluster() == pod.ClusterName {
+		if istio.GetInstallation().GetCluster() == pod.ClusterName {
 			return mesh
 		}
 	}

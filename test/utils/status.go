@@ -19,7 +19,7 @@ func AssertTrafficPolicyStatuses(
 		list, err := trafficPolicy.ListTrafficPolicy(ctx, client.InNamespace(namespace))
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 		for _, policy := range list.Items {
-			if policy.Status.ObservedGeneration == 0 {
+			if policy.Status.GetObservedGeneration() == 0 {
 				return false
 			}
 		}
@@ -37,7 +37,7 @@ func AssertVirtualMeshStatuses(
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 		ExpectWithOffset(1, list.Items).To(HaveLen(1))
 		for _, policy := range list.Items {
-			if policy.Status.ObservedGeneration == 0 {
+			if policy.Status.GetObservedGeneration() == 0 {
 				return false
 			}
 		}

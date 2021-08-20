@@ -65,12 +65,12 @@ func (t *translator) Translate(
 	}
 
 	// Istio's default access enforcement policy is disabled.
-	if virtualMesh.Spec.GlobalAccessPolicy == v1.VirtualMeshSpec_MESH_DEFAULT ||
-		virtualMesh.Spec.GlobalAccessPolicy == v1.VirtualMeshSpec_DISABLED {
+	if virtualMesh.GetSpec().GetGlobalAccessPolicy() == v1.VirtualMeshSpec_MESH_DEFAULT ||
+		virtualMesh.GetSpec().GetGlobalAccessPolicy() == v1.VirtualMeshSpec_DISABLED {
 		return
 	}
-	clusterName := istioMesh.Installation.Cluster
-	installationNamespace := istioMesh.Installation.Namespace
+	clusterName := istioMesh.GetInstallation().GetCluster()
+	installationNamespace := istioMesh.GetInstallation().GetNamespace()
 	globalAuthPolicy := buildGlobalAuthPolicy(installationNamespace, clusterName)
 	ingressGatewayAuthPolicies, err := buildAuthPoliciesForIngressGateways(
 		t.ctx,

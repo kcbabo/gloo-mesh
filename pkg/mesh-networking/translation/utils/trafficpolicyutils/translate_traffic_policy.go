@@ -130,17 +130,17 @@ func TranslateMirror(
 	if mirror == nil {
 		return nil, nil, nil
 	}
-	if mirror.DestinationType == nil {
+	if mirror.GetDestinationType() == nil {
 		return nil, nil, eris.Errorf("must provide mirror destination")
 	}
 
 	var translatedMirror *networkingv1alpha3spec.Destination
-	switch destinationType := mirror.DestinationType.(type) {
+	switch destinationType := mirror.GetDestinationType().(type) {
 	case *v1.TrafficPolicySpec_Policy_Mirror_KubeService:
 		var err error
 		translatedMirror, err = makeKubeDestinationMirror(
 			destinationType,
-			mirror.Port,
+			mirror.GetPort(),
 			sourceClusterName,
 			clusterDomains,
 			destinations,
@@ -183,8 +183,8 @@ func makeKubeDestinationMirror(
 	}
 
 	if port != 0 {
-		if !ContainsPort(mirrorKubeService.Ports, port) {
-			return nil, eris.Errorf("specified port %d does not exist for mirror destination service %v", port, sets.Key(mirrorKubeService.Ref))
+		if !ContainsPort(mirrorKubeService.GetPorts(), port) {
+			return nil, eris.Errorf("specified port %d does not exist for mirror destination service %v", port, sets.Key(mirrorKubeService.GetRef()))
 		}
 		translatedMirror.Port = &networkingv1alpha3spec.PortSelector{
 			Number: port,

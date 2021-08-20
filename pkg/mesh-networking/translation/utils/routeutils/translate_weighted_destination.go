@@ -30,7 +30,7 @@ func TranslateWeightedDestination(
 	virtualDestinations v1beta1sets.VirtualDestinationSet,
 	clusterDomains hostutils.ClusterDomainRegistry,
 ) (*networkingv1alpha3spec.HTTPRouteDestination, error) {
-	if weightedDest.DestinationType == nil {
+	if weightedDest.GetDestinationType() == nil {
 		return nil, eris.Errorf("must set a destination type on weighted destination")
 	}
 
@@ -51,8 +51,8 @@ func TranslateWeightedDestination(
 			Port:   destinationPort,
 			Subset: subsetName,
 		},
-		Weight:  int32(weightedDest.Weight),
-		Headers: trafficpolicyutils.TranslateHeaderManipulation(weightedDest.Options.GetHeaderManipulation()),
+		Weight:  int32(weightedDest.GetWeight()),
+		Headers: trafficpolicyutils.TranslateHeaderManipulation(weightedDest.GetOptions().GetHeaderManipulation()),
 	}, nil
 }
 
@@ -63,7 +63,7 @@ func resolveHostPortSubset(
 	sourceCluster string,
 	clusterDomains hostutils.ClusterDomainRegistry,
 ) (string, *networkingv1alpha3spec.PortSelector, string, error) {
-	switch destinationType := weightedDest.DestinationType.(type) {
+	switch destinationType := weightedDest.GetDestinationType().(type) {
 	case *networkingv1.WeightedDestination_KubeService:
 		return resolveHostPortSubsetKubeService(
 			destinationType.KubeService,
@@ -91,9 +91,9 @@ func resolveHostPortSubsetKubeService(
 ) (string, *networkingv1alpha3spec.PortSelector, string, error) {
 
 	svcRef := &skv2corev1.ClusterObjectRef{
-		Name:        kubeDest.Name,
-		Namespace:   kubeDest.Namespace,
-		ClusterName: kubeDest.ClusterName,
+		Name:        kubeDest.GetName(),
+		Namespace:   kubeDest.GetNamespace(),
+		ClusterName: kubeDest.GetClusterName(),
 	}
 
 	// validate destination service is a known destination
@@ -107,16 +107,16 @@ func resolveHostPortSubsetKubeService(
 
 	var destinationPort *networkingv1alpha3spec.PortSelector
 	if port := kubeDest.GetPort(); port != 0 {
-		if !trafficpolicyutils.ContainsPort(trafficShiftKubeService.Ports, port) {
-			return "", nil, "", eris.Errorf("specified port %d does not exist for traffic shift destination service %v", port, sets.Key(trafficShiftKubeService.Ref))
+		if !trafficpolicyutils.ContainsPort(trafficShiftKubeService.GetPorts(), port) {
+			return "", nil, "", eris.Errorf("specified port %d does not exist for traffic shift destination service %v", port, sets.Key(trafficShiftKubeService.GetRef()))
 		}
 		destinationPort = &networkingv1alpha3spec.PortSelector{
 			Number: port,
 		}
 	} else {
 		// validate that Destination only has one port
-		if numPorts := len(trafficShiftKubeService.Ports); numPorts > 1 {
-			return "", nil, "", eris.Errorf("must provide port for traffic shift destination service %v with multiple ports (%v) defined", sets.Key(trafficShiftKubeService.Ref), numPorts)
+		if numPorts := len(trafficShiftKubeService.GetPorts()); numPorts > 1 {
+			return "", nil, "", eris.Errorf("must provide port for traffic shift destination service %v with multiple ports (%v) defined", sets.Key(trafficShiftKubeService.GetRef()), numPorts)
 		}
 	}
 
@@ -137,7 +137,7 @@ func resolveHostPortSubsetVirtualDestination(
 		return "", nil, "", eris.Wrapf(err, "invalid traffic shift destination %s, VirtualDestination not found", sets.Key(virtualDest))
 	}
 
-	hostname := virtualDestination.Spec.Hostname
+	hostname := virtualDestination.Spec.GetHostname()
 	port := &networkingv1alpha3spec.PortSelector{
 		Number: virtualDestination.Spec.GetPort().GetNumber(),
 	}
@@ -169,7 +169,7 @@ func MakeDestinationRuleSubsetsForDestination(
 		for _, subset := range subsets {
 			// only the name of the subset matters here.
 			// the labels must match those on the ServiceEntry's endpoints.
-			subset.Labels = MakeFederatedSubsetLabel(destination.Spec.GetKubeService().Ref.ClusterName)
+			subset.Labels = MakeFederatedSubsetLabel(destination.Spec.GetKubeService().GetRef().GetClusterName())
 			// we also remove the TrafficPolicy, leaving
 			// it to the server-side DestinationRule to enforce.
 			subset.TrafficPolicy = nil
@@ -230,12 +230,12 @@ func MakeDestinationRuleSubsets(
 	}
 
 	for _, requiredSubset := range requiredSubsets {
-		for _, dest := range requiredSubset.TrafficShift.Destinations {
-			switch destType := dest.DestinationType.(type) {
+		for _, dest := range requiredSubset.GetTrafficShift().GetDestinations() {
+			switch destType := dest.GetDestinationType().(type) {
 			case *networkingv1.WeightedDestination_KubeService:
-				appendUniqueSubset(destType.KubeService.Subset)
+				appendUniqueSubset(destType.KubeService.GetSubset())
 			case *networkingv1.WeightedDestination_VirtualDestination_:
-				appendUniqueSubset(destType.VirtualDestination.Subset)
+				appendUniqueSubset(destType.VirtualDestination.GetSubset())
 			}
 		}
 	}

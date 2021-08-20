@@ -65,7 +65,7 @@ func (d *trafficShiftDecorator) ApplyTrafficPolicyToVirtualService(
 	output *networkingv1alpha3spec.HTTPRoute,
 	registerField decorators.RegisterField,
 ) error {
-	trafficShiftDestinations, err := d.translateTrafficShift(destination, appliedPolicy.Spec, sourceMeshInstallation.GetCluster())
+	trafficShiftDestinations, err := d.translateTrafficShift(destination, appliedPolicy.GetSpec(), sourceMeshInstallation.GetCluster())
 	if err != nil {
 		return err
 	}
@@ -89,18 +89,18 @@ func (d *trafficShiftDecorator) translateTrafficShift(
 	}
 
 	var shiftedDestinations []*networkingv1alpha3spec.HTTPRouteDestination
-	for _, weightedDest := range trafficShift.Destinations {
-		if weightedDest.DestinationType == nil {
+	for _, weightedDest := range trafficShift.GetDestinations() {
+		if weightedDest.GetDestinationType() == nil {
 			return nil, eris.Errorf("must set a destination type on traffic shift destination")
 		}
 		var trafficShiftDestination *networkingv1alpha3spec.HTTPRouteDestination
-		switch destinationType := weightedDest.DestinationType.(type) {
+		switch destinationType := weightedDest.GetDestinationType().(type) {
 		case *networkingv1.WeightedDestination_KubeService:
 			var err error
 			trafficShiftDestination, err = d.buildKubeTrafficShiftDestination(
 				destinationType.KubeService,
 				destination,
-				weightedDest.Weight,
+				weightedDest.GetWeight(),
 				sourceClusterName,
 			)
 			if err != nil {
@@ -110,13 +110,13 @@ func (d *trafficShiftDecorator) translateTrafficShift(
 			var err error
 			trafficShiftDestination, err = d.buildVirtualDestinationDestination(
 				destinationType.VirtualDestination,
-				weightedDest.Weight,
+				weightedDest.GetWeight(),
 			)
 			if err != nil {
 				return nil, eris.Wrap(err, "constructing traffic shift destination for virtual destination")
 			}
 		default:
-			return nil, eris.Errorf("unsupported traffic shift destination type: %T", weightedDest.DestinationType)
+			return nil, eris.Errorf("unsupported traffic shift destination type: %T", weightedDest.GetDestinationType())
 		}
 		shiftedDestinations = append(shiftedDestinations, trafficShiftDestination)
 
@@ -141,9 +141,9 @@ func (d *trafficShiftDecorator) buildKubeTrafficShiftDestination(
 	}
 
 	svcRef := &skv2corev1.ClusterObjectRef{
-		Name:        kubeDest.Name,
-		Namespace:   kubeDest.Namespace,
-		ClusterName: kubeDest.ClusterName,
+		Name:        kubeDest.GetName(),
+		Namespace:   kubeDest.GetNamespace(),
+		ClusterName: kubeDest.GetClusterName(),
 	}
 
 	// validate destination service is a known destination
@@ -162,16 +162,16 @@ func (d *trafficShiftDecorator) buildKubeTrafficShiftDestination(
 
 	var destinationPort *networkingv1alpha3spec.PortSelector
 	if port := kubeDest.GetPort(); port != 0 {
-		if !trafficpolicyutils.ContainsPort(trafficShiftKubeService.Ports, port) {
-			return nil, eris.Errorf("specified port %d does not exist for traffic shift destination service %v", port, sets.Key(trafficShiftKubeService.Ref))
+		if !trafficpolicyutils.ContainsPort(trafficShiftKubeService.GetPorts(), port) {
+			return nil, eris.Errorf("specified port %d does not exist for traffic shift destination service %v", port, sets.Key(trafficShiftKubeService.GetRef()))
 		}
 		destinationPort = &networkingv1alpha3spec.PortSelector{
 			Number: port,
 		}
 	} else {
 		// validate that Destination only has one port
-		if numPorts := len(trafficShiftKubeService.Ports); numPorts > 1 {
-			return nil, eris.Errorf("must provide port for traffic shift destination service %v with multiple ports (%v) defined", sets.Key(trafficShiftKubeService.Ref), numPorts)
+		if numPorts := len(trafficShiftKubeService.GetPorts()); numPorts > 1 {
+			return nil, eris.Errorf("must provide port for traffic shift destination service %v with multiple ports (%v) defined", sets.Key(trafficShiftKubeService.GetRef()), numPorts)
 		}
 	}
 
@@ -183,9 +183,9 @@ func (d *trafficShiftDecorator) buildKubeTrafficShiftDestination(
 		Weight: int32(weight),
 	}
 
-	if kubeDest.Subset != nil {
+	if kubeDest.GetSubset() != nil {
 		// Use the canonical GlooMesh unique name for this subset.
-		httpRouteDestination.Destination.Subset = routeutils.SubsetName(kubeDest.Subset)
+		httpRouteDestination.GetDestination().Subset = routeutils.SubsetName(kubeDest.GetSubset())
 	}
 
 	return httpRouteDestination, nil
@@ -227,7 +227,7 @@ func (d *trafficShiftDecorator) buildHttpRouteDestination(
 
 	if subset != nil {
 		// Use the canonical GlooMesh unique name for this subset.
-		httpRouteDestination.Destination.Subset = routeutils.SubsetName(subset)
+		httpRouteDestination.GetDestination().Subset = routeutils.SubsetName(subset)
 	}
 
 	return httpRouteDestination

@@ -42,7 +42,7 @@ func (d *timeoutDecorator) ApplyTrafficPolicyToVirtualService(
 	output *networkingv1alpha3spec.HTTPRoute,
 	registerField decorators.RegisterField,
 ) error {
-	timeout, err := d.translateTimeout(appliedPolicy.Spec)
+	timeout, err := d.translateTimeout(appliedPolicy.GetSpec())
 	if err != nil {
 		return err
 	}

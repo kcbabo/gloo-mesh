@@ -43,10 +43,10 @@ func restartPods(ctx context.Context, c client.Client, meshRef *skcorev1.ObjectR
 	}
 	for _, workload := range workloadList.Items {
 		// currently only supports restarting k8s workloads
-		if !ezkube.RefsMatch(workload.Spec.Mesh, meshRef) || workload.Spec.GetKubernetes() == nil {
+		if !ezkube.RefsMatch(workload.Spec.GetMesh(), meshRef) || workload.Spec.GetKubernetes() == nil {
 			continue
 		}
-		podLabels := workload.Spec.GetKubernetes().PodLabels
+		podLabels := workload.Spec.GetKubernetes().GetPodLabels()
 		// ignore if no workload selectors populated to avoid restarting all pods
 		if len(podLabels) < 1 {
 			continue

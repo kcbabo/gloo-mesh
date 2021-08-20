@@ -173,7 +173,7 @@ func handleWorkloadDiscoveredMesh(
 ) {
 
 	// all backing workloads should be in the same mesh
-	tt.Spec.Mesh = backingWorkloads[0].Spec.Mesh
+	tt.Spec.Mesh = backingWorkloads[0].Spec.GetMesh()
 
 	// derive subsets from backing workloads
 	tt.Spec.GetKubeService().Subsets = findSubsets(backingWorkloads)
@@ -237,7 +237,7 @@ func findEndpoints(
 				)
 			}
 
-			sub.Endpoints = append(sub.Endpoints, ep)
+			sub.Endpoints = append(sub.GetEndpoints(), ep)
 
 		}
 
@@ -249,7 +249,7 @@ func findEndpoints(
 				Protocol:    string(port.Protocol),
 				AppProtocol: pointer.StringPtrDerefOr(port.AppProtocol, ""),
 			}
-			sub.Ports = append(sub.Ports, epPort)
+			sub.Ports = append(sub.GetPorts(), epPort)
 		}
 
 		// Only add this subset to the list if any IPs matched the workload in question
@@ -261,7 +261,7 @@ func findEndpoints(
 			continue
 		}
 
-		kubeService.EndpointSubsets = append(kubeService.EndpointSubsets, sub)
+		kubeService.EndpointSubsets = append(kubeService.GetEndpointSubsets(), sub)
 	}
 }
 

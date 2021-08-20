@@ -76,13 +76,13 @@ func (t *translator) Translate(
 	[]*networkingv1alpha3.DestinationRule,
 ) {
 	// nothing to translate if this Destination is not federated to any external meshes
-	if len(destination.Status.AppliedFederation.GetFederatedToMeshes()) == 0 {
+	if len(destination.Status.GetAppliedFederation().GetFederatedToMeshes()) == 0 {
 		return nil, nil, nil
 	}
 
 	// KubeService scenario
 	kubeService := destination.Spec.GetKubeService()
-	appliedFederation := destination.Status.AppliedFederation
+	appliedFederation := destination.Status.GetAppliedFederation()
 	destinationMesh, err := in.Meshes().Find(destination.Spec.GetMesh())
 	if err != nil {
 		contextutils.LoggerFrom(t.ctx).Errorf("Could not find parent Mesh %v for Destination %v", destination.Spec.GetMesh(), ezkube.MakeObjectRef(destination))
@@ -97,9 +97,9 @@ func (t *translator) Translate(
 		return nil, nil, nil
 	}
 
-	destinationVirtualMesh, err := in.VirtualMeshes().Find(destination.Status.AppliedFederation.GetVirtualMeshRef())
+	destinationVirtualMesh, err := in.VirtualMeshes().Find(destination.Status.GetAppliedFederation().GetVirtualMeshRef())
 	if err != nil {
-		contextutils.LoggerFrom(t.ctx).Errorf("Could not find parent VirtualMesh %v for Destination %v", destination.Status.AppliedFederation.GetVirtualMeshRef(), ezkube.MakeObjectRef(destination))
+		contextutils.LoggerFrom(t.ctx).Errorf("Could not find parent VirtualMesh %v for Destination %v", destination.Status.GetAppliedFederation().GetVirtualMeshRef(), ezkube.MakeObjectRef(destination))
 		return nil, nil, nil
 	}
 
@@ -116,7 +116,7 @@ func (t *translator) Translate(
 
 	var remoteDestinationRule *networkingv1alpha3.DestinationRule
 	// translate remote resources
-	for _, meshRef := range destination.Status.AppliedFederation.GetFederatedToMeshes() {
+	for _, meshRef := range destination.Status.GetAppliedFederation().GetFederatedToMeshes() {
 		remoteMesh, err := in.Meshes().Find(meshRef)
 		if err != nil {
 			contextutils.LoggerFrom(t.ctx).Errorf("Could not find Mesh %v that Destination %v is federated to", meshRef, ezkube.MakeObjectRef(destination))
@@ -133,9 +133,9 @@ func (t *translator) Translate(
 		)
 
 		// Append the VirtualMesh as a parent to the outputs
-		metautils.AppendParent(t.ctx, serviceEntry, destination.Status.AppliedFederation.GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
-		metautils.AppendParent(t.ctx, virtualService, destination.Status.AppliedFederation.GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
-		metautils.AppendParent(t.ctx, destinationRule, destination.Status.AppliedFederation.GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
+		metautils.AppendParent(t.ctx, serviceEntry, destination.Status.GetAppliedFederation().GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
+		metautils.AppendParent(t.ctx, virtualService, destination.Status.GetAppliedFederation().GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
+		metautils.AppendParent(t.ctx, destinationRule, destination.Status.GetAppliedFederation().GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
 
 		serviceEntries = append(serviceEntries, serviceEntry)
 		virtualServices = append(virtualServices, virtualService)
@@ -161,8 +161,8 @@ func (t *translator) Translate(
 	}
 
 	// Append the VirtualMesh as a parent to the outputs
-	metautils.AppendParent(t.ctx, localServiceEntry, destination.Status.AppliedFederation.GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
-	metautils.AppendParent(t.ctx, localDestinationRule, destination.Status.AppliedFederation.GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
+	metautils.AppendParent(t.ctx, localServiceEntry, destination.Status.GetAppliedFederation().GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
+	metautils.AppendParent(t.ctx, localDestinationRule, destination.Status.GetAppliedFederation().GetVirtualMeshRef(), networkingv1.VirtualMesh{}.GVK())
 	serviceEntries = append(serviceEntries, localServiceEntry)
 	destinationRules = append(destinationRules, localDestinationRule)
 
@@ -176,7 +176,7 @@ func (t *translator) translateRemoteServiceEntryTemplate(
 ) (*networkingv1alpha3.ServiceEntry, error) {
 	kubeService := destination.Spec.GetKubeService()
 
-	if len(destinationMesh.Status.AppliedEastWestIngressGateways) < 1 {
+	if len(destinationMesh.Status.GetAppliedEastWestIngressGateways()) < 1 {
 		return nil, eris.Errorf("istio mesh %v has no applied east west ingress gateways", sets.Key(destinationMesh))
 	}
 
@@ -189,13 +189,13 @@ func (t *translator) translateRemoteServiceEntryTemplate(
 	var sePorts []*networkingv1alpha3spec.Port
 	workloadEntryPortMapping := make(map[string]uint32)
 	for _, port := range kubeService.GetPorts() {
-		portName := port.Name
+		portName := port.GetName()
 		// fall back to protocol for port name if k8s port name is unpopulated
 		if portName == "" {
-			portName = port.Protocol
+			portName = port.GetProtocol()
 		}
 		sePorts = append(sePorts, &networkingv1alpha3spec.Port{
-			Number:   port.Port,
+			Number:   port.GetPort(),
 			Protocol: ConvertKubePortProtocol(port),
 			Name:     portName,
 		})
@@ -206,19 +206,19 @@ func (t *translator) translateRemoteServiceEntryTemplate(
 	var workloadEntries []*networkingv1alpha3spec.WorkloadEntry
 
 	// construct a WorkloadEntry for each ingress gateway destination's external address, for each endpoint (i.e. backing Workload) on the Destination
-	for _, appliedIngressGateway := range destinationMesh.Status.AppliedEastWestIngressGateways {
+	for _, appliedIngressGateway := range destinationMesh.Status.GetAppliedEastWestIngressGateways() {
 
 		for portName := range workloadEntryPortMapping {
-			workloadEntryPortMapping[portName] = appliedIngressGateway.ExternalPort
+			workloadEntryPortMapping[portName] = appliedIngressGateway.GetExternalPort()
 		}
 
-		for _, externalAddress := range appliedIngressGateway.ExternalAddresses {
-			for _, endpointSubset := range kubeService.EndpointSubsets {
-				for _, endpoint := range endpointSubset.Endpoints {
+		for _, externalAddress := range appliedIngressGateway.GetExternalAddresses() {
+			for _, endpointSubset := range kubeService.GetEndpointSubsets() {
+				for _, endpoint := range endpointSubset.GetEndpoints() {
 					workloadEntry := &networkingv1alpha3spec.WorkloadEntry{
 						Address: externalAddress,
 						Ports:   workloadEntryPortMapping,
-						Labels:  endpoint.Labels,
+						Labels:  endpoint.GetLabels(),
 					}
 					workloadEntries = append(workloadEntries, workloadEntry)
 				}
@@ -226,7 +226,7 @@ func (t *translator) translateRemoteServiceEntryTemplate(
 		}
 	}
 
-	federatedHostname := destination.Status.AppliedFederation.GetFederatedHostname()
+	federatedHostname := destination.Status.GetAppliedFederation().GetFederatedHostname()
 
 	resolution, err := ResolutionForEndpointIpVersions(workloadEntries)
 	if err != nil {
@@ -258,28 +258,28 @@ func (t *translator) translateForLocalMesh(
 	remoteServiceEntryTemplate *networkingv1alpha3.ServiceEntry,
 	remoteDestinationRule *networkingv1alpha3.DestinationRule,
 ) (*networkingv1alpha3.ServiceEntry, *networkingv1alpha3.DestinationRule, error) {
-	federatedHostname := destination.Status.AppliedFederation.GetFederatedHostname()
+	federatedHostname := destination.Status.GetAppliedFederation().GetFederatedHostname()
 	destinationIstioMesh := destinationMesh.Spec.GetIstio()
 
 	var workloadEntries []*networkingv1alpha3spec.WorkloadEntry
 	// construct a WorkloadEntry for each endpoint (i.e. backing Workload) for the Destination
-	for _, endpointSubset := range destination.Spec.GetKubeService().EndpointSubsets {
-		for _, endpoint := range endpointSubset.Endpoints {
+	for _, endpointSubset := range destination.Spec.GetKubeService().GetEndpointSubsets() {
+		for _, endpoint := range endpointSubset.GetEndpoints() {
 
 			ports := map[string]uint32{}
-			for _, port := range endpointSubset.Ports {
-				portName := port.Name
+			for _, port := range endpointSubset.GetPorts() {
+				portName := port.GetName()
 				// fall back to protocol for port name if k8s port name is unpopulated
 				if portName == "" {
-					portName = port.Protocol
+					portName = port.GetProtocol()
 				}
-				ports[portName] = port.Port
+				ports[portName] = port.GetPort()
 			}
 
 			workloadEntry := &networkingv1alpha3spec.WorkloadEntry{
-				Address: endpoint.IpAddress,
+				Address: endpoint.GetIpAddress(),
 				Ports:   ports,
-				Labels:  endpoint.Labels,
+				Labels:  endpoint.GetLabels(),
 			}
 			workloadEntries = append(workloadEntries, workloadEntry)
 		}
@@ -293,8 +293,8 @@ func (t *translator) translateForLocalMesh(
 	se := &networkingv1alpha3.ServiceEntry{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        federatedHostname,
-			Namespace:   destinationIstioMesh.Installation.Namespace,
-			ClusterName: destinationIstioMesh.Installation.Cluster,
+			Namespace:   destinationIstioMesh.GetInstallation().GetNamespace(),
+			ClusterName: destinationIstioMesh.GetInstallation().GetCluster(),
 			Labels:      metautils.TranslatedObjectLabels(),
 		},
 		Spec: networkingv1alpha3spec.ServiceEntry{
@@ -305,7 +305,7 @@ func (t *translator) translateForLocalMesh(
 			Location:   networkingv1alpha3spec.ServiceEntry_MESH_INTERNAL,
 			Resolution: resolution,
 			Endpoints:  workloadEntries,
-			Ports:      remoteServiceEntryTemplate.Spec.Ports,
+			Ports:      remoteServiceEntryTemplate.Spec.GetPorts(),
 		},
 	}
 
@@ -315,14 +315,14 @@ func (t *translator) translateForLocalMesh(
 		dr = &networkingv1alpha3.DestinationRule{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        federatedHostname,
-				Namespace:   destinationIstioMesh.Installation.Namespace,
-				ClusterName: destinationIstioMesh.Installation.Cluster,
+				Namespace:   destinationIstioMesh.GetInstallation().GetNamespace(),
+				ClusterName: destinationIstioMesh.GetInstallation().GetCluster(),
 				Labels:      metautils.TranslatedObjectLabels(),
 			},
 			Spec: networkingv1alpha3spec.DestinationRule{
 				Host:          federatedHostname,
-				Subsets:       remoteDestinationRule.Spec.Subsets,
-				TrafficPolicy: remoteDestinationRule.Spec.TrafficPolicy,
+				Subsets:       remoteDestinationRule.Spec.GetSubsets(),
+				TrafficPolicy: remoteDestinationRule.Spec.GetTrafficPolicy(),
 			},
 		}
 	}
@@ -347,7 +347,7 @@ func (t *translator) translateForRemoteMesh(
 ) {
 	remoteIstioMesh := remoteMesh.Spec.GetIstio()
 
-	if getHostnameSuffix(destination.Status.AppliedFederation.GetFederatedHostname()) != hostutils.DefaultHostnameSuffix && !remoteIstioMesh.SmartDnsProxyingEnabled {
+	if getHostnameSuffix(destination.Status.GetAppliedFederation().GetFederatedHostname()) != hostutils.DefaultHostnameSuffix && !remoteIstioMesh.GetSmartDnsProxyingEnabled() {
 		reporter.ReportVirtualMeshToDestination(destination, destinationVirtualMesh, eris.Errorf(
 			"mesh %v does not have smart DNS proxying enabled (hostname suffix can only be specified for federated Destination if Istio's smart DNS proxying is enabled)",
 			sets.Key(remoteMesh),
@@ -358,14 +358,14 @@ func (t *translator) translateForRemoteMesh(
 	// translate ServiceEntry
 	serviceEntry := serviceEntryTemplate.DeepCopy()
 	// set the Namespace and ClusterName based on the remote istio Mesh
-	serviceEntry.Namespace = remoteIstioMesh.Installation.Namespace
-	serviceEntry.ClusterName = remoteIstioMesh.Installation.Cluster
+	serviceEntry.Namespace = remoteIstioMesh.GetInstallation().GetNamespace()
+	serviceEntry.ClusterName = remoteIstioMesh.GetInstallation().GetCluster()
 
 	// translate VirtualService for federated Destinations, can be nil
-	virtualService := t.virtualServiceTranslator.Translate(t.ctx, in, destination, remoteIstioMesh.Installation, reporter)
+	virtualService := t.virtualServiceTranslator.Translate(t.ctx, in, destination, remoteIstioMesh.GetInstallation(), reporter)
 
 	// translate DestinationRule for federated Destinations, can be nil
-	destinationRule := t.destinationRuleTranslator.Translate(t.ctx, in, destination, remoteIstioMesh.Installation, reporter)
+	destinationRule := t.destinationRuleTranslator.Translate(t.ctx, in, destination, remoteIstioMesh.GetInstallation(), reporter)
 
 	return serviceEntry, virtualService, destinationRule
 }
@@ -374,12 +374,12 @@ func (t *translator) translateForRemoteMesh(
 // exported for use in enterprise
 func ConvertKubePortProtocol(port *discoveryv1.DestinationSpec_KubeService_KubeServicePort) string {
 	var appProtocol *string
-	if port.AppProtocol != "" {
-		appProtocol = pointer.StringPtr(port.AppProtocol)
+	if port.GetAppProtocol() != "" {
+		appProtocol = pointer.StringPtr(port.GetAppProtocol())
 	}
-	convertedProtocol := kube.ConvertProtocol(int32(port.Port), port.Name, corev1.Protocol(port.Protocol), appProtocol)
+	convertedProtocol := kube.ConvertProtocol(int32(port.GetPort()), port.GetName(), corev1.Protocol(port.GetProtocol()), appProtocol)
 	if convertedProtocol == protocol.Unsupported {
-		return port.Protocol
+		return port.GetProtocol()
 	}
 	return string(convertedProtocol)
 }

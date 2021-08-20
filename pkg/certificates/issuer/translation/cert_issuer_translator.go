@@ -88,7 +88,7 @@ func (s *secretTranslator) Translate(
 	// generate the issued cert PEM encoded bytes
 	signedCert, err := utils.GenCertForCSR(
 		ctx,
-		issuedCertificate.Spec.Hosts,
+		issuedCertificate.Spec.GetHosts(),
 		certificateRequest.Spec.GetCertificateSigningRequest(),
 		signingCA.CaCert,
 		signingCA.CaPrivateKey,
@@ -110,8 +110,8 @@ func GetSigningSecret(issuedCertificate *certificatesv1.IssuedCertificate) *skv2
 	//Handle deprecated field
 	if issuedCertificate.Spec.GetGlooMeshCa().GetSigningCertificateSecret() != nil {
 		return issuedCertificate.Spec.GetGlooMeshCa().GetSigningCertificateSecret()
-	} else if issuedCertificate.Spec.SigningCertificateSecret != nil {
-		return issuedCertificate.Spec.SigningCertificateSecret
+	} else if issuedCertificate.Spec.GetSigningCertificateSecret() != nil {
+		return issuedCertificate.Spec.GetSigningCertificateSecret()
 	}
 	return nil
 }

@@ -73,15 +73,15 @@ func (p *podBouncer) BouncePods(
 	var errs error
 	// collect the pods we want to delete in the order they're specified in the directive
 	// it is important Istiod is restarted before any of the other pods
-	for i, selector := range podBounceDirective.Spec.PodsToBounce {
-		if len(podBounceDirective.Status.PodsBounced) > i {
+	for i, selector := range podBounceDirective.Spec.GetPodsToBounce() {
+		if len(podBounceDirective.Status.GetPodsBounced()) > i {
 			// the set of pods for this selector was already bounced, so we instead ensure that
 			// the minimum number of replacement pods are ready before moving on with the deletion
-			podsBounced := podBounceDirective.Status.PodsBounced[i]
+			podsBounced := podBounceDirective.Status.GetPodsBounced()[i]
 
 			// if all required replicas are not ready, return true to indicate we should halt processing
 			// of the directive here in order to wait for a future update to the Pods in the input snapshot.
-			if !replacementsReady(pods, selector, podsBounced.BouncedPods) {
+			if !replacementsReady(pods, selector, podsBounced.GetBouncedPods()) {
 
 				contextutils.LoggerFrom(ctx).Debugf("podBounceDirective %v: waiting for ready pods for selector %v", sets.Key(podBounceDirective), selector)
 
@@ -96,11 +96,11 @@ func (p *podBouncer) BouncePods(
 			continue
 		}
 
-		if selector.RootCertSync != nil {
-			configMap, err := configMaps.Find(selector.RootCertSync.ConfigMapRef)
+		if selector.GetRootCertSync() != nil {
+			configMap, err := configMaps.Find(selector.GetRootCertSync().GetConfigMapRef())
 			if err != nil && errors.IsNotFound(err) {
 				// ConfigMap isn't found; let's wait for it to be added by Istio
-				contextutils.LoggerFrom(ctx).Debugf("podBounceDirective %v: waiting for %v configmap creation for selector %v", sets.Key(podBounceDirective), selector.RootCertSync.ConfigMapRef.Name, selector)
+				contextutils.LoggerFrom(ctx).Debugf("podBounceDirective %v: waiting for %v configmap creation for selector %v", sets.Key(podBounceDirective), selector.GetRootCertSync().GetConfigMapRef().GetName(), selector)
 
 				time.Sleep(time.Second)
 
@@ -111,7 +111,7 @@ func (p *podBouncer) BouncePods(
 
 			matches, err := p.rootCertMatcher.MatchesRootCert(
 				ctx,
-				[]byte(configMap.Data[selector.RootCertSync.ConfigMapKey]),
+				[]byte(configMap.Data[selector.GetRootCertSync().GetConfigMapKey()]),
 				selector,
 				secrets,
 			)
@@ -122,7 +122,7 @@ func (p *podBouncer) BouncePods(
 			if !matches {
 				// the configmap's public key doesn't match the root cert CA's
 				// sleep to allow time for the cert to be distributed and retry
-				contextutils.LoggerFrom(ctx).Debugf("podBounceDirective %v: waiting for %v configmap update for selector %v", sets.Key(podBounceDirective), selector.RootCertSync.ConfigMapRef.Name, selector)
+				contextutils.LoggerFrom(ctx).Debugf("podBounceDirective %v: waiting for %v configmap update for selector %v", sets.Key(podBounceDirective), selector.GetRootCertSync().GetConfigMapRef().GetName(), selector)
 
 				time.Sleep(time.Second)
 
@@ -146,11 +146,11 @@ func (p *podBouncer) BouncePods(
 
 		// update the status to show we've bounced this selector already
 		podBounceDirective.Status.PodsBounced = append(
-			podBounceDirective.Status.PodsBounced,
+			podBounceDirective.Status.GetPodsBounced(),
 			&certificatesv1.PodBounceDirectiveStatus_BouncedPodSet{BouncedPods: bouncedPods},
 		)
 
-		if selector.WaitForReplicas > 0 {
+		if selector.GetWaitForReplicas() > 0 {
 			// if we just deleted pods for a selector that wants us to wait, we should return here
 			// and signal a wait
 			return true, errs
@@ -166,7 +166,7 @@ func replacementsReady(
 	podSelector *certificatesv1.PodBounceDirectiveSpec_PodSelector,
 	deletedPodNames []string,
 ) bool {
-	if podSelector.WaitForReplicas == 0 {
+	if podSelector.GetWaitForReplicas() == 0 {
 		return true
 	}
 
@@ -183,12 +183,12 @@ func replacementsReady(
 	})
 
 	// ensure we have the right number of ready replicas
-	return len(currentReadyPods) >= int(podSelector.WaitForReplicas)
+	return len(currentReadyPods) >= int(podSelector.GetWaitForReplicas())
 }
 
 func isPodSelected(pod *corev1.Pod, podSelector *certificatesv1.PodBounceDirectiveSpec_PodSelector) bool {
-	return podSelector.Namespace == pod.Namespace &&
-		labels.SelectorFromSet(podSelector.Labels).Matches(labels.Set(pod.Labels))
+	return podSelector.GetNamespace() == pod.Namespace &&
+		labels.SelectorFromSet(podSelector.GetLabels()).Matches(labels.Set(pod.Labels))
 }
 
 func NewSecretRootCertMatcher() RootCertMatcher {
@@ -204,10 +204,10 @@ func (s *secretRootCertMatcher) MatchesRootCert(
 	selector *certificatesv1.PodBounceDirectiveSpec_PodSelector,
 	allSecrets corev1sets.SecretSet,
 ) (matches bool, err error) {
-	secret, err := allSecrets.Find(selector.RootCertSync.SecretRef)
+	secret, err := allSecrets.Find(selector.GetRootCertSync().GetSecretRef())
 	if err != nil {
 		return false, err
 	}
 
-	return bytes.Equal(secret.Data[selector.RootCertSync.SecretKey], rootCert), nil
+	return bytes.Equal(secret.Data[selector.GetRootCertSync().GetSecretKey()], rootCert), nil
 }

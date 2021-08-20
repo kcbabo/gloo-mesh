@@ -87,7 +87,7 @@ func (r *certIssuerReconciler) reconcile(_ ezkube.ClusterResourceId) (bool, erro
 func (r *certIssuerReconciler) reconcileCertificateRequest(certificateRequest *certificatesv1.CertificateRequest, issuedCertificates v1sets.IssuedCertificateSet) error {
 
 	// if observed generation is out of sync, treat the issued certificate as Pending (spec has been modified)
-	if certificateRequest.Status.ObservedGeneration != certificateRequest.Generation {
+	if certificateRequest.Status.GetObservedGeneration() != certificateRequest.Generation {
 		certificateRequest.Status.State = certificatesv1.CertificateRequestStatus_PENDING
 	}
 
@@ -95,9 +95,9 @@ func (r *certIssuerReconciler) reconcileCertificateRequest(certificateRequest *c
 	certificateRequest.Status.ObservedGeneration = certificateRequest.Generation
 	certificateRequest.Status.Error = ""
 
-	switch certificateRequest.Status.State {
+	switch certificateRequest.Status.GetState() {
 	case certificatesv1.CertificateRequestStatus_FINISHED:
-		if len(certificateRequest.Status.SignedCertificate) > 0 {
+		if len(certificateRequest.Status.GetSignedCertificate()) > 0 {
 			contextutils.LoggerFrom(r.ctx).Debugf("skipping cert request %v which has already been fulfilled", sets.Key(certificateRequest))
 			return nil
 		}
@@ -109,7 +109,7 @@ func (r *certIssuerReconciler) reconcileCertificateRequest(certificateRequest *c
 	case certificatesv1.CertificateRequestStatus_PENDING:
 		// Break out of switch statement here to start workflow
 	default:
-		return eris.Errorf("unknown certificate request state: %v", certificateRequest.Status.State)
+		return eris.Errorf("unknown certificate request state: %v", certificateRequest.Status.GetState())
 	}
 
 	issuedCertificate, err := issuedCertificates.Find(certificateRequest)

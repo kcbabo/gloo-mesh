@@ -116,8 +116,8 @@ func initializePolicyStatuses(input input.LocalSnapshot) {
 			Destinations:       map[string]*networkingv1.ApprovalStatus{},
 			Errors:             nil,
 			// Need to retain previous conditions
-			Conditions:          virtualMesh.Status.Conditions,
-			DeployedSharedTrust: virtualMesh.Status.DeployedSharedTrust,
+			Conditions:          virtualMesh.Status.GetConditions(),
+			DeployedSharedTrust: virtualMesh.Status.GetDeployedSharedTrust(),
 		}
 	}
 }
@@ -155,7 +155,7 @@ func applyPoliciesToConfigTargets(ctx context.Context, input input.LocalSnapshot
 	previousAppliedVirtualMeshes := make(map[*discoveryv1.Mesh]*discoveryv1.MeshStatus_AppliedVirtualMesh)
 
 	for _, mesh := range input.Meshes().List() {
-		previousAppliedVirtualMeshes[mesh] = mesh.Status.AppliedVirtualMesh
+		previousAppliedVirtualMeshes[mesh] = mesh.Status.GetAppliedVirtualMesh()
 		mesh.Status.AppliedVirtualMesh = getAppliedVirtualMesh(input.VirtualMeshes().List(), mesh)
 		// getAppliedEastWestIngressGateways must be invoked after getAppliedVirtualMesh
 		mesh.Status.AppliedEastWestIngressGateways = getAppliedEastWestIngressGateways(ctx, input.VirtualMeshes(), mesh, input.Destinations())
@@ -264,22 +264,22 @@ func validateAndReturnApprovedTrafficPolicies(ctx context.Context, input input.L
 
 	// track accepted index
 	var acceptedIndex uint32
-	for _, appliedTrafficPolicy := range destination.Status.AppliedTrafficPolicies {
-		errsForTrafficPolicy := reporter.getTrafficPolicyErrors(destination, appliedTrafficPolicy.Ref)
+	for _, appliedTrafficPolicy := range destination.Status.GetAppliedTrafficPolicies() {
+		errsForTrafficPolicy := reporter.getTrafficPolicyErrors(destination, appliedTrafficPolicy.GetRef())
 
-		trafficPolicy, err := input.TrafficPolicies().Find(appliedTrafficPolicy.Ref)
+		trafficPolicy, err := input.TrafficPolicies().Find(appliedTrafficPolicy.GetRef())
 		if err != nil {
 			// should never happen
-			contextutils.LoggerFrom(ctx).Errorf("internal error: failed to look up applied TrafficPolicy %v: %v", appliedTrafficPolicy.Ref, err)
+			contextutils.LoggerFrom(ctx).Errorf("internal error: failed to look up applied TrafficPolicy %v: %v", appliedTrafficPolicy.GetRef(), err)
 			continue
 		}
 
-		if trafficPolicy.Status.Destinations == nil {
+		if trafficPolicy.Status.GetDestinations() == nil {
 			trafficPolicy.Status.Destinations = map[string]*networkingv1.ApprovalStatus{}
 		}
 
 		if len(errsForTrafficPolicy) == 0 {
-			trafficPolicy.Status.Destinations[sets.Key(destination)] = &networkingv1.ApprovalStatus{
+			trafficPolicy.Status.GetDestinations()[sets.Key(destination)] = &networkingv1.ApprovalStatus{
 				AcceptanceOrder: acceptedIndex,
 				State:           commonv1.ApprovalState_ACCEPTED,
 			}
@@ -290,7 +290,7 @@ func validateAndReturnApprovedTrafficPolicies(ctx context.Context, input input.L
 			for _, tpErr := range errsForTrafficPolicy {
 				errMsgs = append(errMsgs, tpErr.Error())
 			}
-			trafficPolicy.Status.Destinations[sets.Key(destination)] = &networkingv1.ApprovalStatus{
+			trafficPolicy.Status.GetDestinations()[sets.Key(destination)] = &networkingv1.ApprovalStatus{
 				State:  commonv1.ApprovalState_INVALID,
 				Errors: errMsgs,
 			}
@@ -313,18 +313,18 @@ func validateAndReturnApprovedAccessPolicies(
 
 	// track accepted index
 	var acceptedIndex uint32
-	for _, appliedAccessPolicy := range destination.Status.AppliedAccessPolicies {
-		errsForAccessPolicy := reporter.getAccessPolicyErrors(destination, appliedAccessPolicy.Ref)
+	for _, appliedAccessPolicy := range destination.Status.GetAppliedAccessPolicies() {
+		errsForAccessPolicy := reporter.getAccessPolicyErrors(destination, appliedAccessPolicy.GetRef())
 
-		accessPolicy, err := input.AccessPolicies().Find(appliedAccessPolicy.Ref)
+		accessPolicy, err := input.AccessPolicies().Find(appliedAccessPolicy.GetRef())
 		if err != nil {
 			// should never happen
-			contextutils.LoggerFrom(ctx).Errorf("internal error: failed to look up applied AccessPolicy %v: %v", appliedAccessPolicy.Ref, err)
+			contextutils.LoggerFrom(ctx).Errorf("internal error: failed to look up applied AccessPolicy %v: %v", appliedAccessPolicy.GetRef(), err)
 			continue
 		}
 
 		if len(errsForAccessPolicy) == 0 {
-			accessPolicy.Status.Destinations[sets.Key(destination)] = &networkingv1.ApprovalStatus{
+			accessPolicy.Status.GetDestinations()[sets.Key(destination)] = &networkingv1.ApprovalStatus{
 				AcceptanceOrder: acceptedIndex,
 				State:           commonv1.ApprovalState_ACCEPTED,
 			}
@@ -335,7 +335,7 @@ func validateAndReturnApprovedAccessPolicies(
 			for _, apErr := range errsForAccessPolicy {
 				errMsgs = append(errMsgs, apErr.Error())
 			}
-			accessPolicy.Status.Destinations[sets.Key(destination)] = &networkingv1.ApprovalStatus{
+			accessPolicy.Status.GetDestinations()[sets.Key(destination)] = &networkingv1.ApprovalStatus{
 				State:  commonv1.ApprovalState_INVALID,
 				Errors: errMsgs,
 			}
@@ -352,11 +352,11 @@ func validateAndReturnApprovedFederation(
 	reporter *applyReporter,
 	destination *discoveryv1.Destination,
 ) *discoveryv1.DestinationStatus_AppliedFederation {
-	if destination.Status.AppliedFederation == nil {
+	if destination.Status.GetAppliedFederation() == nil {
 		return nil
 	}
 
-	virtualMeshRef := destination.Status.AppliedFederation.GetVirtualMeshRef()
+	virtualMeshRef := destination.Status.GetAppliedFederation().GetVirtualMeshRef()
 	errsForFederation := reporter.getFederationsErrors(destination, virtualMeshRef)
 
 	virtualMesh, err := input.VirtualMeshes().Find(virtualMeshRef)
@@ -367,16 +367,16 @@ func validateAndReturnApprovedFederation(
 	}
 
 	if len(errsForFederation) == 0 {
-		virtualMesh.Status.Destinations[sets.Key(destination)] = &networkingv1.ApprovalStatus{
+		virtualMesh.Status.GetDestinations()[sets.Key(destination)] = &networkingv1.ApprovalStatus{
 			State: commonv1.ApprovalState_ACCEPTED,
 		}
-		return destination.Status.AppliedFederation
+		return destination.Status.GetAppliedFederation()
 	} else {
 		var errMsgs []string
 		for _, err := range errsForFederation {
 			errMsgs = append(errMsgs, err.Error())
 		}
-		virtualMesh.Status.Destinations[sets.Key(destination)] = &networkingv1.ApprovalStatus{
+		virtualMesh.Status.GetDestinations()[sets.Key(destination)] = &networkingv1.ApprovalStatus{
 			State:  commonv1.ApprovalState_INVALID,
 			Errors: errMsgs,
 		}
@@ -392,19 +392,19 @@ func validateAndReturnRequiredSubsets(
 ) []*discoveryv1.RequiredSubsets {
 	var requiredSubsets []*discoveryv1.RequiredSubsets
 
-	for _, requiredSubset := range destination.Status.RequiredSubsets {
+	for _, requiredSubset := range destination.Status.GetRequiredSubsets() {
 
-		trafficPolicy, err := input.TrafficPolicies().Find(requiredSubset.TrafficPolicyRef)
+		trafficPolicy, err := input.TrafficPolicies().Find(requiredSubset.GetTrafficPolicyRef())
 		if err != nil {
 			contextutils.LoggerFrom(ctx).DPanicf(
 				"could not find TrafficPolicy referenced in required subset: %s",
-				sets.Key(requiredSubset.TrafficPolicyRef),
+				sets.Key(requiredSubset.GetTrafficPolicyRef()),
 			)
 			continue
 		}
 
 		// don't require subsets from invalid TrafficPolicies
-		if trafficPolicy.Status.State != commonv1.ApprovalState_ACCEPTED {
+		if trafficPolicy.Status.GetState() != commonv1.ApprovalState_ACCEPTED {
 			continue
 		}
 
@@ -421,21 +421,21 @@ func validateAndReturnVirtualMesh(
 	mesh *discoveryv1.Mesh,
 	previouslyAppliedVirtualMesh *discoveryv1.MeshStatus_AppliedVirtualMesh,
 ) *discoveryv1.MeshStatus_AppliedVirtualMesh {
-	appliedVirtualMesh := mesh.Status.AppliedVirtualMesh
+	appliedVirtualMesh := mesh.Status.GetAppliedVirtualMesh()
 	if appliedVirtualMesh == nil {
 		return nil
 	}
-	errsForVirtualMesh := reporter.getVirtualMeshErrors(mesh, appliedVirtualMesh.Ref)
+	errsForVirtualMesh := reporter.getVirtualMeshErrors(mesh, appliedVirtualMesh.GetRef())
 
-	virtualMesh, err := input.VirtualMeshes().Find(appliedVirtualMesh.Ref)
+	virtualMesh, err := input.VirtualMeshes().Find(appliedVirtualMesh.GetRef())
 	if err != nil {
 		// should never happen
-		contextutils.LoggerFrom(ctx).Errorf("internal error: failed to look up applied VirtualMesh %v: %v", appliedVirtualMesh.Ref, err)
+		contextutils.LoggerFrom(ctx).Errorf("internal error: failed to look up applied VirtualMesh %v: %v", appliedVirtualMesh.GetRef(), err)
 		return nil
 	}
 
 	if len(errsForVirtualMesh) == 0 {
-		virtualMesh.Status.Meshes[sets.Key(mesh)] = &networkingv1.ApprovalStatus{
+		virtualMesh.Status.GetMeshes()[sets.Key(mesh)] = &networkingv1.ApprovalStatus{
 			State: commonv1.ApprovalState_ACCEPTED,
 		}
 		return appliedVirtualMesh
@@ -444,7 +444,7 @@ func validateAndReturnVirtualMesh(
 		for _, fsErr := range errsForVirtualMesh {
 			errMsgs = append(errMsgs, fsErr.Error())
 		}
-		virtualMesh.Status.Meshes[sets.Key(mesh)] = &networkingv1.ApprovalStatus{
+		virtualMesh.Status.GetMeshes()[sets.Key(mesh)] = &networkingv1.ApprovalStatus{
 			State:  commonv1.ApprovalState_INVALID,
 			Errors: errMsgs,
 		}
@@ -579,7 +579,7 @@ func getAppliedTrafficPolicies(
 ) []*networkingv1.AppliedTrafficPolicy {
 	var matchingTrafficPolicies networkingv1.TrafficPolicySlice
 	for _, policy := range trafficPolicies {
-		if selectorutils.SelectorMatchesDestination(policy.Spec.DestinationSelector, destination) {
+		if selectorutils.SelectorMatchesDestination(policy.Spec.GetDestinationSelector(), destination) {
 			matchingTrafficPolicies = append(matchingTrafficPolicies, policy)
 		}
 	}
@@ -606,14 +606,14 @@ func getAppliedTrafficPolicies(
 // Finally, policies which are rejected and modified
 func sortTrafficPoliciesByAcceptedDate(destination *discoveryv1.Destination, trafficPolicies networkingv1.TrafficPolicySlice) {
 	isUpToDate := func(tp *networkingv1.TrafficPolicy) bool {
-		return tp.Status.ObservedGeneration == tp.Generation
+		return tp.Status.GetObservedGeneration() == tp.Generation
 	}
 
 	sort.SliceStable(trafficPolicies, func(i, j int) bool {
 		tp1, tp2 := trafficPolicies[i], trafficPolicies[j]
 
-		status1 := tp1.Status.Destinations[sets.Key(destination)]
-		status2 := tp2.Status.Destinations[sets.Key(destination)]
+		status1 := tp1.Status.GetDestinations()[sets.Key(destination)]
+		status2 := tp2.Status.GetDestinations()[sets.Key(destination)]
 
 		if status2 == nil {
 			// if status is not set, the TrafficPolicy is "pending" for this Destination
@@ -624,8 +624,8 @@ func sortTrafficPoliciesByAcceptedDate(destination *discoveryv1.Destination, tra
 		}
 
 		switch {
-		case status1.State == commonv1.ApprovalState_ACCEPTED:
-			if status2.State != commonv1.ApprovalState_ACCEPTED {
+		case status1.GetState() == commonv1.ApprovalState_ACCEPTED:
+			if status2.GetState() != commonv1.ApprovalState_ACCEPTED {
 				// accepted comes before non accepted
 				return true
 			}
@@ -636,8 +636,8 @@ func sortTrafficPoliciesByAcceptedDate(destination *discoveryv1.Destination, tra
 			}
 
 			// sort by the previous acceptance order
-			return status1.AcceptanceOrder < status2.AcceptanceOrder
-		case status2.State == commonv1.ApprovalState_ACCEPTED:
+			return status1.GetAcceptanceOrder() < status2.GetAcceptanceOrder()
+		case status2.GetState() == commonv1.ApprovalState_ACCEPTED:
 			// accepted comes before non accepted
 			return false
 		default:
@@ -656,7 +656,7 @@ func getAppliedAccessPolicies(
 	var appliedPolicies []*discoveryv1.DestinationStatus_AppliedAccessPolicy
 	for _, policy := range accessPolicies {
 		policy := policy // pike
-		if !selectorutils.SelectorMatchesDestination(policy.Spec.DestinationSelector, destination) {
+		if !selectorutils.SelectorMatchesDestination(policy.Spec.GetDestinationSelector(), destination) {
 			continue
 		}
 		appliedPolicies = append(appliedPolicies, &discoveryv1.DestinationStatus_AppliedAccessPolicy{
@@ -739,7 +739,7 @@ func getRequiredSubsets(
 		requiredSubsets = append(requiredSubsets, &discoveryv1.RequiredSubsets{
 			TrafficPolicyRef:   ezkube.MakeObjectRef(policy),
 			ObservedGeneration: policy.Generation,
-			TrafficShift:       policy.Spec.Policy.TrafficShift,
+			TrafficShift:       policy.Spec.GetPolicy().GetTrafficShift(),
 		})
 	}
 	return requiredSubsets
@@ -767,7 +767,7 @@ func getAppliedVirtualMesh(
 ) *discoveryv1.MeshStatus_AppliedVirtualMesh {
 	for _, vMesh := range virtualMeshes {
 		vMesh := vMesh // pike
-		for _, meshRef := range vMesh.Spec.Meshes {
+		for _, meshRef := range vMesh.Spec.GetMeshes() {
 			if ezkube.RefsMatch(mesh, meshRef) {
 				return &discoveryv1.MeshStatus_AppliedVirtualMesh{
 					Ref:                ezkube.MakeObjectRef(vMesh),
@@ -823,7 +823,7 @@ func getAppliedEastWestIngressGateways(
 			if len(kubeService.GetWorkloadSelectorLabels()) == 0 {
 				virtualMesh.Status.State = commonv1.ApprovalState_INVALID
 				virtualMesh.Status.Errors = append(
-					virtualMesh.Status.Errors,
+					virtualMesh.Status.GetErrors(),
 					fmt.Sprintf("attempting to select ingress gateway destination %v with no selector labels", sets.Key(destination)),
 				)
 				return nil
@@ -832,7 +832,7 @@ func getAppliedEastWestIngressGateways(
 			// add the ingress Destination
 			if appliedIngressGateway, err := buildAppliedIngressGateway(destination, ingressGatewayServiceSelector.GetPortName()); err != nil {
 				virtualMesh.Status.State = commonv1.ApprovalState_INVALID
-				virtualMesh.Status.Errors = append(virtualMesh.Status.Errors, err.Error())
+				virtualMesh.Status.Errors = append(virtualMesh.Status.GetErrors(), err.Error())
 				return nil
 			} else {
 				selectedIngressGatewayList = append(selectedIngressGatewayList, appliedIngressGateway)
@@ -874,8 +874,8 @@ func getDefaultEastWestIngressGateways(
 		var destinationPort uint32
 		for _, port := range destination.Spec.GetKubeService().GetPorts() {
 			// infer destination port based on external tls port
-			if port.Port == ingressGatewayDestination.ExternalTlsPort || port.NodePort == ingressGatewayDestination.ExternalTlsPort {
-				destinationPort = port.Port
+			if port.GetPort() == ingressGatewayDestination.GetExternalTlsPort() || port.GetNodePort() == ingressGatewayDestination.GetExternalTlsPort() {
+				destinationPort = port.GetPort()
 			}
 		}
 
@@ -883,7 +883,7 @@ func getDefaultEastWestIngressGateways(
 			DestinationRef:    ezkube.MakeObjectRef(destination),
 			ExternalAddresses: getDestinationExternalAddresses(destination),
 			Port:              destinationPort,
-			ExternalPort:      ingressGatewayDestination.ExternalTlsPort,
+			ExternalPort:      ingressGatewayDestination.GetExternalTlsPort(),
 		})
 	}
 	if len(defaultIngressGatewayList) > 0 {
@@ -908,7 +908,7 @@ func getDefaultEastWestIngressGateways(
 
 		if appliedIngressGateway, err := buildAppliedIngressGateway(destination, defaults.IstioGatewayTlsPortName); err != nil {
 			virtualMesh.Status.State = commonv1.ApprovalState_INVALID
-			virtualMesh.Status.Errors = append(virtualMesh.Status.Errors, err.Error())
+			virtualMesh.Status.Errors = append(virtualMesh.Status.GetErrors(), err.Error())
 			return nil
 		} else {
 			defaultIngressGatewayList = append(defaultIngressGatewayList, appliedIngressGateway)
@@ -967,11 +967,11 @@ func getIngressPortsByName(
 
 		destinationPort = port.GetPort()
 
-		switch kubeService.ServiceType {
+		switch kubeService.GetServiceType() {
 		case discoveryv1.DestinationSpec_KubeService_NODE_PORT:
-			externalDestinationPort = port.NodePort
+			externalDestinationPort = port.GetNodePort()
 		case discoveryv1.DestinationSpec_KubeService_LOAD_BALANCER:
-			externalDestinationPort = port.Port
+			externalDestinationPort = port.GetPort()
 		}
 
 		break

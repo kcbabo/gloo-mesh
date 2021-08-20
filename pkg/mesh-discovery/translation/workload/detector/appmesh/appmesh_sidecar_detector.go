@@ -58,7 +58,7 @@ func (d sidecarDetector) DetectMeshSidecar(pod *corev1.Pod, meshes v1sets.MeshSe
 		}
 
 		// TODO joekelley this does not deduplicate across disparate accounts, which are not referenced on sidecars.
-		if appmesh.AwsName == sidecarMeshName {
+		if appmesh.GetAwsName() == sidecarMeshName {
 			return mesh
 		}
 	}

@@ -93,12 +93,12 @@ func (t *translator) Translate(
 		return nil
 	}
 
-	sourceClusterName := kubeService.Ref.ClusterName
+	sourceClusterName := kubeService.GetRef().GetClusterName()
 	if sourceMeshInstallation != nil {
-		sourceClusterName = sourceMeshInstallation.Cluster
+		sourceClusterName = sourceMeshInstallation.GetCluster()
 	}
 
-	destinationRule, err := t.initializeDestinationRule(destination, t.settings.Spec.Mtls, sourceMeshInstallation)
+	destinationRule, err := t.initializeDestinationRule(destination, t.settings.Spec.GetMtls(), sourceMeshInstallation)
 	if err != nil {
 		contextutils.LoggerFrom(ctx).Error(err)
 		return nil
@@ -112,14 +112,14 @@ func (t *translator) Translate(
 	})
 
 	// Apply decorators which map a single applicable TrafficPolicy to a field on the DestinationRule.
-	for _, policy := range destination.Status.AppliedTrafficPolicies {
+	for _, policy := range destination.Status.GetAppliedTrafficPolicies() {
 
 		// Don't translate the trafficPolicy if the sourceClusterName is not selected by the SourceSelectors
-		if !selectorutils.WorkloadSelectorContainsCluster(policy.Spec.SourceSelector, sourceClusterName) {
+		if !selectorutils.WorkloadSelectorContainsCluster(policy.GetSpec().GetSourceSelector(), sourceClusterName) {
 			continue
 		}
 
-		registerField := registerFieldFunc(destinationRuleFields, destinationRule, policy.Ref)
+		registerField := registerFieldFunc(destinationRuleFields, destinationRule, policy.GetRef())
 		for _, decorator := range drDecorators {
 
 			if destinationRuleDecorator, ok := decorator.(decorators.TrafficPolicyDestinationRuleDecorator); ok {
@@ -129,7 +129,7 @@ func (t *translator) Translate(
 					&destinationRule.Spec,
 					registerField,
 				); err != nil {
-					reporter.ReportTrafficPolicyToDestination(destination, policy.Ref, eris.Wrapf(err, "%v", decorator.DecoratorName()))
+					reporter.ReportTrafficPolicyToDestination(destination, policy.GetRef(), eris.Wrapf(err, "%v", decorator.DecoratorName()))
 				}
 			}
 		}
@@ -148,8 +148,8 @@ func (t *translator) Translate(
 		destinationRule,
 	); len(errs) > 0 {
 		for _, err := range errs {
-			for _, policy := range destination.Status.AppliedTrafficPolicies {
-				reporter.ReportTrafficPolicyToDestination(destination, policy.Ref, err)
+			for _, policy := range destination.Status.GetAppliedTrafficPolicies() {
+				reporter.ReportTrafficPolicyToDestination(destination, policy.GetRef(), err)
 			}
 		}
 		return nil
@@ -191,17 +191,17 @@ func (t *translator) initializeDestinationRule(
 	var meta metav1.ObjectMeta
 	if sourceMeshInstallation != nil {
 		meta = metautils.FederatedObjectMeta(
-			destination.Spec.GetKubeService().Ref,
+			destination.Spec.GetKubeService().GetRef(),
 			sourceMeshInstallation,
 			destination.Annotations,
 		)
 	} else {
 		meta = metautils.TranslatedObjectMeta(
-			destination.Spec.GetKubeService().Ref,
+			destination.Spec.GetKubeService().GetRef(),
 			destination.Annotations,
 		)
 	}
-	hostname := t.clusterDomains.GetDestinationFQDN(meta.ClusterName, destination.Spec.GetKubeService().Ref)
+	hostname := t.clusterDomains.GetDestinationFQDN(meta.ClusterName, destination.Spec.GetKubeService().GetRef())
 
 	destinationRule := &networkingv1alpha3.DestinationRule{
 		ObjectMeta: meta,
@@ -217,7 +217,7 @@ func (t *translator) initializeDestinationRule(
 	if err != nil {
 		return nil, err
 	}
-	destinationRule.Spec.TrafficPolicy.Tls = &networkingv1alpha3spec.ClientTLSSettings{
+	destinationRule.Spec.GetTrafficPolicy().Tls = &networkingv1alpha3spec.ClientTLSSettings{
 		Mode: istioTlsMode,
 	}
 
@@ -240,7 +240,7 @@ func conflictsWithUserDestinationRule(
 		}
 
 		// check if common hostnames exist
-		commonHostname := utils.CommonHostnames([]string{dr.Spec.Host}, []string{translatedDestinationRule.Spec.Host})
+		commonHostname := utils.CommonHostnames([]string{dr.Spec.GetHost()}, []string{translatedDestinationRule.Spec.GetHost()})
 		if len(commonHostname) > 0 {
 			errs = append(
 				errs,
@@ -256,7 +256,7 @@ func conflictsWithUserDestinationRule(
 // If this is a federated (AKA cross-cluster) destination, add keepalive values if they're present.
 // Possible Todo: refactor this code into a decorator if keepalive conflicts become possible.
 func addKeepaliveToDestinationRule(destination *discoveryv1.Destination, sourceMeshInstallation *discoveryv1.MeshInstallation, destinationRule *networkingv1alpha3.DestinationRule) {
-	keepalive := destination.Status.AppliedFederation.GetTcpKeepalive()
+	keepalive := destination.Status.GetAppliedFederation().GetTcpKeepalive()
 	// If we also have a non-nil keepalive and this is a federated destination, then extract and apply the keepalive value
 	// to the resulting destination rule.
 	// If the destination is in a different mesh than the sourceMeshInstallation, then it's a federated destination.
@@ -268,17 +268,17 @@ func addKeepaliveToDestinationRule(destination *discoveryv1.Destination, sourceM
 		}
 		connectionPool := destinationRule.Spec.GetTrafficPolicy().GetConnectionPool()
 		if connectionPool == nil {
-			destinationRule.Spec.TrafficPolicy.ConnectionPool = &networkingv1alpha3spec.ConnectionPoolSettings{}
+			destinationRule.Spec.GetTrafficPolicy().ConnectionPool = &networkingv1alpha3spec.ConnectionPoolSettings{}
 		}
 		tcp := destinationRule.Spec.GetTrafficPolicy().GetConnectionPool().GetTcp()
 		if tcp == nil {
-			destinationRule.Spec.TrafficPolicy.ConnectionPool.Tcp = &networkingv1alpha3spec.ConnectionPoolSettings_TCPSettings{}
+			destinationRule.Spec.GetTrafficPolicy().GetConnectionPool().Tcp = &networkingv1alpha3spec.ConnectionPoolSettings_TCPSettings{}
 		}
 
 		// Istio uses gogo duration structs. Since we don't use gogo in our protos, we have to convert durations during runtime.
 		gogoTime := gogoutils.DurationProtoToGogo(keepalive.GetTime())
 		gogoInterval := gogoutils.DurationProtoToGogo(keepalive.GetInterval())
-		destinationRule.Spec.TrafficPolicy.ConnectionPool.Tcp.TcpKeepalive = &networkingv1alpha3spec.ConnectionPoolSettings_TCPSettings_TcpKeepalive{
+		destinationRule.Spec.GetTrafficPolicy().GetConnectionPool().GetTcp().TcpKeepalive = &networkingv1alpha3spec.ConnectionPoolSettings_TCPSettings_TcpKeepalive{
 			Probes:   keepalive.GetProbes(),
 			Time:     gogoTime,
 			Interval: gogoInterval,

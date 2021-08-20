@@ -237,8 +237,8 @@ func collectDescriptors(protoDir, outDir string, customImports ...string) (*gend
 	req := &plugin_go.CodeGeneratorRequest{}
 
 	for _, file := range descriptors {
-		req.FileToGenerate = append(req.FileToGenerate, file.GetName())
-		req.ProtoFile = append(req.ProtoFile, file.FileDescriptorProto)
+		req.FileToGenerate = append(req.GetFileToGenerate(), file.GetName())
+		req.ProtoFile = append(req.GetProtoFile(), file.FileDescriptorProto)
 	}
 
 	return gendoc.NewTemplate(protokit.ParseCodeGenRequest(req)), nil

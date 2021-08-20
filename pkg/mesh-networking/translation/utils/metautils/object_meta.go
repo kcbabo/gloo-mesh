@@ -61,8 +61,8 @@ func FederatedObjectMeta(
 
 	return metav1.ObjectMeta{
 		Name:        federatedObjectName(sourceObj),
-		Namespace:   meshInstallation.Namespace,
-		ClusterName: meshInstallation.Cluster,
+		Namespace:   meshInstallation.GetNamespace(),
+		ClusterName: meshInstallation.GetCluster(),
 		Labels:      TranslatedObjectLabels(),
 		Annotations: annotations,
 	}

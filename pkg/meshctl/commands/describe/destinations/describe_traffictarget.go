@@ -126,13 +126,13 @@ func matchDestination(destination discoveryv1.Destination, searchTerms []string)
 func describeDestination(destination *discoveryv1.Destination) destinationDescription {
 	meshMeta := getDestinationMetadata(destination)
 	var trafficPolicies []*v1.ObjectRef
-	for _, fs := range destination.Status.AppliedTrafficPolicies {
-		trafficPolicies = append(trafficPolicies, fs.Ref)
+	for _, fs := range destination.Status.GetAppliedTrafficPolicies() {
+		trafficPolicies = append(trafficPolicies, fs.GetRef())
 	}
 
 	var accessPolicies []*v1.ObjectRef
-	for _, vm := range destination.Status.AppliedAccessPolicies {
-		accessPolicies = append(accessPolicies, vm.Ref)
+	for _, vm := range destination.Status.GetAppliedAccessPolicies() {
+		accessPolicies = append(accessPolicies, vm.GetRef())
 	}
 
 	return destinationDescription{
@@ -145,12 +145,12 @@ func describeDestination(destination *discoveryv1.Destination) destinationDescri
 func getDestinationMetadata(destination *discoveryv1.Destination) destinationMetadata {
 	switch destination.Spec.GetType().(type) {
 	case *discoveryv1.DestinationSpec_KubeService_:
-		kubeServiceRef := destination.Spec.GetKubeService().Ref
+		kubeServiceRef := destination.Spec.GetKubeService().GetRef()
 		return destinationMetadata{
 			Type:              "kubernetes service",
-			Name:              kubeServiceRef.Name,
-			Namespace:         kubeServiceRef.Namespace,
-			Cluster:           kubeServiceRef.ClusterName,
+			Name:              kubeServiceRef.GetName(),
+			Namespace:         kubeServiceRef.GetNamespace(),
+			Cluster:           kubeServiceRef.GetClusterName(),
 			FederatedDnsName:  destination.Status.GetAppliedFederation().GetFederatedHostname(),
 			FederatedToMeshes: destination.Status.GetAppliedFederation().GetFederatedToMeshes(),
 		}

@@ -40,7 +40,7 @@ func (d *headerManipulationDecorator) ApplyTrafficPolicyToVirtualService(
 	output *networkingv1alpha3spec.HTTPRoute,
 	registerField decorators.RegisterField,
 ) error {
-	headers := d.translateHeaderManipulation(appliedPolicy.Spec)
+	headers := d.translateHeaderManipulation(appliedPolicy.GetSpec())
 	if headers != nil {
 		if err := registerField(&output.Headers, headers); err != nil {
 			return err

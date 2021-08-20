@@ -22,7 +22,7 @@ func DiscoveryTest() {
 		BeforeEach(func() {
 			ctx = context.Background()
 
-			VirtualMesh.Spec.Federation.FlatNetwork = true
+			VirtualMesh.Spec.GetFederation().FlatNetwork = true
 			VirtualMeshManifest.CreateOrTruncate()
 			err := VirtualMeshManifest.AppendResources(VirtualMesh)
 			Expect(err).NotTo(HaveOccurred())
@@ -31,7 +31,7 @@ func DiscoveryTest() {
 		})
 
 		AfterEach(func() {
-			VirtualMesh.Spec.Federation.FlatNetwork = false
+			VirtualMesh.Spec.GetFederation().FlatNetwork = false
 			VirtualMeshManifest.CreateOrTruncate()
 			err := VirtualMeshManifest.AppendResources(VirtualMesh)
 			Expect(err).NotTo(HaveOccurred())

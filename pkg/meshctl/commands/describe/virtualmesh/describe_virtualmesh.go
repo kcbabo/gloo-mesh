@@ -141,6 +141,6 @@ func getVirtualMeshMetadata(virtualMesh *networkingv1.VirtualMesh) v1.ClusterObj
 
 func getVirtualMeshNet(virtualMesh *networkingv1.VirtualMesh) virtualMeshNet {
 	return virtualMeshNet{
-		GlobalAccessPolicy: virtualMesh.Spec.GlobalAccessPolicy.String(),
+		GlobalAccessPolicy: virtualMesh.Spec.GetGlobalAccessPolicy().String(),
 	}
 }

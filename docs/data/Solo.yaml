@@ -2,8 +2,8 @@
 # This is here just for local testing.
 
 # Uncomment DocsVersion and CodeVersion for local testing.
-DocsVersion: /gloo-mesh/latest
-CodeVersion: latest
+#DocsVersion: /gloo-mesh/latest
+#CodeVersion: latest
 DocsVersions:
   - "latest"
 LatestVersion: "latest"

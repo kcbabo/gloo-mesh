@@ -51,7 +51,7 @@ func (d *mirrorDecorator) ApplyTrafficPolicyToVirtualService(
 	output *networkingv1alpha3spec.HTTPRoute,
 	registerField decorators.RegisterField,
 ) error {
-	mirror, percentage, err := d.translateMirror(destination, appliedPolicy.Spec, sourceMeshInstallation.GetCluster())
+	mirror, percentage, err := d.translateMirror(destination, appliedPolicy.GetSpec(), sourceMeshInstallation.GetCluster())
 	if err != nil {
 		return err
 	}

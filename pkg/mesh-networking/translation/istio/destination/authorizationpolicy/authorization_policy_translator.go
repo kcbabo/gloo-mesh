@@ -65,18 +65,18 @@ func (t *translator) Translate(
 
 	authPolicy := t.initializeAuthorizationPolicy(destination)
 
-	for _, policy := range destination.Status.AppliedAccessPolicies {
-		rule, err := t.translateAccessPolicy(policy.Spec, in.Meshes())
+	for _, policy := range destination.Status.GetAppliedAccessPolicies() {
+		rule, err := t.translateAccessPolicy(policy.GetSpec(), in.Meshes())
 		if err != nil {
-			reporter.ReportAccessPolicyToDestination(destination, policy.Ref, eris.Wrapf(err, "%v", translatorName))
+			reporter.ReportAccessPolicyToDestination(destination, policy.GetRef(), eris.Wrapf(err, "%v", translatorName))
 			continue
 		}
-		authPolicy.Spec.Rules = append(authPolicy.Spec.Rules, rule)
+		authPolicy.Spec.Rules = append(authPolicy.Spec.GetRules(), rule)
 	}
 
 	// don't output an AuthPolicy with no matching rules, which semantically denies all requests
 	// reference: https://istio.io/latest/docs/reference/config/security/authorization-policy/#AuthorizationPolicy
-	if len(authPolicy.Spec.Rules) == 0 {
+	if len(authPolicy.Spec.GetRules()) == 0 {
 		return nil
 	}
 
@@ -87,14 +87,14 @@ func (t *translator) initializeAuthorizationPolicy(
 	destination *discoveryv1.Destination,
 ) *securityv1beta1.AuthorizationPolicy {
 	meta := metautils.TranslatedObjectMeta(
-		destination.Spec.GetKubeService().Ref,
+		destination.Spec.GetKubeService().GetRef(),
 		destination.Annotations,
 	)
 	authPolicy := &securityv1beta1.AuthorizationPolicy{
 		ObjectMeta: meta,
 		Spec: securityv1beta1spec.AuthorizationPolicy{
 			Selector: &typesv1beta1.WorkloadSelector{
-				MatchLabels: destination.Spec.GetKubeService().WorkloadSelectorLabels,
+				MatchLabels: destination.Spec.GetKubeService().GetWorkloadSelectorLabels(),
 			},
 			Action: securityv1beta1spec.AuthorizationPolicy_ALLOW,
 		},
@@ -111,7 +111,7 @@ func (t *translator) translateAccessPolicy(
 	meshes discoveryv1sets.MeshSet,
 ) (*securityv1beta1spec.Rule, error) {
 	var fromRules []*securityv1beta1spec.Rule_From
-	for _, sourceSelector := range accessPolicy.SourceSelector {
+	for _, sourceSelector := range accessPolicy.GetSourceSelector() {
 		fromRule, err := t.buildSource(sourceSelector, meshes)
 		if err != nil {
 			return nil, eris.Wrap(err, "building from_rule")
@@ -126,14 +126,14 @@ func (t *translator) translateAccessPolicy(
 }
 
 func buildToRules(accessPolicy *v1.AccessPolicySpec) []*securityv1beta1spec.Rule_To {
-	allowedPaths := accessPolicy.AllowedPaths
-	allowedMethods := accessPolicy.AllowedMethods
-	allowedPorts := convertIntsToStrings(accessPolicy.AllowedPorts)
+	allowedPaths := accessPolicy.GetAllowedPaths()
+	allowedMethods := accessPolicy.GetAllowedMethods()
+	allowedPorts := convertIntsToStrings(accessPolicy.GetAllowedPorts())
 	var ruleTo []*securityv1beta1spec.Rule_To
 	if allowedPaths != nil || allowedMethods != nil || allowedPorts != nil {
 		ruleTo = append(ruleTo, &securityv1beta1spec.Rule_To{
 			Operation: &securityv1beta1spec.Operation{
-				Paths:   accessPolicy.AllowedPaths,
+				Paths:   accessPolicy.GetAllowedPaths(),
 				Methods: allowedMethods,
 				Ports:   allowedPorts,
 			},
@@ -159,18 +159,18 @@ func (t *translator) buildSource(
 		return ruleFrom, nil
 	}
 	// Select by identity matcher.
-	wildcardPrincipals, namespaces, err := parseIdentityMatcher(sources.KubeIdentityMatcher, meshes)
+	wildcardPrincipals, namespaces, err := parseIdentityMatcher(sources.GetKubeIdentityMatcher(), meshes)
 	if err != nil {
 		return nil, eris.Wrap(err, "parsing identity matcher")
 	}
 	// Select by direct reference to ServiceAccounts
-	serviceAccountPrincipals, err := parseServiceAccountRefs(sources.KubeServiceAccountRefs, meshes)
+	serviceAccountPrincipals, err := parseServiceAccountRefs(sources.GetKubeServiceAccountRefs(), meshes)
 	if err != nil {
 		return nil, eris.Wrap(err, "parsing service account refs")
 	}
 
-	ruleFrom.Source.Principals = append(wildcardPrincipals, serviceAccountPrincipals...)
-	ruleFrom.Source.Namespaces = namespaces
+	ruleFrom.GetSource().Principals = append(wildcardPrincipals, serviceAccountPrincipals...)
+	ruleFrom.GetSource().Namespaces = namespaces
 	return ruleFrom, nil
 }
 
@@ -184,13 +184,13 @@ func parseIdentityMatcher(
 	if kubeIdentityMatcher == nil {
 		return nil, nil, nil
 	}
-	if len(kubeIdentityMatcher.Clusters) > 0 {
+	if len(kubeIdentityMatcher.GetClusters()) > 0 {
 		// select by clusters and specifiedNamespaces
-		trustDomains, err := getTrustDomainsForClusters(kubeIdentityMatcher.Clusters, meshes)
+		trustDomains, err := getTrustDomainsForClusters(kubeIdentityMatcher.GetClusters(), meshes)
 		if err != nil {
 			return nil, nil, err
 		}
-		specifiedNamespaces := kubeIdentityMatcher.Namespaces
+		specifiedNamespaces := kubeIdentityMatcher.GetNamespaces()
 		// Permit any namespace if unspecified.
 		if len(specifiedNamespaces) == 0 {
 			specifiedNamespaces = []string{""}
@@ -205,9 +205,9 @@ func parseIdentityMatcher(
 				principals = append(principals, uri)
 			}
 		}
-	} else if len(kubeIdentityMatcher.Namespaces) > 0 {
+	} else if len(kubeIdentityMatcher.GetNamespaces()) > 0 {
 		// select by namespaces, permit any cluster
-		namespaces = kubeIdentityMatcher.Namespaces
+		namespaces = kubeIdentityMatcher.GetNamespaces()
 	}
 	return principals, namespaces, nil
 }
@@ -220,13 +220,13 @@ func parseServiceAccountRefs(
 		return nil, nil
 	}
 	var principals []string
-	for _, serviceAccountRef := range kubeServiceAccountRefs.ServiceAccounts {
-		trustDomains, err := getTrustDomainsForClusters([]string{serviceAccountRef.ClusterName}, meshes)
+	for _, serviceAccountRef := range kubeServiceAccountRefs.GetServiceAccounts() {
+		trustDomains, err := getTrustDomainsForClusters([]string{serviceAccountRef.GetClusterName()}, meshes)
 		if err != nil {
 			return nil, err
 		}
 		for _, trustDomain := range trustDomains {
-			uri, err := buildSpiffeURI(trustDomain, serviceAccountRef.Namespace, serviceAccountRef.Name)
+			uri, err := buildSpiffeURI(trustDomain, serviceAccountRef.GetNamespace(), serviceAccountRef.GetName())
 			if err != nil {
 				return nil, err
 			}

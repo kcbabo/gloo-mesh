@@ -139,7 +139,7 @@ func (d *meshDetector) detectMesh(
 						Region:    region,
 					},
 					SmartDnsProxyingEnabled: isSmartDnsProxyingEnabled(meshConfig),
-					TrustDomain:             meshConfig.TrustDomain,
+					TrustDomain:             meshConfig.GetTrustDomain(),
 					// This assumes that the istiod deployment is the cert provider
 					IstiodServiceAccount: deployment.Spec.Template.Spec.ServiceAccountName,
 					IngressGateways:      ingressGateways,

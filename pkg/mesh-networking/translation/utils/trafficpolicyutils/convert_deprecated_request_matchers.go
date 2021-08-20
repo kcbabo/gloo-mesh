@@ -19,25 +19,25 @@ func ConvertDeprecatedRequestMatchers(deprecated []*v1.DeprecatedHttpMatcher) []
 
 func convertDeprecatedRequestMatcher(deprecated *v1.DeprecatedHttpMatcher) *v1.HttpMatcher {
 	return &v1.HttpMatcher{
-		Name:            deprecated.Name,
+		Name:            deprecated.GetName(),
 		Uri:             convertUri(deprecated),
-		Headers:         deprecated.Headers,
-		QueryParameters: convertQueryParams(deprecated.QueryParameters),
-		Method:          deprecated.Method,
+		Headers:         deprecated.GetHeaders(),
+		QueryParameters: convertQueryParams(deprecated.GetQueryParameters()),
+		Method:          deprecated.GetMethod(),
 	}
 }
 
 func convertUri(deprecated *v1.DeprecatedHttpMatcher) *commonv1.StringMatch {
-	if deprecated.Uri != nil {
+	if deprecated.GetUri() != nil {
 		// use new uri if provided
-		return deprecated.Uri
+		return deprecated.GetUri()
 	}
-	if deprecated.PathSpecifier == nil {
+	if deprecated.GetPathSpecifier() == nil {
 		// no uri provided
 		return nil
 	}
 	m := &commonv1.StringMatch{}
-	switch path := deprecated.PathSpecifier.(type) {
+	switch path := deprecated.GetPathSpecifier().(type) {
 	case *v1.DeprecatedHttpMatcher_Prefix:
 		m.MatchType = &commonv1.StringMatch_Prefix{
 			Prefix: path.Prefix,
@@ -61,9 +61,9 @@ func convertQueryParams(deprecated []*v1.DeprecatedHttpMatcher_QueryParameterMat
 			continue
 		}
 		converted = append(converted, &v1.HttpMatcher_QueryParameterMatcher{
-			Name:  match.Name,
-			Value: match.Value,
-			Regex: match.Regex,
+			Name:  match.GetName(),
+			Value: match.GetValue(),
+			Regex: match.GetRegex(),
 		})
 	}
 	return converted

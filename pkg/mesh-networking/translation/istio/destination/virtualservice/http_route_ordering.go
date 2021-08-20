@@ -34,9 +34,9 @@ ordering needs to be changed.
 7. WithoutHeaders, number of items decreasing
 */
 func isHttpRouteMatcherMoreSpecific(httpRouteA, httpRouteB *networkingv1alpha3spec.HTTPRoute) bool {
-	if httpRouteA.Match == nil {
-		return httpRouteB.Match == nil
-	} else if httpRouteB.Match == nil {
+	if httpRouteA.GetMatch() == nil {
+		return httpRouteB.GetMatch() == nil
+	} else if httpRouteB.GetMatch() == nil {
 		return true
 	}
 	// each HttpRoute is guaranteed to only have a single HttpMatchRequest, see
@@ -78,7 +78,7 @@ func isHttpRouteMatcherMoreSpecific(httpRouteA, httpRouteB *networkingv1alpha3sp
 	} else if len(a.GetWithoutHeaders()) < len(b.GetWithoutHeaders()) {
 		return false
 	}
-	return a.Port < b.Port
+	return a.GetPort() < b.GetPort()
 }
 
 // In decreasing order of specificity: exact, regex, prefix

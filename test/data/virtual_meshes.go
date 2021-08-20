@@ -76,7 +76,7 @@ func SelfSignedVirtualMesh(
 func getTestHostnameSuffix(dynamicClient client.Client, meshes []*skv2corev1.ObjectRef) (string, error) {
 	meshClient := discoveryv1.NewMeshClient(dynamicClient)
 	// assume that all meshes are using the same istio version
-	mesh, err := meshClient.GetMesh(context.TODO(), client.ObjectKey{Name: meshes[0].Name, Namespace: meshes[0].Namespace})
+	mesh, err := meshClient.GetMesh(context.TODO(), client.ObjectKey{Name: meshes[0].GetName(), Namespace: meshes[0].GetNamespace()})
 	if err != nil {
 		return "", err
 	}

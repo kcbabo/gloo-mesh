@@ -104,20 +104,20 @@ func SelectorMatchesDestination(selectors []*commonv1.DestinationSelector, desti
 	for _, selector := range selectors {
 		kubeService := destination.Spec.GetKubeService()
 		if kubeService != nil {
-			if kubeServiceMatcher := selector.KubeServiceMatcher; kubeServiceMatcher != nil {
+			if kubeServiceMatcher := selector.GetKubeServiceMatcher(); kubeServiceMatcher != nil {
 				if kubeServiceMatches(
-					kubeServiceMatcher.Labels,
-					kubeServiceMatcher.Namespaces,
-					kubeServiceMatcher.Clusters,
+					kubeServiceMatcher.GetLabels(),
+					kubeServiceMatcher.GetNamespaces(),
+					kubeServiceMatcher.GetClusters(),
 					kubeService,
 				) {
 					return true
 				}
 			}
-			if kubeServiceRefs := selector.KubeServiceRefs; kubeServiceRefs != nil {
+			if kubeServiceRefs := selector.GetKubeServiceRefs(); kubeServiceRefs != nil {
 				if refsContain(
-					kubeServiceRefs.Services,
-					kubeService.Ref,
+					kubeServiceRefs.GetServices(),
+					kubeService.GetRef(),
 				) {
 					return true
 				}
@@ -135,7 +135,7 @@ func WorkloadSelectorContainsCluster(selectors []*commonv1.WorkloadSelector, clu
 	}
 
 	for _, selector := range selectors {
-		clusters := selector.GetKubeWorkloadMatcher().Clusters
+		clusters := selector.GetKubeWorkloadMatcher().GetClusters()
 
 		if len(clusters) == 0 || stringutils.ContainsString(clusterName, clusters) {
 			return true
@@ -210,19 +210,19 @@ func ValidateSelector(
 	selector *v1.ObjectSelector,
 ) error {
 
-	if len(selector.Labels) > 0 {
+	if len(selector.GetLabels()) > 0 {
 		// expressions and labels cannot be both specified at the same time
-		if len(selector.Expressions) > 0 {
+		if len(selector.GetExpressions()) > 0 {
 			return ObjectSelectorExpressionsAndLabelsWarning
 		}
 	}
 
-	if len(selector.Expressions) > 0 {
-		for _, expression := range selector.Expressions {
+	if len(selector.GetExpressions()) > 0 {
+		for _, expression := range selector.GetExpressions() {
 			if _, err := labels.NewRequirement(
-				expression.Key,
-				ObjectExpressionOperatorValues[expression.Operator],
-				expression.Values); err != nil {
+				expression.GetKey(),
+				ObjectExpressionOperatorValues[expression.GetOperator()],
+				expression.GetValues()); err != nil {
 				return eris.Wrap(ObjectSelectorInvalidExpressionWarning, err.Error())
 			}
 		}
@@ -248,10 +248,10 @@ func SelectorMatchesObject(
 	)
 
 	nsSelector := owner
-	if len(selector.Namespaces) > 0 {
+	if len(selector.GetNamespaces()) > 0 {
 		nsSelector = list
 	}
-	for _, ns := range selector.Namespaces {
+	for _, ns := range selector.GetNamespaces() {
 		if ns == allNamespaceObjectSelector {
 			nsSelector = all
 		}
@@ -259,28 +259,28 @@ func SelectorMatchesObject(
 
 	rtLabels := labels.Set(candidate.GetLabels())
 
-	if len(selector.Labels) > 0 {
+	if len(selector.GetLabels()) > 0 {
 		// expressions and labels cannot be both specified at the same time
-		if len(selector.Expressions) > 0 {
+		if len(selector.GetExpressions()) > 0 {
 			return false
 		}
 
-		labelSelector := labels.SelectorFromSet(selector.Labels)
+		labelSelector := labels.SelectorFromSet(selector.GetLabels())
 
 		// Check whether labels match (strict equality)
-		if selector.Labels != nil {
+		if selector.GetLabels() != nil {
 			if !labelSelector.Matches(rtLabels) {
 				return false
 			}
 		}
 
-	} else if len(selector.Expressions) > 0 {
+	} else if len(selector.GetExpressions()) > 0 {
 		var requirements labels.Requirements
-		for _, expression := range selector.Expressions {
+		for _, expression := range selector.GetExpressions() {
 			r, err := labels.NewRequirement(
-				expression.Key,
-				ObjectExpressionOperatorValues[expression.Operator],
-				expression.Values)
+				expression.GetKey(),
+				ObjectExpressionOperatorValues[expression.GetOperator()],
+				expression.GetValues())
 			if err != nil {
 				return false
 			}
@@ -302,7 +302,7 @@ func SelectorMatchesObject(
 	case owner:
 		nsMatches = candidate.GetNamespace() == ownerNamespace
 	case list:
-		for _, ns := range selector.Namespaces {
+		for _, ns := range selector.GetNamespaces() {
 			if ns == candidate.GetNamespace() {
 				nsMatches = true
 			}

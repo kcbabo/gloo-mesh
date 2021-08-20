@@ -50,34 +50,34 @@ func InputSnapshotFromProto(name string, in *v1beta1.DiscoverySnapshot) input.Lo
 
 	// insert meshes
 	var meshes discoveryv1.MeshSlice
-	for _, mesh := range in.Meshes {
+	for _, mesh := range in.GetMeshes() {
 		meshes = append(meshes, &discoveryv1.Mesh{
-			ObjectMeta: ObjectMetaFromProto(mesh.Metadata),
-			Spec:       *mesh.Spec,
-			Status:     *mesh.Status,
+			ObjectMeta: ObjectMetaFromProto(mesh.GetMetadata()),
+			Spec:       *mesh.GetSpec(),
+			Status:     *mesh.GetStatus(),
 		})
 	}
 	builder.AddMeshes(meshes)
 
 	// insert destinations
 	var destinations discoveryv1.DestinationSlice
-	for _, destination := range in.Destinations {
+	for _, destination := range in.GetDestinations() {
 		destination := destination // pike
 		destinations = append(destinations, &discoveryv1.Destination{
-			ObjectMeta: ObjectMetaFromProto(destination.Metadata),
-			Spec:       *destination.Spec,
-			Status:     *destination.Status,
+			ObjectMeta: ObjectMetaFromProto(destination.GetMetadata()),
+			Spec:       *destination.GetSpec(),
+			Status:     *destination.GetStatus(),
 		})
 	}
 	builder.AddDestinations(destinations)
 
 	// insert workloads
 	var workloads discoveryv1.WorkloadSlice
-	for _, workload := range in.Workloads {
+	for _, workload := range in.GetWorkloads() {
 		workloads = append(workloads, &discoveryv1.Workload{
-			ObjectMeta: ObjectMetaFromProto(workload.Metadata),
-			Spec:       *workload.Spec,
-			Status:     *workload.Status,
+			ObjectMeta: ObjectMetaFromProto(workload.GetMetadata()),
+			Spec:       *workload.GetSpec(),
+			Status:     *workload.GetStatus(),
 		})
 	}
 	builder.AddWorkloads(workloads)

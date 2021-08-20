@@ -105,7 +105,7 @@ func (t *translator) Translate(
 
 	trafficSplit := &smislpitv1alpha2.TrafficSplit{
 		ObjectMeta: metautils.TranslatedObjectMeta(
-			destination.Spec.GetKubeService().Ref,
+			destination.Spec.GetKubeService().GetRef(),
 			destination.Annotations,
 		),
 		Spec: smislpitv1alpha2.TrafficSplitSpec{
@@ -116,7 +116,7 @@ func (t *translator) Translate(
 		},
 	}
 
-	backends, err := buildBackends(appliedTrafficPolicy.GetRef(), appliedTrafficPolicy.Spec.GetPolicy().GetTrafficShift(), kubeService)
+	backends, err := buildBackends(appliedTrafficPolicy.GetRef(), appliedTrafficPolicy.GetSpec().GetPolicy().GetTrafficShift(), kubeService)
 	if err != nil {
 		reporter.ReportTrafficPolicyToDestination(destination, appliedTrafficPolicy.GetRef(), err)
 	}

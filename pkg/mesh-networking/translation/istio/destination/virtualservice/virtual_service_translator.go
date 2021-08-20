@@ -92,12 +92,12 @@ func (t *translator) Translate(
 		return nil
 	}
 
-	sourceCluster := kubeService.Ref.ClusterName
+	sourceCluster := kubeService.GetRef().GetClusterName()
 	if sourceMeshInstallation != nil {
-		sourceCluster = sourceMeshInstallation.Cluster
+		sourceCluster = sourceMeshInstallation.GetCluster()
 	}
 
-	destinationFQDN := t.clusterDomains.GetDestinationFQDN(sourceCluster, destination.Spec.GetKubeService().Ref)
+	destinationFQDN := t.clusterDomains.GetDestinationFQDN(sourceCluster, destination.Spec.GetKubeService().GetRef())
 
 	virtualService := t.initializeVirtualService(destination, sourceMeshInstallation, destinationFQDN)
 	// register the owners of the virtualservice fields
@@ -107,12 +107,12 @@ func (t *translator) Translate(
 		Snapshot:       in,
 	})
 
-	appliedTpsByRequestMatcher := groupAppliedTpsByRequestMatcher(destination.Status.AppliedTrafficPolicies)
+	appliedTpsByRequestMatcher := groupAppliedTpsByRequestMatcher(destination.Status.GetAppliedTrafficPolicies())
 
 	for _, tpsByRequestMatcher := range appliedTpsByRequestMatcher {
 
 		// initialize base route for TP's group by request matcher
-		baseRoute := initializeBaseRoute(tpsByRequestMatcher[0].Spec, sourceCluster)
+		baseRoute := initializeBaseRoute(tpsByRequestMatcher[0].GetSpec(), sourceCluster)
 
 		for _, policy := range tpsByRequestMatcher {
 			// nil baseRoute indicates that this cluster is not selected by the WorkloadSelector and thus should not be translated
@@ -120,7 +120,7 @@ func (t *translator) Translate(
 				continue
 			}
 
-			registerField := registerFieldFunc(virtualServiceFields, virtualService, policy.Ref)
+			registerField := registerFieldFunc(virtualServiceFields, virtualService, policy.GetRef())
 			for _, decorator := range vsDecorators {
 
 				if trafficPolicyDecorator, ok := decorator.(decorators.TrafficPolicyVirtualServiceDecorator); ok {
@@ -131,14 +131,14 @@ func (t *translator) Translate(
 						baseRoute,
 						registerField,
 					); err != nil {
-						reporter.ReportTrafficPolicyToDestination(destination, policy.Ref, eris.Wrapf(err, "%v", decorator.DecoratorName()))
+						reporter.ReportTrafficPolicyToDestination(destination, policy.GetRef(), eris.Wrapf(err, "%v", decorator.DecoratorName()))
 					}
 				}
 			}
 		}
 
 		// Avoid appending an HttpRoute that will have no affect, which occurs if no decorators mutate the baseRoute with any non-match config.
-		if equalityutils.DeepEqual(initializeBaseRoute(tpsByRequestMatcher[0].Spec, sourceCluster), baseRoute) {
+		if equalityutils.DeepEqual(initializeBaseRoute(tpsByRequestMatcher[0].GetSpec(), sourceCluster), baseRoute) {
 			continue
 		}
 
@@ -148,7 +148,7 @@ func (t *translator) Translate(
 
 		// construct a copy of a route for each service port
 		// required because Istio needs the destination port for every route
-		routesPerPort := duplicateRouteForEachPort(baseRoute, kubeService.Ports)
+		routesPerPort := duplicateRouteForEachPort(baseRoute, kubeService.GetPorts())
 
 		// split routes with multiple HTTP matchers into one matcher per route for easier route sorting later on
 		var routesWithSingleMatcher []*networkingv1alpha3spec.HTTPRoute
@@ -157,12 +157,12 @@ func (t *translator) Translate(
 			routesWithSingleMatcher = append(routesWithSingleMatcher, splitRoutes...)
 		}
 
-		virtualService.Spec.Http = append(virtualService.Spec.Http, routesWithSingleMatcher...)
+		virtualService.Spec.Http = append(virtualService.Spec.GetHttp(), routesWithSingleMatcher...)
 	}
 
-	sort.Sort(RoutesBySpecificity(virtualService.Spec.Http))
+	sort.Sort(RoutesBySpecificity(virtualService.Spec.GetHttp()))
 
-	if len(virtualService.Spec.Http) == 0 {
+	if len(virtualService.Spec.GetHttp()) == 0 {
 		// no need to create this VirtualService as it has no effect
 		return nil
 	}
@@ -177,8 +177,8 @@ func (t *translator) Translate(
 		virtualService,
 	); len(errs) > 0 {
 		for _, err := range errs {
-			for _, policy := range destination.Status.AppliedTrafficPolicies {
-				reporter.ReportTrafficPolicyToDestination(destination, policy.Ref, err)
+			for _, policy := range destination.Status.GetAppliedTrafficPolicies() {
+				reporter.ReportTrafficPolicyToDestination(destination, policy.GetRef(), err)
 			}
 		}
 		return nil
@@ -198,7 +198,7 @@ func groupAppliedTpsByRequestMatcher(
 		var grouped bool
 		for i, groupedTps := range allGroupedTps {
 			// append to existing group
-			if requestMatchersEqual(appliedTp.Spec, groupedTps[0].Spec) {
+			if requestMatchersEqual(appliedTp.GetSpec(), groupedTps[0].GetSpec()) {
 				allGroupedTps[i] = append(groupedTps, appliedTp)
 				grouped = true
 				break
@@ -235,8 +235,8 @@ func httpRequestMatchersEqual(matchers1, matchers2 []*v1.HttpMatcher) bool {
 
 // return true if workload selectors' labels and namespaces are equivalent, ignore clusters
 func workloadSelectorsEqual(ws1, ws2 *commonv1.WorkloadSelector) bool {
-	return reflect.DeepEqual(ws1.GetKubeWorkloadMatcher().Labels, ws2.GetKubeWorkloadMatcher().Labels) &&
-		sets.NewString(ws1.GetKubeWorkloadMatcher().Namespaces...).Equal(sets.NewString(ws2.GetKubeWorkloadMatcher().Namespaces...))
+	return reflect.DeepEqual(ws1.GetKubeWorkloadMatcher().GetLabels(), ws2.GetKubeWorkloadMatcher().GetLabels()) &&
+		sets.NewString(ws1.GetKubeWorkloadMatcher().GetNamespaces()...).Equal(sets.NewString(ws2.GetKubeWorkloadMatcher().GetNamespaces()...))
 }
 
 // return true if two lists of WorkloadSelectors are semantically equivalent, abstracting away order
@@ -297,13 +297,13 @@ func (t *translator) initializeVirtualService(
 	var meta metav1.ObjectMeta
 	if sourceMeshInstallation != nil {
 		meta = metautils.FederatedObjectMeta(
-			destination.Spec.GetKubeService().Ref,
+			destination.Spec.GetKubeService().GetRef(),
 			sourceMeshInstallation,
 			destination.Annotations,
 		)
 	} else {
 		meta = metautils.TranslatedObjectMeta(
-			destination.Spec.GetKubeService().Ref,
+			destination.Spec.GetKubeService().GetRef(),
 			destination.Annotations,
 		)
 	}
@@ -318,7 +318,7 @@ func (t *translator) initializeVirtualService(
 
 // Returns nil to prevent translating the trafficPolicy if the sourceClusterName is not selected by the WorkloadSelector
 func initializeBaseRoute(trafficPolicy *v1.TrafficPolicySpec, sourceClusterName string) *networkingv1alpha3spec.HTTPRoute {
-	if !selectorutils.WorkloadSelectorContainsCluster(trafficPolicy.SourceSelector, sourceClusterName) {
+	if !selectorutils.WorkloadSelectorContainsCluster(trafficPolicy.GetSourceSelector(), sourceClusterName) {
 		return nil
 	}
 	return &networkingv1alpha3spec.HTTPRoute{
@@ -332,12 +332,12 @@ func (t *translator) setDefaultDestinationAndPortMatchers(
 ) {
 	// need a default matcher for the destination, which
 	// gets populated later in duplicateRouteForEachPort()
-	if len(baseRoute.Match) == 0 {
+	if len(baseRoute.GetMatch()) == 0 {
 		baseRoute.Match = []*networkingv1alpha3spec.HTTPMatchRequest{{}}
 	}
 
 	// if a route destination is already set, we don't need to modify the route
-	if baseRoute.Route != nil {
+	if baseRoute.GetRoute() != nil {
 		return
 	}
 
@@ -360,7 +360,7 @@ func duplicateRouteForEachPort(
 		// create a separate set of matchers for each port on the destination service
 		var matchersWithPort []*networkingv1alpha3spec.HTTPMatchRequest
 
-		for _, matcher := range baseRoute.Match {
+		for _, matcher := range baseRoute.GetMatch() {
 			matcher := matcher.DeepCopy()
 			matcher.Port = port.GetPort()
 			matchersWithPort = append(matchersWithPort, matcher)
@@ -368,12 +368,12 @@ func duplicateRouteForEachPort(
 
 		var destinationsWithPort []*networkingv1alpha3spec.HTTPRouteDestination
 
-		for _, destination := range baseRoute.Route {
+		for _, destination := range baseRoute.GetRoute() {
 			destination := destination.DeepCopy()
 
 			// don't overwrite ports that were derived from traffic shift
 			if destination.GetDestination().GetPort().GetNumber() == 0 {
-				destination.Destination.Port = &networkingv1alpha3spec.PortSelector{
+				destination.GetDestination().Port = &networkingv1alpha3spec.PortSelector{
 					Number: port.GetPort(),
 				}
 			}
@@ -391,12 +391,12 @@ func duplicateRouteForEachPort(
 }
 
 func splitRouteByMatchers(baseRoute *networkingv1alpha3spec.HTTPRoute) []*networkingv1alpha3spec.HTTPRoute {
-	if len(baseRoute.Match) < 1 {
+	if len(baseRoute.GetMatch()) < 1 {
 		return []*networkingv1alpha3spec.HTTPRoute{baseRoute}
 	}
 
 	var singleMatcherRoutes []*networkingv1alpha3spec.HTTPRoute
-	for _, match := range baseRoute.Match {
+	for _, match := range baseRoute.GetMatch() {
 		singleMatcherRoute := baseRoute.DeepCopy()
 		singleMatcherRoute.Match = []*networkingv1alpha3spec.HTTPMatchRequest{match}
 		singleMatcherRoutes = append(singleMatcherRoutes, singleMatcherRoute)
@@ -408,8 +408,8 @@ func translateRequestMatchers(
 	trafficPolicy *v1.TrafficPolicySpec,
 ) []*networkingv1alpha3spec.HTTPMatchRequest {
 	return routeutils.TranslateRequestMatchers(
-		trafficpolicyutils.ConvertDeprecatedRequestMatchers(trafficPolicy.HttpRequestMatchers),
-		trafficPolicy.SourceSelector,
+		trafficpolicyutils.ConvertDeprecatedRequestMatchers(trafficPolicy.GetHttpRequestMatchers()),
+		trafficPolicy.GetSourceSelector(),
 	)
 }
 
@@ -429,7 +429,7 @@ func conflictsWithUserVirtualService(
 		}
 
 		// check if common hostnames exist
-		commonHostnames := utils.CommonHostnames(vs.Spec.Hosts, translatedVirtualService.Spec.Hosts)
+		commonHostnames := utils.CommonHostnames(vs.Spec.GetHosts(), translatedVirtualService.Spec.GetHosts())
 		if len(commonHostnames) > 0 {
 			errs = append(
 				errs,

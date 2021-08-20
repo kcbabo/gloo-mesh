@@ -337,7 +337,7 @@ func (r *networkingReconciler) isIgnoredSecret(obj metav1.Object) bool {
 
 	// Search virtual meshes for secret reference
 	for _, v := range r.lastSnapshot.VirtualMeshes().List() {
-		rootCaSecret := v.Spec.MtlsConfig.GetShared().GetRootCertificateAuthority().GetSecret()
+		rootCaSecret := v.Spec.GetMtlsConfig().GetShared().GetRootCertificateAuthority().GetSecret()
 		// If the secret reference is nil we can break out.
 		if rootCaSecret == nil {
 			continue
@@ -388,7 +388,7 @@ func (r *networkingReconciler) syncSettings(ctx *context.Context, in input.Local
 	}
 
 	// update configured NetworkExtensionServers for the extension clients which are called inside the translator.
-	if err := r.extensionClients.ConfigureServers(settings.Spec.NetworkingExtensionServers, func(_ *v1beta1.PushNotification) {
+	if err := r.extensionClients.ConfigureServers(settings.Spec.GetNetworkingExtensionServers(), func(_ *v1beta1.PushNotification) {
 		// ignore error because underlying impl should never error here
 		_, _ = r.reconciler.ReconcileLocalGeneric(pushNotificationId)
 	}); err != nil {

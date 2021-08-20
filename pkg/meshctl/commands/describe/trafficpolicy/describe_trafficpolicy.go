@@ -95,8 +95,8 @@ func formattedWorkloadSelectors(sels []*commonv1.WorkloadSelector) string {
 	var s strings.Builder
 	for i, sel := range sels {
 		sel := sel.GetKubeWorkloadMatcher()
-		s.WriteString(printing.FormattedField("Namespaces", strings.Join(sel.Namespaces, ", ")))
-		s.WriteString(printing.FormattedField("Clusters", strings.Join(sel.Clusters, ", ")))
+		s.WriteString(printing.FormattedField("Namespaces", strings.Join(sel.GetNamespaces(), ", ")))
+		s.WriteString(printing.FormattedField("Clusters", strings.Join(sel.GetClusters(), ", ")))
 		s.WriteString("LABELS\n")
 		for label, val := range sel.GetLabels() {
 			s.WriteString(printing.FormattedField(label, val))
@@ -121,19 +121,19 @@ func formattedHttpMatchers(sels []*networkingv1.HttpMatcher) string {
 		s.WriteString(printing.FormattedField("Method", matcher.GetMethod()))
 		s.WriteString("HEADERS\n")
 		for _, header := range matcher.GetHeaders() {
-			val := header.Value
-			if header.Regex {
+			val := header.GetValue()
+			if header.GetRegex() {
 				val += " (regex)"
 			}
-			s.WriteString(printing.FormattedField(header.Name, val))
+			s.WriteString(printing.FormattedField(header.GetName(), val))
 		}
 		s.WriteString("QUERY PARAMETERS\n")
 		for _, param := range matcher.GetQueryParameters() {
-			val := param.Value
-			if param.Regex {
+			val := param.GetValue()
+			if param.GetRegex() {
 				val += " (regex)"
 			}
-			s.WriteString(printing.FormattedField(param.Name, val))
+			s.WriteString(printing.FormattedField(param.GetName(), val))
 		}
 		if i < len(sels)-1 {
 			s.WriteString("\n")
@@ -170,7 +170,7 @@ func describeTrafficPolicy(trafficPolicy *networkingv1.TrafficPolicy) trafficPol
 	var destinationServices []*v1.ClusterObjectRef
 	for _, sel := range trafficPolicy.Spec.GetDestinationSelector() {
 		if svcs := sel.GetKubeServiceRefs(); svcs != nil {
-			destinationServices = append(destinationServices, svcs.Services...)
+			destinationServices = append(destinationServices, svcs.GetServices()...)
 		}
 	}
 

@@ -114,7 +114,7 @@ func (c *certAgentTranslator) IssuedCertificatePending(
 ) ([]byte, error) {
 
 	// create a new private key
-	privateKey, err := utils.GeneratePrivateKey(int(issuedCertificate.Spec.CertOptions.GetRsaKeySizeBytes()))
+	privateKey, err := utils.GeneratePrivateKey(int(issuedCertificate.Spec.GetCertOptions().GetRsaKeySizeBytes()))
 	if err != nil {
 		return nil, eris.Wrap(err, "generating private key")
 	}
@@ -131,12 +131,12 @@ func (c *certAgentTranslator) IssuedCertificatePending(
 	// Use deprecated field if present
 	org := issuedCertificate.Spec.GetCertOptions().GetOrgName()
 	if org == "" {
-		org = issuedCertificate.Spec.Org
+		org = issuedCertificate.Spec.GetOrg()
 	}
 
 	// create certificate request for private key
 	csrBytes, err := utils.GenerateCertificateSigningRequest(
-		issuedCertificate.Spec.Hosts,
+		issuedCertificate.Spec.GetHosts(),
 		org,
 		issuedCertificate.Name,
 		privateKey,
@@ -167,7 +167,7 @@ func (c *certAgentTranslator) IssuedCertificateRequested(
 		return false, eris.Errorf("invalid private key found, no data provided")
 	}
 
-	switch certificateRequest.Status.State {
+	switch certificateRequest.Status.GetState() {
 	case certificatesv1.CertificateRequestStatus_PENDING:
 		contextutils.LoggerFrom(ctx).Infof("waiting for certificate request %v to be signed by Issuer", sets.Key(certificateRequest))
 
@@ -180,12 +180,12 @@ func (c *certAgentTranslator) IssuedCertificateRequested(
 		// return true to not update status
 		return true, nil
 	case certificatesv1.CertificateRequestStatus_FAILED:
-		return false, eris.Errorf("certificate request %v failed to be signed by Issuer: %v", sets.Key(certificateRequest), certificateRequest.Status.Error)
+		return false, eris.Errorf("certificate request %v failed to be signed by Issuer: %v", sets.Key(certificateRequest), certificateRequest.Status.GetError())
 	}
 
-	signedCert := certificateRequest.Status.SignedCertificate
-	signingRootCA := certificateRequest.Status.SigningRootCa
-	signingCaChain := certificateRequest.Status.CertChain
+	signedCert := certificateRequest.Status.GetSignedCertificate()
+	signingRootCA := certificateRequest.Status.GetSigningRootCa()
+	signingCaChain := certificateRequest.Status.GetCertChain()
 
 	issuedCertificateData := secrets.CAData{
 		RootCert:     signingRootCA,
@@ -197,8 +197,8 @@ func (c *certAgentTranslator) IssuedCertificateRequested(
 	// finally, create the secret
 	issuedCertificateSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      issuedCertificate.Spec.IssuedCertificateSecret.Name,
-			Namespace: issuedCertificate.Spec.IssuedCertificateSecret.Namespace,
+			Name:      issuedCertificate.Spec.GetIssuedCertificateSecret().GetName(),
+			Namespace: issuedCertificate.Spec.GetIssuedCertificateSecret().GetNamespace(),
 			Labels:    agentLabels(),
 		},
 		Data: issuedCertificateData.ToSecretData(),
@@ -234,13 +234,13 @@ func (c *certAgentTranslator) IssuedCertificateFinished(
 	outputs certagent.Builder,
 ) error {
 	// Search for the issued certificate secret, so it can be readded to the output snap
-	issuedCertificateSecret, err := inputs.Secrets().Find(issuedCertificate.Spec.IssuedCertificateSecret)
+	issuedCertificateSecret, err := inputs.Secrets().Find(issuedCertificate.Spec.GetIssuedCertificateSecret())
 	if err != nil {
 		// If it can't be found, return that error
 		return eris.Wrapf(
 			err,
 			"could not find issued cert secret (%s), restarting workflow",
-			sets.Key(issuedCertificate.Spec.IssuedCertificateSecret),
+			sets.Key(issuedCertificate.Spec.GetIssuedCertificateSecret()),
 		)
 	}
 	// Add the issuedCert to the output

@@ -41,7 +41,7 @@ func (d *retriesDecorator) ApplyTrafficPolicyToVirtualService(
 	output *networkingv1alpha3spec.HTTPRoute,
 	registerField decorators.RegisterField,
 ) error {
-	retries, err := d.translateRetries(appliedPolicy.Spec)
+	retries, err := d.translateRetries(appliedPolicy.GetSpec())
 	if err != nil {
 		return err
 	}

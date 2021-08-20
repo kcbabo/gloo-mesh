@@ -20,7 +20,7 @@ func SetupProvidedCA(
 	if err := secretClient.UpsertSecret(ctx, secret); err != nil {
 		return err
 	}
-	vm.Spec.MtlsConfig.TrustModel = &networkingv1.VirtualMeshSpec_MTLSConfig_Shared{
+	vm.Spec.GetMtlsConfig().TrustModel = &networkingv1.VirtualMeshSpec_MTLSConfig_Shared{
 		Shared: &networkingv1.SharedTrust{
 			CertificateAuthority: &networkingv1.SharedTrust_RootCertificateAuthority{
 				RootCertificateAuthority: &networkingv1.RootCertificateAuthority{

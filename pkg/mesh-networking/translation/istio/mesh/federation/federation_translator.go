@@ -65,17 +65,17 @@ func (t *translator) Translate(
 ) {
 	istioMesh := mesh.Spec.GetIstio()
 	if istioMesh == nil {
-		contextutils.LoggerFrom(t.ctx).Debugf("ignoring non istio mesh %v %T", sets.Key(mesh), mesh.Spec.Type)
+		contextutils.LoggerFrom(t.ctx).Debugf("ignoring non istio mesh %v %T", sets.Key(mesh), mesh.Spec.GetType())
 		return
 	}
-	if virtualMesh == nil || len(virtualMesh.Spec.Meshes) < 2 {
+	if virtualMesh == nil || len(virtualMesh.GetSpec().GetMeshes()) < 2 {
 		contextutils.LoggerFrom(t.ctx).Debugf("ignoring istio mesh %v which is not federated with other meshes in a VirtualMesh", sets.Key(mesh))
 		return
 	}
 
-	istioCluster := istioMesh.Installation.Cluster
-	istioNamespace := istioMesh.Installation.Namespace
-	federatedHostnameSuffix := hostutils.GetFederatedHostnameSuffix(virtualMesh.Spec)
+	istioCluster := istioMesh.GetInstallation().GetCluster()
+	istioNamespace := istioMesh.GetInstallation().GetNamespace()
+	federatedHostnameSuffix := hostutils.GetFederatedHostnameSuffix(virtualMesh.GetSpec())
 
 	if len(mesh.Status.GetAppliedEastWestIngressGateways()) == 0 {
 		reporter.ReportVirtualMeshToMesh(mesh, virtualMesh.GetRef(),

@@ -26,15 +26,15 @@ func isBackingKubeWorkload(
 		return false
 	}
 
-	workloadRef := kubeWorkload.Controller
+	workloadRef := kubeWorkload.GetController()
 
-	if workloadRef.ClusterName != service.GetRef().GetClusterName() ||
-		workloadRef.Namespace != service.GetRef().GetNamespace() {
+	if workloadRef.GetClusterName() != service.GetRef().GetClusterName() ||
+		workloadRef.GetNamespace() != service.GetRef().GetNamespace() {
 		return false
 	}
 
 	podLabels := kubeWorkload.GetPodLabels()
-	selectorLabels := service.WorkloadSelectorLabels
+	selectorLabels := service.GetWorkloadSelectorLabels()
 
 	if len(podLabels) == 0 || len(selectorLabels) == 0 {
 		return false

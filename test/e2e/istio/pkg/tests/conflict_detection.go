@@ -247,20 +247,20 @@ func ConflictDetectionTest() {
 func getDestinationLocalFqdn(mgmtClient client.Client, ref *skv2corev1.ObjectRef) (string, error) {
 	destinationClient := discoveryv1.NewDestinationClient(mgmtClient)
 	destination, err := destinationClient.GetDestination(context.TODO(), client.ObjectKey{
-		Name:      ref.Name,
-		Namespace: ref.Namespace,
+		Name:      ref.GetName(),
+		Namespace: ref.GetNamespace(),
 	})
 	if err != nil {
 		return "", err
 	}
-	return destination.Status.LocalFqdn, nil
+	return destination.Status.GetLocalFqdn(), nil
 }
 
 func getVirtualService(remoteClient client.Client, ref *skv2corev1.ObjectRef) (*istionetworkingv1alpha3.VirtualService, error) {
 	virtualServiceClient := v1alpha3.NewVirtualServiceClient(remoteClient)
 	return virtualServiceClient.GetVirtualService(context.TODO(), client.ObjectKey{
-		Name:      ref.Name,
-		Namespace: ref.Namespace,
+		Name:      ref.GetName(),
+		Namespace: ref.GetNamespace(),
 	})
 }
 
@@ -272,16 +272,16 @@ func createVirtualService(remoteClient client.Client, virtualService *istionetwo
 func deleteVirtualService(remoteClient client.Client, ref *skv2corev1.ObjectRef) error {
 	virtualServiceClient := v1alpha3.NewVirtualServiceClient(remoteClient)
 	return virtualServiceClient.DeleteVirtualService(context.TODO(), client.ObjectKey{
-		Name:      ref.Name,
-		Namespace: ref.Namespace,
+		Name:      ref.GetName(),
+		Namespace: ref.GetNamespace(),
 	})
 }
 
 func getDestinationRule(remoteClient client.Client, ref *skv2corev1.ObjectRef) (*istionetworkingv1alpha3.DestinationRule, error) {
 	destinationRuleClient := v1alpha3.NewDestinationRuleClient(remoteClient)
 	return destinationRuleClient.GetDestinationRule(context.TODO(), client.ObjectKey{
-		Name:      ref.Name,
-		Namespace: ref.Namespace,
+		Name:      ref.GetName(),
+		Namespace: ref.GetNamespace(),
 	})
 }
 
@@ -293,7 +293,7 @@ func createDestinationRule(remoteClient client.Client, destinationRule *istionet
 func deleteDestinationRule(remoteClient client.Client, ref *skv2corev1.ObjectRef) error {
 	destinationRuleClient := v1alpha3.NewDestinationRuleClient(remoteClient)
 	return destinationRuleClient.DeleteDestinationRule(context.TODO(), client.ObjectKey{
-		Name:      ref.Name,
-		Namespace: ref.Namespace,
+		Name:      ref.GetName(),
+		Namespace: ref.GetNamespace(),
 	})
 }

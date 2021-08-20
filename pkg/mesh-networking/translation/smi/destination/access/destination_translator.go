@@ -108,7 +108,7 @@ func (t *translator) Translate(
 		backingWorkload := backingWorkloads[0]
 		trafficTarget := &smiaccessv1alpha2.TrafficTarget{
 			ObjectMeta: metautils.TranslatedObjectMeta(
-				destination.Spec.GetKubeService().Ref,
+				destination.Spec.GetKubeService().GetRef(),
 				destination.Annotations,
 			),
 			Spec: smiaccessv1alpha2.TrafficTargetSpec{
@@ -194,7 +194,7 @@ func (t *translator) Translate(
 
 		routeGroup := &smispecsv1alpha3.HTTPRouteGroup{
 			ObjectMeta: metautils.TranslatedObjectMeta(
-				destination.Spec.GetKubeService().Ref,
+				destination.Spec.GetKubeService().GetRef(),
 				destination.Annotations,
 			),
 			Spec: smispecsv1alpha3.HTTPRouteGroupSpec{

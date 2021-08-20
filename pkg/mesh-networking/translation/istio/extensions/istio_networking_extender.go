@@ -45,7 +45,7 @@ func (i *istioExtender) PatchOutputs(ctx context.Context, inputs input.LocalSnap
 		if err != nil {
 			return err
 		}
-		applyPatches(ctx, outputs, patches.PatchedOutputs)
+		applyPatches(ctx, outputs, patches.GetPatchedOutputs())
 	}
 	return nil
 }
@@ -120,35 +120,35 @@ func applyPatches(ctx context.Context, outputs istio.Builder, patches []*v1beta1
 		return
 	}
 	for _, patchedObject := range patches {
-		switch objectType := patchedObject.Type.(type) {
+		switch objectType := patchedObject.GetType().(type) {
 		case *v1beta1.GeneratedObject_DestinationRule:
-			contextutils.LoggerFrom(ctx).Debugf("applied patched DestinationRule %v", sets.Key(patchedObject.Metadata))
+			contextutils.LoggerFrom(ctx).Debugf("applied patched DestinationRule %v", sets.Key(patchedObject.GetMetadata()))
 			outputs.AddDestinationRules(&istionetworkingv1alpha3.DestinationRule{
-				ObjectMeta: extensions.ObjectMetaFromProto(patchedObject.Metadata),
+				ObjectMeta: extensions.ObjectMetaFromProto(patchedObject.GetMetadata()),
 				Spec:       *objectType.DestinationRule,
 			})
 		case *v1beta1.GeneratedObject_EnvoyFilter:
-			contextutils.LoggerFrom(ctx).Debugf("applied patched EnvoyFilter %v", sets.Key(patchedObject.Metadata))
+			contextutils.LoggerFrom(ctx).Debugf("applied patched EnvoyFilter %v", sets.Key(patchedObject.GetMetadata()))
 			outputs.AddEnvoyFilters(&istionetworkingv1alpha3.EnvoyFilter{
-				ObjectMeta: extensions.ObjectMetaFromProto(patchedObject.Metadata),
+				ObjectMeta: extensions.ObjectMetaFromProto(patchedObject.GetMetadata()),
 				Spec:       *objectType.EnvoyFilter,
 			})
 		case *v1beta1.GeneratedObject_ServiceEntry:
-			contextutils.LoggerFrom(ctx).Debugf("applied patched ServiceEntry %v", sets.Key(patchedObject.Metadata))
+			contextutils.LoggerFrom(ctx).Debugf("applied patched ServiceEntry %v", sets.Key(patchedObject.GetMetadata()))
 			outputs.AddServiceEntries(&istionetworkingv1alpha3.ServiceEntry{
-				ObjectMeta: extensions.ObjectMetaFromProto(patchedObject.Metadata),
+				ObjectMeta: extensions.ObjectMetaFromProto(patchedObject.GetMetadata()),
 				Spec:       *objectType.ServiceEntry,
 			})
 		case *v1beta1.GeneratedObject_VirtualService:
-			contextutils.LoggerFrom(ctx).Debugf("applied patched VirtualService %v", sets.Key(patchedObject.Metadata))
+			contextutils.LoggerFrom(ctx).Debugf("applied patched VirtualService %v", sets.Key(patchedObject.GetMetadata()))
 			outputs.AddVirtualServices(&istionetworkingv1alpha3.VirtualService{
-				ObjectMeta: extensions.ObjectMetaFromProto(patchedObject.Metadata),
+				ObjectMeta: extensions.ObjectMetaFromProto(patchedObject.GetMetadata()),
 				Spec:       *objectType.VirtualService,
 			})
 		case *v1beta1.GeneratedObject_XdsConfig:
-			contextutils.LoggerFrom(ctx).Debugf("applied patched XdsConfig %v", sets.Key(patchedObject.Metadata))
+			contextutils.LoggerFrom(ctx).Debugf("applied patched XdsConfig %v", sets.Key(patchedObject.GetMetadata()))
 			outputs.AddXdsConfigs(&xdsv1beta1.XdsConfig{
-				ObjectMeta: extensions.ObjectMetaFromProto(patchedObject.Metadata),
+				ObjectMeta: extensions.ObjectMetaFromProto(patchedObject.GetMetadata()),
 				Spec:       *objectType.XdsConfig,
 			})
 		default:

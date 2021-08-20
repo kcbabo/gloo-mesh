@@ -40,7 +40,7 @@ func (d *corsDecorator) ApplyTrafficPolicyToVirtualService(
 	output *networkingv1alpha3spec.HTTPRoute,
 	registerField decorators.RegisterField,
 ) error {
-	cors, err := d.translateCors(appliedPolicy.Spec)
+	cors, err := d.translateCors(appliedPolicy.GetSpec())
 	if err != nil {
 		return err
 	}

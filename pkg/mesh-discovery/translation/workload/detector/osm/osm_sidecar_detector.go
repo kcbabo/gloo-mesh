@@ -49,7 +49,7 @@ func (s *sidecarDetector) DetectMeshSidecar(pod *corev1.Pod, meshes v1sets.MeshS
 		// TODO(ilackarms): currently we assume one mesh per cluster,
 		// and that the control plane for a given sidecar is always
 		// the mesh
-		if osmMesh.Installation.GetCluster() == pod.ClusterName {
+		if osmMesh.GetInstallation().GetCluster() == pod.ClusterName {
 			return mesh
 		}
 	}

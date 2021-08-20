@@ -41,7 +41,7 @@ func (t *testExtensionsServer) Run() error {
 }
 
 func (t *testExtensionsServer) GetExtensionPatches(ctx context.Context, request *v1beta1.ExtensionPatchRequest) (*v1beta1.ExtensionPatchResponse, error) {
-	inputs := extensionutils.InputSnapshotFromProto("test-server", request.Inputs)
+	inputs := extensionutils.InputSnapshotFromProto("test-server", request.GetInputs())
 
 	var patches []*v1beta1.GeneratedObject
 	for _, mesh := range inputs.Meshes().List() {

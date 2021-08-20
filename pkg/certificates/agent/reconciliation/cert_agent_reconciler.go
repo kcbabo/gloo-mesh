@@ -149,11 +149,11 @@ func (r *certAgentReconciler) reconcileIssuedCertificate(
 	}
 
 	// if observed generation is out of sync, treat the issued certificate as Pending (spec has been modified)
-	if issuedCertificate.Status.ObservedGeneration != issuedCertificate.Generation {
+	if issuedCertificate.Status.GetObservedGeneration() != issuedCertificate.Generation {
 		issuedCertificate.Status.State = certificatesv1.IssuedCertificateStatus_PENDING
 		// Also need to reset PBD status so that pods get bounced again to pick up new cert
-		if issuedCertificate.Spec.PodBounceDirective != nil {
-			podBounceDirective, err := inputSnap.PodBounceDirectives().Find(issuedCertificate.Spec.PodBounceDirective)
+		if issuedCertificate.Spec.GetPodBounceDirective() != nil {
+			podBounceDirective, err := inputSnap.PodBounceDirectives().Find(issuedCertificate.Spec.GetPodBounceDirective())
 			if err != nil {
 				return eris.Wrap(err, "failed to find specified pod bounce directive")
 			}
@@ -166,7 +166,7 @@ func (r *certAgentReconciler) reconcileIssuedCertificate(
 	issuedCertificate.Status.Error = ""
 
 	// state-machine style processor
-	switch issuedCertificate.Status.State {
+	switch issuedCertificate.Status.GetState() {
 	case certificatesv1.IssuedCertificateStatus_FINISHED:
 
 		// If the translator errors, set the Status to failed so we can restart the workflow
@@ -231,8 +231,8 @@ func (r *certAgentReconciler) reconcileIssuedCertificate(
 		}
 
 		// see if we need to bounce pods
-		if issuedCertificate.Spec.PodBounceDirective != nil {
-			podBounceDirective, err := inputSnap.PodBounceDirectives().Find(issuedCertificate.Spec.PodBounceDirective)
+		if issuedCertificate.Spec.GetPodBounceDirective() != nil {
+			podBounceDirective, err := inputSnap.PodBounceDirectives().Find(issuedCertificate.Spec.GetPodBounceDirective())
 			if err != nil {
 				return eris.Wrap(err, "failed to find specified pod bounce directive")
 			}
@@ -259,7 +259,7 @@ func (r *certAgentReconciler) reconcileIssuedCertificate(
 		// mark issued certificate as finished
 		issuedCertificate.Status.State = certificatesv1.IssuedCertificateStatus_FINISHED
 	default:
-		return eris.Errorf("unknown issued certificate state: %v", issuedCertificate.Status.State)
+		return eris.Errorf("unknown issued certificate state: %v", issuedCertificate.Status.GetState())
 	}
 
 	return nil

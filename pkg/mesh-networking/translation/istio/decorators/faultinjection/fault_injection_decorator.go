@@ -40,7 +40,7 @@ func (d *faultInjectionDecorator) ApplyTrafficPolicyToVirtualService(
 	output *networkingv1alpha3spec.HTTPRoute,
 	registerField decorators.RegisterField,
 ) error {
-	faultInjection, err := translateFaultInjection(appliedPolicy.Spec)
+	faultInjection, err := translateFaultInjection(appliedPolicy.GetSpec())
 	if err != nil {
 		return err
 	}

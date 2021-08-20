@@ -134,7 +134,7 @@ func describeWorkload(workload *discoveryv1.Workload) workloadDescription {
 	return workloadDescription{
 		Metadata:   &workloadMeta,
 		Kubernetes: &workloadKubernetes,
-		Mesh:       workload.Spec.Mesh,
+		Mesh:       workload.Spec.GetMesh(),
 	}
 }
 
@@ -148,8 +148,8 @@ func getWorkloadMetadata(workload *discoveryv1.Workload) v1.ClusterObjectRef {
 
 func getWorkloadKubernetes(workload *discoveryv1.Workload) workloadKubernetes {
 	return workloadKubernetes{
-		ServiceAccount: workload.Spec.GetKubernetes().ServiceAccountName,
+		ServiceAccount: workload.Spec.GetKubernetes().GetServiceAccountName(),
 		PodLabels:      workload.Spec.GetKubernetes().GetPodLabels(),
-		Controller:     workload.Spec.GetKubernetes().Controller,
+		Controller:     workload.Spec.GetKubernetes().GetController(),
 	}
 }

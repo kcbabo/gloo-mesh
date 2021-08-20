@@ -68,7 +68,7 @@ func (c *clusterDomainRegistry) GetClusterDomain(clusterName string) string {
 	if err != nil {
 		return defaults.DefaultClusterDomain
 	}
-	clusterDomain := cluster.Spec.ClusterDomain
+	clusterDomain := cluster.Spec.GetClusterDomain()
 	if clusterDomain == "" {
 		clusterDomain = defaults.DefaultClusterDomain
 	}

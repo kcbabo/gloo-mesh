@@ -63,14 +63,14 @@ func (t *translator) Translate(
 ) {
 	istioMesh := mesh.Spec.GetIstio()
 	if istioMesh == nil {
-		contextutils.LoggerFrom(t.ctx).Debugf("ignoring non istio mesh %v %T", sets.Key(mesh), mesh.Spec.Type)
+		contextutils.LoggerFrom(t.ctx).Debugf("ignoring non istio mesh %v %T", sets.Key(mesh), mesh.Spec.GetType())
 		return
 	}
 
 	// add mesh installation cluster to outputs
-	istioOutputs.AddCluster(istioMesh.Installation.GetCluster())
+	istioOutputs.AddCluster(istioMesh.GetInstallation().GetCluster())
 
-	appliedVirtualMesh := mesh.Status.AppliedVirtualMesh
+	appliedVirtualMesh := mesh.Status.GetAppliedVirtualMesh()
 	if appliedVirtualMesh != nil {
 		t.mtlsTranslator.Translate(mesh, appliedVirtualMesh, istioOutputs, localOutputs, reporter)
 		t.federationTranslator.Translate(in, mesh, appliedVirtualMesh, istioOutputs, reporter)

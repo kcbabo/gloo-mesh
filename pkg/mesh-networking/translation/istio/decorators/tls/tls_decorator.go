@@ -39,15 +39,15 @@ func (d *tlsDecorator) ApplyTrafficPolicyToDestinationRule(
 	output *networkingv1alpha3spec.DestinationRule,
 	registerField decorators.RegisterField,
 ) error {
-	tlsSettings, err := d.translateTlsSettings(appliedPolicy.Spec)
+	tlsSettings, err := d.translateTlsSettings(appliedPolicy.GetSpec())
 	if err != nil {
 		return err
 	}
 	if tlsSettings != nil {
-		if err := registerField(&output.TrafficPolicy.Tls, tlsSettings); err != nil {
+		if err := registerField(&output.GetTrafficPolicy().Tls, tlsSettings); err != nil {
 			return err
 		}
-		output.TrafficPolicy.Tls = tlsSettings
+		output.GetTrafficPolicy().Tls = tlsSettings
 	}
 
 	return nil
@@ -61,7 +61,7 @@ func (d *tlsDecorator) translateTlsSettings(
 	if istioMtls == nil {
 		return nil, nil
 	}
-	istioTlsMode, err := MapIstioTlsMode(istioMtls.TlsMode)
+	istioTlsMode, err := MapIstioTlsMode(istioMtls.GetTlsMode())
 	if err != nil {
 		return nil, err
 	}

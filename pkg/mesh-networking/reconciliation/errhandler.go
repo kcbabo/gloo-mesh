@@ -68,7 +68,7 @@ func (e *errHandler) handleError(resource ezkube.Object, err error) {
 					continue
 				}
 
-				vmesh.Status.Errors = append(vmesh.Status.Errors, err.Error())
+				vmesh.Status.Errors = append(vmesh.Status.GetErrors(), err.Error())
 				vmesh.Status.State = commonv1.ApprovalState_FAILED
 			}
 		case v1.AccessPolicy{}.GVK().String():
@@ -79,7 +79,7 @@ func (e *errHandler) handleError(resource ezkube.Object, err error) {
 					continue
 				}
 
-				ap.Status.Errors = append(ap.Status.Errors, err.Error())
+				ap.Status.Errors = append(ap.Status.GetErrors(), err.Error())
 				ap.Status.State = commonv1.ApprovalState_FAILED
 			}
 		case v1.TrafficPolicy{}.GVK().String():
@@ -90,7 +90,7 @@ func (e *errHandler) handleError(resource ezkube.Object, err error) {
 					continue
 				}
 
-				tp.Status.Errors = append(tp.Status.Errors, err.Error())
+				tp.Status.Errors = append(tp.Status.GetErrors(), err.Error())
 				tp.Status.State = commonv1.ApprovalState_FAILED
 			}
 		case enterprisenetworkingv1beta1.WasmDeployment{}.GVK().String():
@@ -101,7 +101,7 @@ func (e *errHandler) handleError(resource ezkube.Object, err error) {
 					continue
 				}
 
-				fs.Status.Error = strings.Join([]string{fs.Status.Error, err.Error()}, ", ")
+				fs.Status.Error = strings.Join([]string{fs.Status.GetError(), err.Error()}, ", ")
 			}
 		case observabilityv1.AccessLogRecord{}.GVK().String():
 			for _, parentAlr := range parents {
@@ -111,7 +111,7 @@ func (e *errHandler) handleError(resource ezkube.Object, err error) {
 					continue
 				}
 
-				fs.Status.Errors = append(fs.Status.Errors, err.Error())
+				fs.Status.Errors = append(fs.Status.GetErrors(), err.Error())
 				fs.Status.State = commonv1.ApprovalState_FAILED
 			}
 		}

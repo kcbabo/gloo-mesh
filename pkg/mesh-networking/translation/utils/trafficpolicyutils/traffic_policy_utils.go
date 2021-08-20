@@ -7,7 +7,7 @@ func ContainsPort(
 	port uint32,
 ) bool {
 	for _, destPort := range destKubeServicePorts {
-		if destPort.Port == port {
+		if destPort.GetPort() == port {
 			return true
 		}
 	}

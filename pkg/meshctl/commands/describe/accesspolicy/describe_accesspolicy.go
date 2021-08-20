@@ -128,14 +128,14 @@ func describeAccessPolicy(accessPolicy *networkingv1.AccessPolicy) accessPolicyD
 	var sourceServiceAccounts []*v1.ClusterObjectRef
 	for _, sel := range accessPolicy.Spec.GetSourceSelector() {
 		if svcAccs := sel.GetKubeServiceAccountRefs(); svcAccs != nil {
-			sourceServiceAccounts = append(sourceServiceAccounts, svcAccs.ServiceAccounts...)
+			sourceServiceAccounts = append(sourceServiceAccounts, svcAccs.GetServiceAccounts()...)
 		}
 	}
 
 	var destinationServices []*v1.ClusterObjectRef
 	for _, sel := range accessPolicy.Spec.GetDestinationSelector() {
 		if svcs := sel.GetKubeServiceRefs(); svcs != nil {
-			destinationServices = append(destinationServices, svcs.Services...)
+			destinationServices = append(destinationServices, svcs.GetServices()...)
 		}
 	}
 
@@ -157,7 +157,7 @@ func getAccessPolicyMetadata(accessPolicy *networkingv1.AccessPolicy) v1.Cluster
 
 func getAccessPolicyFilters(accessPolicy *networkingv1.AccessPolicy) accessPolicyFilters {
 	filters := accessPolicyFilters{
-		AllowedPaths:   accessPolicy.Spec.AllowedPaths,
+		AllowedPaths:   accessPolicy.Spec.GetAllowedPaths(),
 		AllowedMethods: make([]string, len(accessPolicy.Spec.GetAllowedMethods())),
 		AllowedPorts:   make([]string, len(accessPolicy.Spec.GetAllowedPorts())),
 	}

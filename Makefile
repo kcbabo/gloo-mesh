@@ -46,6 +46,7 @@ export GOBIN:=$(DEPSGOBIN)
 .PHONY: fmt
 fmt:
 	goimports -w $(shell ls -d */ | grep -v vendor)
+	gettercheck -ignoretests -ignoregenerated -write ./...
 
 .PHONY: mod-download
 mod-download:
@@ -66,6 +67,7 @@ install-go-tools: mod-download
 	go install golang.org/x/tools/cmd/goimports@v0.1.2
 	go install github.com/onsi/ginkgo/ginkgo
 	go install github.com/gobuffalo/packr/packr
+	go get github.com/saiskee/gettercheck
 	go mod tidy
 
 # Call all generated code targets

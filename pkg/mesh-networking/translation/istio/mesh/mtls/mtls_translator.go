@@ -115,12 +115,12 @@ func (t *translator) Translate(
 ) {
 	istioMesh := mesh.Spec.GetIstio()
 	if istioMesh == nil {
-		contextutils.LoggerFrom(t.ctx).Debugf("ignoring non istio mesh %v %T", sets.Key(mesh), mesh.Spec.Type)
+		contextutils.LoggerFrom(t.ctx).Debugf("ignoring non istio mesh %v %T", sets.Key(mesh), mesh.Spec.GetType())
 		return
 	}
 
 	if err := t.updateMtlsOutputs(mesh, virtualMesh, istioOutputs, localOutputs); err != nil {
-		reporter.ReportVirtualMeshToMesh(mesh, virtualMesh.Ref, err)
+		reporter.ReportVirtualMeshToMesh(mesh, virtualMesh.GetRef(), err)
 	}
 }
 
@@ -130,26 +130,26 @@ func (t *translator) updateMtlsOutputs(
 	istioOutputs istio.Builder,
 	localOutputs local.Builder,
 ) error {
-	mtlsConfig := virtualMesh.Spec.MtlsConfig
+	mtlsConfig := virtualMesh.GetSpec().GetMtlsConfig()
 	if mtlsConfig == nil {
 		// nothing to do
 		contextutils.LoggerFrom(t.ctx).Debugf("no translation for VirtualMesh %v which has no mTLS configuration", sets.Key(mesh))
 		return nil
 	}
 
-	if mtlsConfig.TrustModel == nil {
+	if mtlsConfig.GetTrustModel() == nil {
 		return eris.Errorf("must specify trust model to use for issuing certificates")
 	}
 
-	switch trustModel := mtlsConfig.TrustModel.(type) {
+	switch trustModel := mtlsConfig.GetTrustModel().(type) {
 	case *networkingv1.VirtualMeshSpec_MTLSConfig_Shared:
 		return t.configureSharedTrust(
 			mesh,
 			trustModel.Shared,
-			virtualMesh.Ref,
+			virtualMesh.GetRef(),
 			istioOutputs,
 			localOutputs,
-			mtlsConfig.AutoRestartPods,
+			mtlsConfig.GetAutoRestartPods(),
 		)
 	case *networkingv1.VirtualMeshSpec_MTLSConfig_Limited:
 		return eris.Errorf("limited trust not supported in version %v of Gloo Mesh", version.Version)
@@ -169,7 +169,7 @@ func (t *translator) configureSharedTrust(
 	autoRestartPods bool,
 ) error {
 
-	agentInfo := mesh.Spec.AgentInfo
+	agentInfo := mesh.Spec.GetAgentInfo()
 	if agentInfo == nil {
 		contextutils.LoggerFrom(t.ctx).Debugf("cannot configure root certificates for mesh %v which has no cert-agent", sets.Key(mesh))
 		return nil
@@ -429,8 +429,8 @@ func getPodsToBounce(
 	// then the control-plane should not be bounced.
 	if sharedTrust.GetIntermediateCertificateAuthority().GetVault() == nil {
 		podsToBounce = append(podsToBounce, &certificatesv1.PodBounceDirectiveSpec_PodSelector{
-			Namespace: istioInstall.Namespace,
-			Labels:    istioInstall.PodLabels,
+			Namespace: istioInstall.GetNamespace(),
+			Labels:    istioInstall.GetPodLabels(),
 			// ensure at least one replica of istiod is ready before restarting the other pods
 			WaitForReplicas: 1,
 		})
@@ -439,15 +439,15 @@ func getPodsToBounce(
 	// bounce all workloads controlled by the mesh
 	allWorkloads.List(func(workload *discoveryv1.Workload) bool {
 		kubeWorkload := workload.Spec.GetKubernetes()
-		workloadNamespace := kubeWorkload.Controller.GetNamespace()
-		if kubeWorkload != nil && ezkube.RefsMatch(workload.Spec.Mesh, mesh) {
+		workloadNamespace := kubeWorkload.GetController().GetNamespace()
+		if kubeWorkload != nil && ezkube.RefsMatch(workload.Spec.GetMesh(), mesh) {
 			podsToBounce = append(podsToBounce, &certificatesv1.PodBounceDirectiveSpec_PodSelector{
 				Namespace: workloadNamespace,
-				Labels:    kubeWorkload.PodLabels,
+				Labels:    kubeWorkload.GetPodLabels(),
 				RootCertSync: &certificatesv1.PodBounceDirectiveSpec_PodSelector_RootCertSync{
 					SecretRef: &skv2corev1.ObjectRef{
 						Name:      istioCaSecretName,
-						Namespace: istioInstall.Namespace,
+						Namespace: istioInstall.GetNamespace(),
 					},
 					SecretKey: secrets.RootCertID,
 					ConfigMapRef: &skv2corev1.ObjectRef{

@@ -133,8 +133,8 @@ func describeMesh(mesh *discoveryv1.Mesh) meshDescription {
 	meshMeta := getMeshMetadata(mesh)
 
 	var virtualDestinations []*v1.ObjectRef
-	for _, fs := range mesh.Status.AppliedVirtualDestinations {
-		virtualDestinations = append(virtualDestinations, fs.Ref)
+	for _, fs := range mesh.Status.GetAppliedVirtualDestinations() {
+		virtualDestinations = append(virtualDestinations, fs.GetRef())
 	}
 
 	return meshDescription{
@@ -150,31 +150,31 @@ func getMeshMetadata(mesh *discoveryv1.Mesh) meshMetadata {
 		appmesh := mesh.Spec.GetAwsAppMesh()
 		return meshMetadata{
 			Type:         "appmesh",
-			Name:         appmesh.AwsName,
-			Region:       appmesh.Region,
-			AwsAccountId: appmesh.AwsAccountId,
-			Clusters:     appmesh.Clusters,
+			Name:         appmesh.GetAwsName(),
+			Region:       appmesh.GetRegion(),
+			AwsAccountId: appmesh.GetAwsAccountId(),
+			Clusters:     appmesh.GetClusters(),
 		}
 	}
 	var meshInstallation *discoveryv1.MeshInstallation
 	switch mesh.Spec.GetType().(type) {
 	case *discoveryv1.MeshSpec_Istio_:
 		meshType = "istio"
-		meshInstallation = mesh.Spec.GetIstio().Installation
+		meshInstallation = mesh.Spec.GetIstio().GetInstallation()
 	case *discoveryv1.MeshSpec_Linkerd:
 		meshType = "linkerd"
-		meshInstallation = mesh.Spec.GetLinkerd().Installation
+		meshInstallation = mesh.Spec.GetLinkerd().GetInstallation()
 	case *discoveryv1.MeshSpec_ConsulConnect:
 		meshType = "consulconnect"
-		meshInstallation = mesh.Spec.GetConsulConnect().Installation
+		meshInstallation = mesh.Spec.GetConsulConnect().GetInstallation()
 	case *discoveryv1.MeshSpec_Osm:
 		meshType = "osm"
-		meshInstallation = mesh.Spec.GetOsm().Installation
+		meshInstallation = mesh.Spec.GetOsm().GetInstallation()
 	}
 	return meshMetadata{
 		Type:      meshType,
-		Namespace: meshInstallation.Namespace,
-		Cluster:   meshInstallation.Cluster,
-		Version:   meshInstallation.Version,
+		Namespace: meshInstallation.GetNamespace(),
+		Cluster:   meshInstallation.GetCluster(),
+		Version:   meshInstallation.GetVersion(),
 	}
 }

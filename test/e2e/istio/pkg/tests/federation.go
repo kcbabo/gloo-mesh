@@ -47,7 +47,7 @@ func FederationTest() {
 			restrictiveVirtualMesh := VirtualMesh.DeepCopy()
 
 			// federate only the reviews service from each mesh to the other mesh
-			restrictiveVirtualMesh.Spec.Federation.Selectors = []*networkingv1.VirtualMeshSpec_Federation_FederationSelector{
+			restrictiveVirtualMesh.Spec.GetFederation().Selectors = []*networkingv1.VirtualMeshSpec_Federation_FederationSelector{
 				{
 					DestinationSelectors: []*commonv1.DestinationSelector{
 						{
@@ -101,8 +101,8 @@ func FederationTest() {
 				}
 
 				expectedServiceEntryNames := sets.NewString(
-					remoteReviews.Status.AppliedFederation.GetFederatedHostname(),
-					mgmtReviews.Status.AppliedFederation.GetFederatedHostname(),
+					remoteReviews.Status.GetAppliedFederation().GetFederatedHostname(),
+					mgmtReviews.Status.GetAppliedFederation().GetFederatedHostname(),
 				)
 
 				return serviceEntryNames.Equal(expectedServiceEntryNames)
@@ -119,8 +119,8 @@ func FederationTest() {
 				}
 
 				expectedServiceEntryNames := sets.NewString(
-					remoteReviews.Status.AppliedFederation.GetFederatedHostname(),
-					mgmtReviews.Status.AppliedFederation.GetFederatedHostname(),
+					remoteReviews.Status.GetAppliedFederation().GetFederatedHostname(),
+					mgmtReviews.Status.GetAppliedFederation().GetFederatedHostname(),
 				)
 
 				return serviceEntryNames.Equal(expectedServiceEntryNames)
@@ -326,8 +326,8 @@ func FederationTest() {
 				if err != nil {
 					return false
 				}
-				if len(virtualService.Spec.Http) > 0 {
-					httpRoute := virtualService.Spec.Http[0]
+				if len(virtualService.Spec.GetHttp()) > 0 {
+					httpRoute := virtualService.Spec.GetHttp()[0]
 					if httpRoute.GetMirror().GetHost() != fmt.Sprintf("reviews.%s.svc.cluster.local", BookinfoNamespace) {
 						return false
 					}
@@ -348,7 +348,7 @@ func FederationTest() {
 
 		By("able to select the default ingress gateway destination explicitly", func() {
 			defaultFederatedIngressGatewayVm := VirtualMesh.DeepCopy()
-			defaultFederatedIngressGatewayVm.Spec.Federation.IngressGatewaySelectors = []*commonv1.IngressGatewaySelector{
+			defaultFederatedIngressGatewayVm.Spec.GetFederation().IngressGatewaySelectors = []*commonv1.IngressGatewaySelector{
 				{
 					PortName: "tls",
 					DestinationSelectors: []*commonv1.DestinationSelector{
