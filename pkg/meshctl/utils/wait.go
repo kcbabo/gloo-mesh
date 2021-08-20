@@ -3,7 +3,6 @@ package utils
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/rotisserie/eris"
@@ -23,7 +22,6 @@ func WaitUntilCRDsEstablished(ctx context.Context, kubeClient client.Client, tim
 			for _, crd := range crdNames {
 				ready, err := crdEstablished(ctx, kubeClient, crd)
 				if err != nil {
-					log.Printf("failed to get crd status: %v", err)
 					notYetEstablished[crd] = struct{}{}
 				}
 				if !ready {
