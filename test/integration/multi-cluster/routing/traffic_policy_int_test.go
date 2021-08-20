@@ -54,7 +54,6 @@ func TestTrafficPolicies(t *testing.T) {
 							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
 							FileName:    "request-prefix-matcher.yaml",
 							Folder:      "gloo-mesh/traffic-policy",
-							Skip:        "https://github.com/solo-io/gloo-mesh-enterprise/issues/967",
 						},
 						{
 							Name:        "request-header-matcher",
@@ -63,7 +62,6 @@ func TestTrafficPolicies(t *testing.T) {
 							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
 							FileName:    "request-header-matcher.yaml",
 							Folder:      "gloo-mesh/traffic-policy",
-							Skip:        "https://github.com/solo-io/gloo-mesh-enterprise/issues/967",
 						},
 						{
 							Name:        "request-prefix-header-matcher-and",
@@ -72,7 +70,6 @@ func TestTrafficPolicies(t *testing.T) {
 							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
 							FileName:    "request-prefix-header-matcher-and.yaml",
 							Folder:      "gloo-mesh/traffic-policy",
-							Skip:        "https://github.com/solo-io/gloo-mesh-enterprise/issues/967",
 						},
 						{
 							Name:        "request-prefix-header-matcher-or",
@@ -81,7 +78,6 @@ func TestTrafficPolicies(t *testing.T) {
 							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
 							FileName:    "request-prefix-header-matcher-or.yaml",
 							Folder:      "gloo-mesh/traffic-policy",
-							Skip:        "https://github.com/solo-io/gloo-mesh-enterprise/issues/967",
 						},
 					},
 				},
