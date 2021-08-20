@@ -29,6 +29,6 @@ func MustCleanupCompletedPodsInNamespace(ctx context.Context, kubeconfig, kubeco
 	pods := v1.NewPodClient(kubeClient)
 
 	return pods.DeleteAllOfPod(ctx, client.InNamespace(namespace), client.MatchingFieldsSelector{
-		Selector: fields.OneTermEqualSelector("status.phase","Succeeded"),
+		Selector: fields.OneTermEqualSelector("status.phase", "Succeeded"),
 	})
 }
