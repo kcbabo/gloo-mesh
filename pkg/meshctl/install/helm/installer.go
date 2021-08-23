@@ -250,7 +250,7 @@ func upsertCrds(ctx context.Context, kubeClient client.Client, chartObj *chart.C
 			}
 		}
 	}
-        // wait until CRDs are in the "established" status to prevent race conditions when subsequently creating CRs
+	// wait until CRDs are in the "established" status to prevent race conditions when subsequently creating CRs
 	return utils.WaitUntilCRDsEstablished(ctx, kubeClient, time.Minute, crdNames)
 }
 

@@ -99,7 +99,7 @@ func runAgentChecks(ctx context.Context, opts *agentOpts, inCluster bool) error 
 
 	// Some helm checks need to be run in a pod, and not a job, leaving behind Pods in a completed state.
 	// This can affect future runs of `meshctl check agent` and therefore are cleaned up here.
-	return utils.MustCleanupCompletedPodsInNamespace(ctx, opts.kubeconfig, opts.kubecontext, opts.namespace)
+	return utils.CleanupCompletedPodsInNamespace(ctx, opts.kubeconfig, opts.kubecontext, opts.namespace)
 }
 
 // fetch the Helm chart corresponding to the version found in the enterprise-agent deployment

@@ -21,7 +21,7 @@ func EnsureNamespace(ctx context.Context, kubeClient client.Client, namespace st
 	})
 }
 
-func MustCleanupCompletedPodsInNamespace(ctx context.Context, kubeconfig, kubecontext, namespace string) error {
+func CleanupCompletedPodsInNamespace(ctx context.Context, kubeconfig, kubecontext, namespace string) error {
 	kubeClient, err := BuildClient(kubeconfig, kubecontext)
 	if err != nil {
 		return err
