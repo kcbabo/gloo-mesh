@@ -83,7 +83,6 @@ func TestSecurity(t *testing.T) {
 							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
 							FileName:    "single-cluster-access.yaml",
 							Folder:      "gloo-mesh/security",
-							Skip:        "https://github.com/solo-io/gloo-mesh-enterprise/issues/1033",
 						},
 					},
 				},
