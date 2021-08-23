@@ -1,8 +1,0 @@
-gloo-mesh-default.yaml
-cert-agent-default.yaml
-helm/_output
-**/charts/**
-**/Chart.yaml
-**/Chart.lock
-**/values.yaml
-**/requirements.lock
