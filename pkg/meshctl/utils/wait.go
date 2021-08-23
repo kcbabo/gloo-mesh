@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// block until CRD is in the "established" phase to prevent subsequent race conditions when attempting to create CRs
 func WaitUntilCRDsEstablished(ctx context.Context, kubeClient client.Client, timeout time.Duration, crdNames []string) error {
 	failed := time.After(timeout)
 	notYetEstablished := make(map[string]struct{})
