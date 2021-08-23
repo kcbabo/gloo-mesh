@@ -9,54 +9,11 @@ FLAT_NETWORKING_ENABLED=false RUN_INTEGRATION=true GLOO_MESH_ENTERPRISE_VERSION=
   -args --istio.test.kube.config=/Users/nick/.kube/mp,/Users/nick/.kube/cp \
     --istio.test.nocleanup=false \
     --istio.test.hub=gcr.io/istio-enterprise \
-    --istio.test.tag=1.10.3 \
+    --istio.test.tag=1.10.3
 ```
-
-## todo
-* use gm to setup routing between the two clusters and use echo calls to test it works
-
-## cluster setup script using k3d
-```sh
-#!/bin/bash
-network=demo-1
-
-# create docker network if it does not exist
-docker network create $network || true
-
-## management plane cluster exposes port 9000 (unused currently)
-k3d cluster create mp --image "rancher/k3s:v1.20.2-k3s1"  --k3s-server-arg "--disable=traefik" --network $network
-kube_ctx=k3d-mp
-k3d kubeconfig get mp > ~/.kube/mp
-
-kubectl label node $kube_ctx-server-0 topology.kubernetes.io/region=us-west-1 --context $kube_ctx
-kubectl label node $kube_ctx-server-0 topology.kubernetes.io/zone=us-west-1b --context $kube_ctx
-
-## control plane cluster (us-east) exposes port 9010 (unused currently)
-k3d cluster create cp-us-east --image "rancher/k3s:v1.20.2-k3s1"  --k3s-server-arg "--disable=traefik" --network $network
-k3d kubeconfig get cp-us-east > ~/.kube/cp-us-east
-kube_ctx=k3d-cp-us-east
-
-kubectl label node $kube_ctx-server-0 topology.kubernetes.io/region=us-east-1 --context $kube_ctx
-kubectl label node $kube_ctx-server-0 topology.kubernetes.io/zone=us-east-1a --context $kube_ctx
-
-```
-
-### teardown
-```shell
-#!/bin/bash
-network=demo-1
-k3d cluster delete mp
-rm  ~/.kube/mp
-  
-k3d cluster delete cp-us-east
-rm  ~/.kube/cp-us-east
-
-docker network rm $network
-
-```
-
 
 ## Cluster setup using kind (works better for virtualGateway tests)
+
 ```sh
 deploy-kind() {
 
@@ -227,6 +184,47 @@ kind-down(){
   rm  $HOME/.kube/cp || true
 }
 
+
+```
+
+## cluster setup script using k3d
+
+```sh
+#!/bin/bash
+network=demo-1
+
+# create docker network if it does not exist
+docker network create $network || true
+
+## management plane cluster exposes port 9000 (unused currently)
+k3d cluster create mp --image "rancher/k3s:v1.20.2-k3s1"  --k3s-server-arg "--disable=traefik" --network $network
+kube_ctx=k3d-mp
+k3d kubeconfig get mp > ~/.kube/mp
+
+kubectl label node $kube_ctx-server-0 topology.kubernetes.io/region=us-west-1 --context $kube_ctx
+kubectl label node $kube_ctx-server-0 topology.kubernetes.io/zone=us-west-1b --context $kube_ctx
+
+## control plane cluster (us-east) exposes port 9010 (unused currently)
+k3d cluster create cp-us-east --image "rancher/k3s:v1.20.2-k3s1"  --k3s-server-arg "--disable=traefik" --network $network
+k3d kubeconfig get cp-us-east > ~/.kube/cp-us-east
+kube_ctx=k3d-cp-us-east
+
+kubectl label node $kube_ctx-server-0 topology.kubernetes.io/region=us-east-1 --context $kube_ctx
+kubectl label node $kube_ctx-server-0 topology.kubernetes.io/zone=us-east-1a --context $kube_ctx
+
+```
+
+### teardown
+```shell
+#!/bin/bash
+network=demo-1
+k3d cluster delete mp
+rm  ~/.kube/mp
+  
+k3d cluster delete cp-us-east
+rm  ~/.kube/cp-us-east
+
+docker network rm $network
 
 ```
 

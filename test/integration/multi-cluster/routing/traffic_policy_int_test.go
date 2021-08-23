@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"istio.io/istio/pkg/test/echo/client"
 	"net/http"
 	"testing"
 
@@ -78,6 +79,24 @@ func TestTrafficPolicies(t *testing.T) {
 							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
 							FileName:    "request-prefix-header-matcher-or.yaml",
 							Folder:      "gloo-mesh/traffic-policy",
+						},
+						{
+							Name:        "weighted-routing",
+							Description: "Testing multi cluster weighted routing",
+							Test:        testWeightedRouting,
+							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
+							FileName:    "weighted-routing.yaml",
+							Folder:      "gloo-mesh/traffic-policy",
+							Skip:        "Blocked https://github.com/solo-io/gloo-mesh-enterprise/issues/640 https://github.com/solo-io/gloo-mesh-enterprise/issues/589",
+						},
+						{
+							Name:        "weighted-routing-single-cluster",
+							Description: "Testing multi cluster weighted routing where only 1 cluster has apps",
+							Test:        testWeightedRouting,
+							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
+							FileName:    "weighted-routing-single-cluster-gateway.yaml",
+							Folder:      "gloo-mesh/traffic-policy",
+							Skip:        "Blocked https://github.com/solo-io/gloo-mesh-enterprise/issues/640 https://github.com/solo-io/gloo-mesh-enterprise/issues/589",
 						},
 					},
 				},
@@ -458,4 +477,51 @@ func testRequestPrefixOrHeaderMatcher(ctx resource.Context, t *testing.T, deploy
 		Count:     1,
 		Validator: echo.ExpectCode("404"),
 	})
+}
+
+// testWeightedRouting testing multi cluster weighted routing
+func testWeightedRouting(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
+	westCluster := ctx.Clusters()[cluster0Index]
+	// frontend calling subset in mesh using virtual destination in same cluster and different clusters
+	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(westCluster)))
+	backendHost := "http-subset.solo.io"
+
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 8090,
+		},
+		Scheme:    scheme.HTTP,
+		Address:   backendHost,
+		Method:    http.MethodGet,
+		Path:      "",
+		Count:     100,
+		Validator: echo.And(validateWeightedRouting(map[string]int{"v1": 90, "v2": 10}, 2)),
+	})
+}
+
+func validateWeightedRouting(expected map[string]int, variance int) echo.Validator {
+	return echo.ValidatorFunc(func(resp client.ParsedResponses, err error) error {
+		// calculate the number of apps reached
+		actual := make(map[string]int)
+		for _, r := range resp {
+			actual[r.Version] = actual[r.Version] + 1
+		}
+		if len(expected) != len(actual) {
+			return fmt.Errorf("did not recieve the correct amount of subset actual got %d expectedf %d", len(actual), len(expected))
+		}
+		for v, e := range expected {
+			a, exists := actual[v]
+			if e != 0 && !exists {
+				return fmt.Errorf("no requests for subset %s", v)
+			}
+			// make sure a is in the variance window
+			if a < e-variance || a > e+variance {
+				return fmt.Errorf("actaul amount of responses from subset %s was %d but expected to be between %d and %d ", v, a, e-variance, e+variance)
+			}
+		}
+
+		return nil
+	})
+
 }
