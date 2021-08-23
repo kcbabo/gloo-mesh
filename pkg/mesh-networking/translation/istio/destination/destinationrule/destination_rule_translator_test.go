@@ -83,6 +83,7 @@ var _ = Describe("DestinationRuleTranslator", func() {
 					TlsMode: v1.TrafficPolicySpec_Policy_MTLS_Istio_ISTIO_MUTUAL,
 				},
 			},
+			PeerAuth: &settingsv1.PeerAuthenticationSettings{Enabled: false},
 		}
 
 		destination := &discoveryv1.Destination{
@@ -225,6 +226,7 @@ var _ = Describe("DestinationRuleTranslator", func() {
 				destination,
 				&initializedDestinatonRule.Spec,
 				gomock.Any(),
+				settings.Spec.GetPeerAuth(),
 			).
 			Return(nil)
 
@@ -251,6 +253,7 @@ var _ = Describe("DestinationRuleTranslator", func() {
 					TlsMode: v1.TrafficPolicySpec_Policy_MTLS_Istio_ISTIO_MUTUAL,
 				},
 			},
+			PeerAuth: &settingsv1.PeerAuthenticationSettings{Enabled: false},
 		}
 
 		destination := &discoveryv1.Destination{
@@ -371,12 +374,14 @@ var _ = Describe("DestinationRuleTranslator", func() {
 				destination,
 				gomock.Any(),
 				gomock.Any(),
+				settings.Spec.GetPeerAuth(),
 			).
 			DoAndReturn(func(
 				_ *v1.AppliedTrafficPolicy,
 				service *discoveryv1.Destination,
 				destinationRuleSpec *networkingv1alpha3spec.DestinationRule,
 				_ decorators.RegisterField,
+				authenticationSettings *settingsv1.PeerAuthenticationSettings,
 			) error {
 				// sort subsets for deterministic comparison
 				sort.Slice(destinationRuleSpec.Subsets, func(i, j int) bool {
@@ -416,6 +421,7 @@ var _ = Describe("DestinationRuleTranslator", func() {
 					TlsMode: v1.TrafficPolicySpec_Policy_MTLS_Istio_ISTIO_MUTUAL,
 				},
 			},
+			PeerAuth: &settingsv1.PeerAuthenticationSettings{Enabled: false},
 		}
 
 		destination := &discoveryv1.Destination{
@@ -565,12 +571,14 @@ var _ = Describe("DestinationRuleTranslator", func() {
 				destination,
 				gomock.Any(),
 				gomock.Any(),
+				settings.Spec.GetPeerAuth(),
 			).
 			DoAndReturn(func(
 				_ *v1.AppliedTrafficPolicy,
 				service *discoveryv1.Destination,
 				destinationRuleSpec *networkingv1alpha3spec.DestinationRule,
 				_ decorators.RegisterField,
+				authenticationSettings *settingsv1.PeerAuthenticationSettings,
 			) error {
 				return nil
 			})
@@ -586,7 +594,9 @@ var _ = Describe("DestinationRuleTranslator", func() {
 	})
 
 	It("should report error if translated DestinationRule applies to host already configured by existing DestinationRule", func() {
-		settings.Spec = settingsv1.SettingsSpec{}
+		settings.Spec = settingsv1.SettingsSpec{
+			PeerAuth: &settingsv1.PeerAuthenticationSettings{Enabled: false},
+		}
 
 		existingDestinationRules := v1alpha3sets.NewDestinationRuleSet(
 			// user-supplied, should yield conflict error
@@ -667,12 +677,14 @@ var _ = Describe("DestinationRuleTranslator", func() {
 				destination,
 				gomock.Any(),
 				gomock.Any(),
+				settings.Spec.GetPeerAuth(),
 			).
 			DoAndReturn(func(
 				appliedPolicy *v1.AppliedTrafficPolicy,
 				service *discoveryv1.Destination,
 				output *networkingv1alpha3spec.DestinationRule,
 				registerField decorators.RegisterField,
+				authenticationSettings *settingsv1.PeerAuthenticationSettings,
 			) error {
 				output.TrafficPolicy.OutlierDetection = &networkingv1alpha3spec.OutlierDetection{
 					Consecutive_5XxErrors: &types.UInt32Value{Value: 5},
