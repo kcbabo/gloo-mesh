@@ -25,8 +25,8 @@ type Reporter interface {
 	// report an error on a VirtualMesh that has been applied to a Destination
 	ReportVirtualMeshToDestination(destination *discoveryv1.Destination, virtualMesh ezkube.ResourceId, err error)
 
-	// report an error on a PeerAuthentication that has been applied to a Mesh
-	ReportPeerAuthenticationToMesh(mesh *discoveryv1.Mesh, peerAuth ezkube.ResourceId, err error)
+	// report an error on GM settings that have been applied to a Mesh
+	ReportSettingsToMesh(mesh *discoveryv1.Mesh, settings ezkube.ResourceId, err error)
 }
 
 // this reporter implementation is only used inside
@@ -74,10 +74,10 @@ func (p *panickingReporter) ReportVirtualMeshToDestination(destination *discover
 			"error", err)
 }
 
-func (p *panickingReporter) ReportPeerAuthenticationToMesh(mesh *discoveryv1.Mesh, peerAuth ezkube.ResourceId, err error) {
+func (p *panickingReporter) ReportSettingsToMesh(mesh *discoveryv1.Mesh, settings ezkube.ResourceId, err error) {
 	contextutils.LoggerFrom(p.ctx).
-		DPanicw("internal error: error reported on PeerAuthentication which should have been caught by validation!",
+		DPanicw("internal error: error reported on settings which should have been caught by validation!",
 			"mesh", sets.Key(mesh),
-			"peer-authentication", sets.Key(peerAuth),
+			"settings", sets.Key(settings),
 			"error", err)
 }

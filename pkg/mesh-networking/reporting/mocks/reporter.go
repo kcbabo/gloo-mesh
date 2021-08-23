@@ -47,16 +47,16 @@ func (mr *MockReporterMockRecorder) ReportAccessPolicyToDestination(destination,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportAccessPolicyToDestination", reflect.TypeOf((*MockReporter)(nil).ReportAccessPolicyToDestination), destination, accessPolicy, err)
 }
 
-// ReportPeerAuthenticationToMesh mocks base method.
-func (m *MockReporter) ReportPeerAuthenticationToMesh(mesh *v1.Mesh, peerAuth ezkube.ResourceId, err error) {
+// ReportSettingsToMesh mocks base method.
+func (m *MockReporter) ReportSettingsToMesh(mesh *v1.Mesh, peerAuth ezkube.ResourceId, err error) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ReportPeerAuthenticationToMesh", mesh, peerAuth, err)
+	m.ctrl.Call(m, "ReportSettingsToMesh", mesh, peerAuth, err)
 }
 
-// ReportPeerAuthenticationToMesh indicates an expected call of ReportPeerAuthenticationToMesh.
-func (mr *MockReporterMockRecorder) ReportPeerAuthenticationToMesh(mesh, peerAuth, err interface{}) *gomock.Call {
+// ReportSettingsToMesh indicates an expected call of ReportSettingsToMesh.
+func (mr *MockReporterMockRecorder) ReportSettingsToMesh(mesh, peerAuth, err interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportPeerAuthenticationToMesh", reflect.TypeOf((*MockReporter)(nil).ReportPeerAuthenticationToMesh), mesh, peerAuth, err)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportSettingsToMesh", reflect.TypeOf((*MockReporter)(nil).ReportSettingsToMesh), mesh, peerAuth, err)
 }
 
 // ReportTrafficPolicyToDestination mocks base method.

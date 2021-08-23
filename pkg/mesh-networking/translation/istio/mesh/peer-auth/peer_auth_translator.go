@@ -73,8 +73,9 @@ func (t *translator) Translate(
 		contextutils.LoggerFrom(t.ctx).Debugf("ignoring non istio mesh %v %T", sets.Key(mesh), mesh.Spec.Type)
 		return
 	}
-	if auth, err := t.updatePeerAuthValues(mesh, istioOutputs); err != nil {
-		reporter.ReportPeerAuthenticationToMesh(mesh, auth, err)
+	if _, err := t.updatePeerAuthValues(mesh, istioOutputs); err != nil {
+		// we don't have a GM representation of PA's, just the implicit promise to make them in the settings.
+		reporter.ReportSettingsToMesh(mesh, t.settings, err)
 	}
 }
 
