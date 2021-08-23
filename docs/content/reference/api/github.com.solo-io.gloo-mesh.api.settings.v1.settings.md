@@ -140,7 +140,7 @@ Settings for the default
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | enabled | bool |  | Enable the creation of PeerAuthentications on meshes to manage TLS connections. Defaults to true. |
-  | peerAuthTlsMode | [settings.mesh.gloo.solo.io.PeerAuthenticationSettings.MutualTLS]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.settings.v1.settings#settings.mesh.gloo.solo.io.PeerAuthenticationSettings.MutualTLS" >}}) |  | The default mutualTls mode for automatically generated Peer Authentications to use. The enum values correspond to the values listed [by istio](https://istio.io/latest/docs/reference/config/security/peer_authentication/#PeerAuthentication-MutualTLS-Mode) Defaults to UNSET, which behaves like PERMISSIVE. |
+  | peerAuthTlsMode | [settings.mesh.gloo.solo.io.PeerAuthenticationSettings.MutualTLS]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.settings.v1.settings#settings.mesh.gloo.solo.io.PeerAuthenticationSettings.MutualTLS" >}}) |  | The default mutualTls mode for automatically generated Peer Authentications to use. The enum values correspond to the values listed [by istio](https://istio.io/latest/docs/reference/config/security/peer_authentication/#PeerAuthentication-MutualTLS-Mode) Defaults to UNSET, which behaves like PERMISSIVE. Note: If this is set to STRICT, and settings.mtls.istio.tlsMode is UNSET (or vise verse), translation will fail, since we cannot both mandate and disable TLS at different junctures. |
   
 
 

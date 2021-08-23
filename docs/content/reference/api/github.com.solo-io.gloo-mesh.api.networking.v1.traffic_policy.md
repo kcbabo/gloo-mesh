@@ -211,7 +211,7 @@ Istio TLS settings.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| tlsMode | [networking.mesh.gloo.solo.io.TrafficPolicySpec.Policy.MTLS.Istio.TLSmode]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.networking.v1.traffic_policy#networking.mesh.gloo.solo.io.TrafficPolicySpec.Policy.MTLS.Istio.TLSmode" >}}) |  | TLS connection mode |
+| tlsMode | [networking.mesh.gloo.solo.io.TrafficPolicySpec.Policy.MTLS.Istio.TLSmode]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.networking.v1.traffic_policy#networking.mesh.gloo.solo.io.TrafficPolicySpec.Policy.MTLS.Istio.TLSmode" >}}) |  | TLS connection mode Note: If this is set to STRICT, and settings.spec.peerAuth.peerAuthTlsMode is UNSET (or vise verse), translation will fail, since we cannot both mandate and disable TLS at different junctures. |
   
 
 

@@ -189,6 +189,8 @@ type PeerAuthenticationSettings struct {
 	// The default mutualTls mode for automatically generated Peer Authentications to use.
 	// The enum values correspond to the values listed [by istio](https://istio.io/latest/docs/reference/config/security/peer_authentication/#PeerAuthentication-MutualTLS-Mode)
 	// Defaults to UNSET, which behaves like PERMISSIVE.
+	// Note: If this is set to STRICT, and settings.mtls.istio.tlsMode is UNSET (or vise verse), translation will fail, since
+	// we cannot both mandate and disable TLS at different junctures.
 	PeerAuthTlsMode PeerAuthenticationSettings_MutualTLS `protobuf:"varint,2,opt,name=peer_auth_tls_mode,json=peerAuthTlsMode,proto3,enum=settings.mesh.gloo.solo.io.PeerAuthenticationSettings_MutualTLS" json:"peer_auth_tls_mode,omitempty"`
 }
 

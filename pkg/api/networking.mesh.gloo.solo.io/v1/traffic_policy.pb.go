@@ -1306,6 +1306,8 @@ type TrafficPolicySpec_Policy_MTLS_Istio struct {
 	unknownFields protoimpl.UnknownFields
 
 	// TLS connection mode
+	// Note: If this is set to STRICT, and settings.spec.peerAuth.peerAuthTlsMode is UNSET (or vise verse), translation will fail, since
+	// we cannot both mandate and disable TLS at different junctures.
 	TlsMode TrafficPolicySpec_Policy_MTLS_Istio_TLSmode `protobuf:"varint,1,opt,name=tls_mode,json=tlsMode,proto3,enum=networking.mesh.gloo.solo.io.TrafficPolicySpec_Policy_MTLS_Istio_TLSmode" json:"tls_mode,omitempty"`
 }
 

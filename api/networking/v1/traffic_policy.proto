@@ -212,6 +212,8 @@ message TrafficPolicySpec {
             message Istio {
 
                 // TLS connection mode
+                // Note: If this is set to STRICT, and settings.spec.peerAuth.peerAuthTlsMode is UNSET (or vise verse), translation will fail, since
+                // we cannot both mandate and disable TLS at different junctures.
                 TLSmode tls_mode = 1;
 
                 // TLS connection mode. Enums correspond to those
