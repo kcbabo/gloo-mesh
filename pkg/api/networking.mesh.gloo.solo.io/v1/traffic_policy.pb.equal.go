@@ -391,6 +391,16 @@ func (m *TrafficPolicySpec_Policy) Equal(that interface{}) bool {
 		}
 	}
 
+	if h, ok := interface{}(m.GetTransformations()).(equality.Equalizer); ok {
+		if !h.Equal(target.GetTransformations()) {
+			return false
+		}
+	} else {
+		if !proto.Equal(m.GetTransformations(), target.GetTransformations()) {
+			return false
+		}
+	}
+
 	return true
 }
 
@@ -860,34 +870,6 @@ func (m *TrafficPolicySpec_Policy_MTLS) Equal(that interface{}) bool {
 		if !proto.Equal(m.GetIstio(), target.GetIstio()) {
 			return false
 		}
-	}
-
-	return true
-}
-
-// Equal function
-func (m *TrafficPolicySpec_Policy_Transform) Equal(that interface{}) bool {
-	if that == nil {
-		return m == nil
-	}
-
-	target, ok := that.(*TrafficPolicySpec_Policy_Transform)
-	if !ok {
-		that2, ok := that.(TrafficPolicySpec_Policy_Transform)
-		if ok {
-			target = &that2
-		} else {
-			return false
-		}
-	}
-	if target == nil {
-		return m == nil
-	} else if m == nil {
-		return false
-	}
-
-	if strings.Compare(m.GetTodo(), target.GetTodo()) != 0 {
-		return false
 	}
 
 	return true

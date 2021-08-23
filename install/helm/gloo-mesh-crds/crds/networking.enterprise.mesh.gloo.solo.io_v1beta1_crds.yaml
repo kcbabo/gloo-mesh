@@ -2052,6 +2052,17 @@ spec:
                                   respond. Defaults to 100ms
                                 type: string
                             type: object
+                          transformations:
+                            description: Enable the use of Transformations of header
+                              / body content on request or response data on routes
+                              served by this gateway.
+                            properties:
+                              enabled:
+                                description: Explicitly enable Transformations on
+                                  a gateway. Only required if strict filter management
+                                  is set on the gateway.
+                                type: boolean
+                            type: object
                         type: object
                     type: object
                   tcp:
@@ -3538,6 +3549,269 @@ spec:
                             type: object
                           type: array
                       type: object
+                    transformations:
+                      description: Configure transformations of HTTP header / body
+                        content on request or response data.
+                      properties:
+                        request:
+                          description: |-
+                            Transformations to apply on the outbound HTTP request before it arrives at the routing Destination.
+                            Only the first matched transformation will be applied to the request.
+                          items:
+                            properties:
+                              applyBeforeAuth:
+                                description: |-
+                                  Apply this transformation before Auth and Rate Limit checks are performed on the request.
+                                  This can be used to modify the request headers before they are captured by the ExtAuth & Rate Limiter services.
+                                type: boolean
+                              matchers:
+                                description: |-
+                                  Specify criteria that HTTP requests must satisfy for the RequestTransformation to apply
+                                  Omit to apply to any HTTP request.
+                                items:
+                                  properties:
+                                    headers:
+                                      description: Specify a set of headers which
+                                        requests must match in entirety (all headers
+                                        must match).
+                                      items:
+                                        properties:
+                                          invertMatch:
+                                            description: |-
+                                              If set to true, the result of the match will be inverted. Defaults to false.
+
+                                                 Examples:
+
+                                                     - name=foo, invert_match=true: matches if no header named `foo` is present
+                                                     - name=foo, value=bar, invert_match=true: matches if no header named `foo` with value `bar` is present
+                                                     - name=foo, value=``\d{3}``, regex=true, invert_match=true: matches if no header named `foo` with a value consisting of three integers is present.
+                                            type: boolean
+                                          name:
+                                            description: Specify the name of the header
+                                              in the request.
+                                            type: string
+                                          regex:
+                                            description: Specify whether the header
+                                              value should be treated as regex.
+                                            type: boolean
+                                          value:
+                                            description: |-
+                                              Specify the value of the header. If the value is absent a request that
+                                              has the name header will match, regardless of the header’s value.
+                                            type: string
+                                        type: object
+                                      type: array
+                                    method:
+                                      description: Specify an HTTP method to match
+                                        against.
+                                      type: string
+                                    name:
+                                      description: |-
+                                        The name assigned to a match. The match's name will be
+                                        concatenated with the parent route's name and will be logged in
+                                        the access logs for requests matching this route.
+                                      type: string
+                                    queryParameters:
+                                      description: Specify a set of URL query parameters
+                                        which requests must match in entirety (all
+                                        query params must match).
+                                      items:
+                                        properties:
+                                          name:
+                                            description: Specify the name of a key
+                                              that must be present in the requested
+                                              path's query string.
+                                            type: string
+                                          regex:
+                                            description: If true, treat `value` as
+                                              a regular expression.
+                                            type: boolean
+                                          value:
+                                            description: Specify the value of the
+                                              query parameter keyed on `name`.
+                                            type: string
+                                        type: object
+                                      type: array
+                                    uri:
+                                      description: Specify match criteria against
+                                        the targeted path.
+                                      oneOf:
+                                      - not:
+                                          anyOf:
+                                          - required:
+                                            - exact
+                                          - required:
+                                            - prefix
+                                          - required:
+                                            - regex
+                                          - required:
+                                            - suffix
+                                      - required:
+                                        - exact
+                                      - required:
+                                        - prefix
+                                      - required:
+                                        - regex
+                                      - required:
+                                        - suffix
+                                      properties:
+                                        exact:
+                                          description: Exact string match.
+                                          type: string
+                                        ignoreCase:
+                                          description: If true, indicates the exact/prefix/suffix
+                                            matching should be case insensitive. This
+                                            has no effect for the regex match.
+                                          type: boolean
+                                        prefix:
+                                          description: Prefix-based match.
+                                          type: string
+                                        regex:
+                                          description: ECMAscript style regex-based
+                                            match.
+                                          type: string
+                                        suffix:
+                                          description: Suffix-based match.
+                                          type: string
+                                      type: object
+                                  type: object
+                                type: array
+                              recalculateRoutingDestination:
+                                description: |-
+                                  If the request was transformed such that it would match a different route within the same Gateway,
+                                  recalculate the routing destination (select a new route) based on the transformed content of the request.
+                                type: boolean
+                              transformation:
+                                description: the transformation to apply to the matched
+                                  request
+                                oneOf:
+                                - not:
+                                    anyOf:
+                                    - required:
+                                      - xsltTransformation
+                                - required:
+                                  - xsltTransformation
+                                properties:
+                                  xsltTransformation:
+                                    description: transform HTTP body using XSLT styling
+                                      language.
+                                    properties:
+                                      nonXmlTransform:
+                                        description: |-
+                                          This should be set to true if the content being transformed is not XML.
+                                          For example, if the content being transformed is from JSON to XML, this should be set to true.
+                                          XSLT transformations can only take valid XML as input to be transformed. If the body is not a valid XML
+                                          (e.g. using JSON as input in a JSON-to-XML transformation), setting `non_xml_transform` to true will allow the
+                                          XSLT to accept the non-XML input without throwing an error by passing the input as XML CDATA.
+                                          defaults to false.
+                                        type: boolean
+                                      setContentType:
+                                        description: |-
+                                          Changes the content-type header of the HTTP request/response to what is set here.
+                                          This is useful in situations where an XSLT transformation is used to transform XML to JSON and the content-type
+                                          should be changed from `application/xml` to `application/json`.
+                                          If left empty, the content-type header remains unmodified by default.
+                                        type: string
+                                      xslt:
+                                        description: |-
+                                          XSLT transformation template which you want to transform requests/responses with.
+                                          Invalid XSLT transformation templates will result will result in an invalid route.
+                                        type: string
+                                    type: object
+                                type: object
+                            type: object
+                          type: array
+                        response:
+                          description: |-
+                            Transformations to apply on the inbound HTTP request before it returns to the HTTP client (traffic source).
+                            Only the first matched transformation will be applied to the response.
+                          items:
+                            properties:
+                              matchers:
+                                description: |-
+                                  Match elements of the Response in order to apply a response transformation.
+                                  If no response matchers are specified, the transformation will always be applied.
+                                items:
+                                  properties:
+                                    headers:
+                                      description: Specify a set of response headers
+                                        which must match in entirety (all headers
+                                        must match).
+                                      items:
+                                        properties:
+                                          invertMatch:
+                                            description: |-
+                                              If set to true, the result of the match will be inverted. Defaults to false.
+
+                                                 Examples:
+
+                                                     - name=foo, invert_match=true: matches if no header named `foo` is present
+                                                     - name=foo, value=bar, invert_match=true: matches if no header named `foo` with value `bar` is present
+                                                     - name=foo, value=``\d{3}``, regex=true, invert_match=true: matches if no header named `foo` with a value consisting of three integers is present.
+                                            type: boolean
+                                          name:
+                                            description: Specify the name of the header
+                                              in the request.
+                                            type: string
+                                          regex:
+                                            description: Specify whether the header
+                                              value should be treated as regex.
+                                            type: boolean
+                                          value:
+                                            description: |-
+                                              Specify the value of the header. If the value is absent a request that
+                                              has the name header will match, regardless of the header’s value.
+                                            type: string
+                                        type: object
+                                      type: array
+                                    responseCodeDetails:
+                                      description: |-
+                                        Response code detail to match on. To see the response code details for your usecase,
+                                        you can use the envoy access log %RESPONSE_CODE_DETAILS% formatter to log it.
+                                      type: string
+                                  type: object
+                                type: array
+                              transformation:
+                                description: the transformation to apply to  the matched
+                                  response
+                                oneOf:
+                                - not:
+                                    anyOf:
+                                    - required:
+                                      - xsltTransformation
+                                - required:
+                                  - xsltTransformation
+                                properties:
+                                  xsltTransformation:
+                                    description: transform HTTP body using XSLT styling
+                                      language.
+                                    properties:
+                                      nonXmlTransform:
+                                        description: |-
+                                          This should be set to true if the content being transformed is not XML.
+                                          For example, if the content being transformed is from JSON to XML, this should be set to true.
+                                          XSLT transformations can only take valid XML as input to be transformed. If the body is not a valid XML
+                                          (e.g. using JSON as input in a JSON-to-XML transformation), setting `non_xml_transform` to true will allow the
+                                          XSLT to accept the non-XML input without throwing an error by passing the input as XML CDATA.
+                                          defaults to false.
+                                        type: boolean
+                                      setContentType:
+                                        description: |-
+                                          Changes the content-type header of the HTTP request/response to what is set here.
+                                          This is useful in situations where an XSLT transformation is used to transform XML to JSON and the content-type
+                                          should be changed from `application/xml` to `application/json`.
+                                          If left empty, the content-type header remains unmodified by default.
+                                        type: string
+                                      xslt:
+                                        description: |-
+                                          XSLT transformation template which you want to transform requests/responses with.
+                                          Invalid XSLT transformation templates will result will result in an invalid route.
+                                        type: string
+                                    type: object
+                                type: object
+                            type: object
+                          type: array
+                      type: object
                   type: object
               type: object
             routes:
@@ -4923,6 +5197,269 @@ spec:
                                   maximum: 4294967295
                                   minimum: 0
                                   type: integer
+                              type: object
+                            type: array
+                        type: object
+                      transformations:
+                        description: Configure transformations of HTTP header / body
+                          content on request or response data.
+                        properties:
+                          request:
+                            description: |-
+                              Transformations to apply on the outbound HTTP request before it arrives at the routing Destination.
+                              Only the first matched transformation will be applied to the request.
+                            items:
+                              properties:
+                                applyBeforeAuth:
+                                  description: |-
+                                    Apply this transformation before Auth and Rate Limit checks are performed on the request.
+                                    This can be used to modify the request headers before they are captured by the ExtAuth & Rate Limiter services.
+                                  type: boolean
+                                matchers:
+                                  description: |-
+                                    Specify criteria that HTTP requests must satisfy for the RequestTransformation to apply
+                                    Omit to apply to any HTTP request.
+                                  items:
+                                    properties:
+                                      headers:
+                                        description: Specify a set of headers which
+                                          requests must match in entirety (all headers
+                                          must match).
+                                        items:
+                                          properties:
+                                            invertMatch:
+                                              description: |-
+                                                If set to true, the result of the match will be inverted. Defaults to false.
+
+                                                   Examples:
+
+                                                       - name=foo, invert_match=true: matches if no header named `foo` is present
+                                                       - name=foo, value=bar, invert_match=true: matches if no header named `foo` with value `bar` is present
+                                                       - name=foo, value=``\d{3}``, regex=true, invert_match=true: matches if no header named `foo` with a value consisting of three integers is present.
+                                              type: boolean
+                                            name:
+                                              description: Specify the name of the
+                                                header in the request.
+                                              type: string
+                                            regex:
+                                              description: Specify whether the header
+                                                value should be treated as regex.
+                                              type: boolean
+                                            value:
+                                              description: |-
+                                                Specify the value of the header. If the value is absent a request that
+                                                has the name header will match, regardless of the header’s value.
+                                              type: string
+                                          type: object
+                                        type: array
+                                      method:
+                                        description: Specify an HTTP method to match
+                                          against.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          The name assigned to a match. The match's name will be
+                                          concatenated with the parent route's name and will be logged in
+                                          the access logs for requests matching this route.
+                                        type: string
+                                      queryParameters:
+                                        description: Specify a set of URL query parameters
+                                          which requests must match in entirety (all
+                                          query params must match).
+                                        items:
+                                          properties:
+                                            name:
+                                              description: Specify the name of a key
+                                                that must be present in the requested
+                                                path's query string.
+                                              type: string
+                                            regex:
+                                              description: If true, treat `value`
+                                                as a regular expression.
+                                              type: boolean
+                                            value:
+                                              description: Specify the value of the
+                                                query parameter keyed on `name`.
+                                              type: string
+                                          type: object
+                                        type: array
+                                      uri:
+                                        description: Specify match criteria against
+                                          the targeted path.
+                                        oneOf:
+                                        - not:
+                                            anyOf:
+                                            - required:
+                                              - exact
+                                            - required:
+                                              - prefix
+                                            - required:
+                                              - regex
+                                            - required:
+                                              - suffix
+                                        - required:
+                                          - exact
+                                        - required:
+                                          - prefix
+                                        - required:
+                                          - regex
+                                        - required:
+                                          - suffix
+                                        properties:
+                                          exact:
+                                            description: Exact string match.
+                                            type: string
+                                          ignoreCase:
+                                            description: If true, indicates the exact/prefix/suffix
+                                              matching should be case insensitive.
+                                              This has no effect for the regex match.
+                                            type: boolean
+                                          prefix:
+                                            description: Prefix-based match.
+                                            type: string
+                                          regex:
+                                            description: ECMAscript style regex-based
+                                              match.
+                                            type: string
+                                          suffix:
+                                            description: Suffix-based match.
+                                            type: string
+                                        type: object
+                                    type: object
+                                  type: array
+                                recalculateRoutingDestination:
+                                  description: |-
+                                    If the request was transformed such that it would match a different route within the same Gateway,
+                                    recalculate the routing destination (select a new route) based on the transformed content of the request.
+                                  type: boolean
+                                transformation:
+                                  description: the transformation to apply to the
+                                    matched request
+                                  oneOf:
+                                  - not:
+                                      anyOf:
+                                      - required:
+                                        - xsltTransformation
+                                  - required:
+                                    - xsltTransformation
+                                  properties:
+                                    xsltTransformation:
+                                      description: transform HTTP body using XSLT
+                                        styling language.
+                                      properties:
+                                        nonXmlTransform:
+                                          description: |-
+                                            This should be set to true if the content being transformed is not XML.
+                                            For example, if the content being transformed is from JSON to XML, this should be set to true.
+                                            XSLT transformations can only take valid XML as input to be transformed. If the body is not a valid XML
+                                            (e.g. using JSON as input in a JSON-to-XML transformation), setting `non_xml_transform` to true will allow the
+                                            XSLT to accept the non-XML input without throwing an error by passing the input as XML CDATA.
+                                            defaults to false.
+                                          type: boolean
+                                        setContentType:
+                                          description: |-
+                                            Changes the content-type header of the HTTP request/response to what is set here.
+                                            This is useful in situations where an XSLT transformation is used to transform XML to JSON and the content-type
+                                            should be changed from `application/xml` to `application/json`.
+                                            If left empty, the content-type header remains unmodified by default.
+                                          type: string
+                                        xslt:
+                                          description: |-
+                                            XSLT transformation template which you want to transform requests/responses with.
+                                            Invalid XSLT transformation templates will result will result in an invalid route.
+                                          type: string
+                                      type: object
+                                  type: object
+                              type: object
+                            type: array
+                          response:
+                            description: |-
+                              Transformations to apply on the inbound HTTP request before it returns to the HTTP client (traffic source).
+                              Only the first matched transformation will be applied to the response.
+                            items:
+                              properties:
+                                matchers:
+                                  description: |-
+                                    Match elements of the Response in order to apply a response transformation.
+                                    If no response matchers are specified, the transformation will always be applied.
+                                  items:
+                                    properties:
+                                      headers:
+                                        description: Specify a set of response headers
+                                          which must match in entirety (all headers
+                                          must match).
+                                        items:
+                                          properties:
+                                            invertMatch:
+                                              description: |-
+                                                If set to true, the result of the match will be inverted. Defaults to false.
+
+                                                   Examples:
+
+                                                       - name=foo, invert_match=true: matches if no header named `foo` is present
+                                                       - name=foo, value=bar, invert_match=true: matches if no header named `foo` with value `bar` is present
+                                                       - name=foo, value=``\d{3}``, regex=true, invert_match=true: matches if no header named `foo` with a value consisting of three integers is present.
+                                              type: boolean
+                                            name:
+                                              description: Specify the name of the
+                                                header in the request.
+                                              type: string
+                                            regex:
+                                              description: Specify whether the header
+                                                value should be treated as regex.
+                                              type: boolean
+                                            value:
+                                              description: |-
+                                                Specify the value of the header. If the value is absent a request that
+                                                has the name header will match, regardless of the header’s value.
+                                              type: string
+                                          type: object
+                                        type: array
+                                      responseCodeDetails:
+                                        description: |-
+                                          Response code detail to match on. To see the response code details for your usecase,
+                                          you can use the envoy access log %RESPONSE_CODE_DETAILS% formatter to log it.
+                                        type: string
+                                    type: object
+                                  type: array
+                                transformation:
+                                  description: the transformation to apply to  the
+                                    matched response
+                                  oneOf:
+                                  - not:
+                                      anyOf:
+                                      - required:
+                                        - xsltTransformation
+                                  - required:
+                                    - xsltTransformation
+                                  properties:
+                                    xsltTransformation:
+                                      description: transform HTTP body using XSLT
+                                        styling language.
+                                      properties:
+                                        nonXmlTransform:
+                                          description: |-
+                                            This should be set to true if the content being transformed is not XML.
+                                            For example, if the content being transformed is from JSON to XML, this should be set to true.
+                                            XSLT transformations can only take valid XML as input to be transformed. If the body is not a valid XML
+                                            (e.g. using JSON as input in a JSON-to-XML transformation), setting `non_xml_transform` to true will allow the
+                                            XSLT to accept the non-XML input without throwing an error by passing the input as XML CDATA.
+                                            defaults to false.
+                                          type: boolean
+                                        setContentType:
+                                          description: |-
+                                            Changes the content-type header of the HTTP request/response to what is set here.
+                                            This is useful in situations where an XSLT transformation is used to transform XML to JSON and the content-type
+                                            should be changed from `application/xml` to `application/json`.
+                                            If left empty, the content-type header remains unmodified by default.
+                                          type: string
+                                        xslt:
+                                          description: |-
+                                            XSLT transformation template which you want to transform requests/responses with.
+                                            Invalid XSLT transformation templates will result will result in an invalid route.
+                                          type: string
+                                      type: object
+                                  type: object
                               type: object
                             type: array
                         type: object
@@ -6611,6 +7148,269 @@ spec:
                                   maximum: 4294967295
                                   minimum: 0
                                   type: integer
+                              type: object
+                            type: array
+                        type: object
+                      transformations:
+                        description: Configure transformations of HTTP header / body
+                          content on request or response data.
+                        properties:
+                          request:
+                            description: |-
+                              Transformations to apply on the outbound HTTP request before it arrives at the routing Destination.
+                              Only the first matched transformation will be applied to the request.
+                            items:
+                              properties:
+                                applyBeforeAuth:
+                                  description: |-
+                                    Apply this transformation before Auth and Rate Limit checks are performed on the request.
+                                    This can be used to modify the request headers before they are captured by the ExtAuth & Rate Limiter services.
+                                  type: boolean
+                                matchers:
+                                  description: |-
+                                    Specify criteria that HTTP requests must satisfy for the RequestTransformation to apply
+                                    Omit to apply to any HTTP request.
+                                  items:
+                                    properties:
+                                      headers:
+                                        description: Specify a set of headers which
+                                          requests must match in entirety (all headers
+                                          must match).
+                                        items:
+                                          properties:
+                                            invertMatch:
+                                              description: |-
+                                                If set to true, the result of the match will be inverted. Defaults to false.
+
+                                                   Examples:
+
+                                                       - name=foo, invert_match=true: matches if no header named `foo` is present
+                                                       - name=foo, value=bar, invert_match=true: matches if no header named `foo` with value `bar` is present
+                                                       - name=foo, value=``\d{3}``, regex=true, invert_match=true: matches if no header named `foo` with a value consisting of three integers is present.
+                                              type: boolean
+                                            name:
+                                              description: Specify the name of the
+                                                header in the request.
+                                              type: string
+                                            regex:
+                                              description: Specify whether the header
+                                                value should be treated as regex.
+                                              type: boolean
+                                            value:
+                                              description: |-
+                                                Specify the value of the header. If the value is absent a request that
+                                                has the name header will match, regardless of the header’s value.
+                                              type: string
+                                          type: object
+                                        type: array
+                                      method:
+                                        description: Specify an HTTP method to match
+                                          against.
+                                        type: string
+                                      name:
+                                        description: |-
+                                          The name assigned to a match. The match's name will be
+                                          concatenated with the parent route's name and will be logged in
+                                          the access logs for requests matching this route.
+                                        type: string
+                                      queryParameters:
+                                        description: Specify a set of URL query parameters
+                                          which requests must match in entirety (all
+                                          query params must match).
+                                        items:
+                                          properties:
+                                            name:
+                                              description: Specify the name of a key
+                                                that must be present in the requested
+                                                path's query string.
+                                              type: string
+                                            regex:
+                                              description: If true, treat `value`
+                                                as a regular expression.
+                                              type: boolean
+                                            value:
+                                              description: Specify the value of the
+                                                query parameter keyed on `name`.
+                                              type: string
+                                          type: object
+                                        type: array
+                                      uri:
+                                        description: Specify match criteria against
+                                          the targeted path.
+                                        oneOf:
+                                        - not:
+                                            anyOf:
+                                            - required:
+                                              - exact
+                                            - required:
+                                              - prefix
+                                            - required:
+                                              - regex
+                                            - required:
+                                              - suffix
+                                        - required:
+                                          - exact
+                                        - required:
+                                          - prefix
+                                        - required:
+                                          - regex
+                                        - required:
+                                          - suffix
+                                        properties:
+                                          exact:
+                                            description: Exact string match.
+                                            type: string
+                                          ignoreCase:
+                                            description: If true, indicates the exact/prefix/suffix
+                                              matching should be case insensitive.
+                                              This has no effect for the regex match.
+                                            type: boolean
+                                          prefix:
+                                            description: Prefix-based match.
+                                            type: string
+                                          regex:
+                                            description: ECMAscript style regex-based
+                                              match.
+                                            type: string
+                                          suffix:
+                                            description: Suffix-based match.
+                                            type: string
+                                        type: object
+                                    type: object
+                                  type: array
+                                recalculateRoutingDestination:
+                                  description: |-
+                                    If the request was transformed such that it would match a different route within the same Gateway,
+                                    recalculate the routing destination (select a new route) based on the transformed content of the request.
+                                  type: boolean
+                                transformation:
+                                  description: the transformation to apply to the
+                                    matched request
+                                  oneOf:
+                                  - not:
+                                      anyOf:
+                                      - required:
+                                        - xsltTransformation
+                                  - required:
+                                    - xsltTransformation
+                                  properties:
+                                    xsltTransformation:
+                                      description: transform HTTP body using XSLT
+                                        styling language.
+                                      properties:
+                                        nonXmlTransform:
+                                          description: |-
+                                            This should be set to true if the content being transformed is not XML.
+                                            For example, if the content being transformed is from JSON to XML, this should be set to true.
+                                            XSLT transformations can only take valid XML as input to be transformed. If the body is not a valid XML
+                                            (e.g. using JSON as input in a JSON-to-XML transformation), setting `non_xml_transform` to true will allow the
+                                            XSLT to accept the non-XML input without throwing an error by passing the input as XML CDATA.
+                                            defaults to false.
+                                          type: boolean
+                                        setContentType:
+                                          description: |-
+                                            Changes the content-type header of the HTTP request/response to what is set here.
+                                            This is useful in situations where an XSLT transformation is used to transform XML to JSON and the content-type
+                                            should be changed from `application/xml` to `application/json`.
+                                            If left empty, the content-type header remains unmodified by default.
+                                          type: string
+                                        xslt:
+                                          description: |-
+                                            XSLT transformation template which you want to transform requests/responses with.
+                                            Invalid XSLT transformation templates will result will result in an invalid route.
+                                          type: string
+                                      type: object
+                                  type: object
+                              type: object
+                            type: array
+                          response:
+                            description: |-
+                              Transformations to apply on the inbound HTTP request before it returns to the HTTP client (traffic source).
+                              Only the first matched transformation will be applied to the response.
+                            items:
+                              properties:
+                                matchers:
+                                  description: |-
+                                    Match elements of the Response in order to apply a response transformation.
+                                    If no response matchers are specified, the transformation will always be applied.
+                                  items:
+                                    properties:
+                                      headers:
+                                        description: Specify a set of response headers
+                                          which must match in entirety (all headers
+                                          must match).
+                                        items:
+                                          properties:
+                                            invertMatch:
+                                              description: |-
+                                                If set to true, the result of the match will be inverted. Defaults to false.
+
+                                                   Examples:
+
+                                                       - name=foo, invert_match=true: matches if no header named `foo` is present
+                                                       - name=foo, value=bar, invert_match=true: matches if no header named `foo` with value `bar` is present
+                                                       - name=foo, value=``\d{3}``, regex=true, invert_match=true: matches if no header named `foo` with a value consisting of three integers is present.
+                                              type: boolean
+                                            name:
+                                              description: Specify the name of the
+                                                header in the request.
+                                              type: string
+                                            regex:
+                                              description: Specify whether the header
+                                                value should be treated as regex.
+                                              type: boolean
+                                            value:
+                                              description: |-
+                                                Specify the value of the header. If the value is absent a request that
+                                                has the name header will match, regardless of the header’s value.
+                                              type: string
+                                          type: object
+                                        type: array
+                                      responseCodeDetails:
+                                        description: |-
+                                          Response code detail to match on. To see the response code details for your usecase,
+                                          you can use the envoy access log %RESPONSE_CODE_DETAILS% formatter to log it.
+                                        type: string
+                                    type: object
+                                  type: array
+                                transformation:
+                                  description: the transformation to apply to  the
+                                    matched response
+                                  oneOf:
+                                  - not:
+                                      anyOf:
+                                      - required:
+                                        - xsltTransformation
+                                  - required:
+                                    - xsltTransformation
+                                  properties:
+                                    xsltTransformation:
+                                      description: transform HTTP body using XSLT
+                                        styling language.
+                                      properties:
+                                        nonXmlTransform:
+                                          description: |-
+                                            This should be set to true if the content being transformed is not XML.
+                                            For example, if the content being transformed is from JSON to XML, this should be set to true.
+                                            XSLT transformations can only take valid XML as input to be transformed. If the body is not a valid XML
+                                            (e.g. using JSON as input in a JSON-to-XML transformation), setting `non_xml_transform` to true will allow the
+                                            XSLT to accept the non-XML input without throwing an error by passing the input as XML CDATA.
+                                            defaults to false.
+                                          type: boolean
+                                        setContentType:
+                                          description: |-
+                                            Changes the content-type header of the HTTP request/response to what is set here.
+                                            This is useful in situations where an XSLT transformation is used to transform XML to JSON and the content-type
+                                            should be changed from `application/xml` to `application/json`.
+                                            If left empty, the content-type header remains unmodified by default.
+                                          type: string
+                                        xslt:
+                                          description: |-
+                                            XSLT transformation template which you want to transform requests/responses with.
+                                            Invalid XSLT transformation templates will result will result in an invalid route.
+                                          type: string
+                                      type: object
+                                  type: object
                               type: object
                             type: array
                         type: object

@@ -2,12 +2,11 @@ package trafficpolicyutils
 
 import (
 	commonv1 "github.com/solo-io/gloo-mesh/pkg/api/common.mesh.gloo.solo.io/v1"
-	v1 "github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/v1"
 )
 
 // conversion function to  make it easy to work with the deprecated request matchers
-func ConvertDeprecatedRequestMatchers(deprecated []*v1.DeprecatedHttpMatcher) []*v1.HttpMatcher {
-	var converted []*v1.HttpMatcher
+func ConvertDeprecatedRequestMatchers(deprecated []*commonv1.DeprecatedHttpMatcher) []*commonv1.HttpMatcher {
+	var converted []*commonv1.HttpMatcher
 	for _, match := range deprecated {
 		if match == nil {
 			continue
@@ -17,8 +16,8 @@ func ConvertDeprecatedRequestMatchers(deprecated []*v1.DeprecatedHttpMatcher) []
 	return converted
 }
 
-func convertDeprecatedRequestMatcher(deprecated *v1.DeprecatedHttpMatcher) *v1.HttpMatcher {
-	return &v1.HttpMatcher{
+func convertDeprecatedRequestMatcher(deprecated *commonv1.DeprecatedHttpMatcher) *commonv1.HttpMatcher {
+	return &commonv1.HttpMatcher{
 		Name:            deprecated.Name,
 		Uri:             convertUri(deprecated),
 		Headers:         deprecated.Headers,
@@ -27,7 +26,7 @@ func convertDeprecatedRequestMatcher(deprecated *v1.DeprecatedHttpMatcher) *v1.H
 	}
 }
 
-func convertUri(deprecated *v1.DeprecatedHttpMatcher) *commonv1.StringMatch {
+func convertUri(deprecated *commonv1.DeprecatedHttpMatcher) *commonv1.StringMatch {
 	if deprecated.Uri != nil {
 		// use new uri if provided
 		return deprecated.Uri
@@ -38,15 +37,15 @@ func convertUri(deprecated *v1.DeprecatedHttpMatcher) *commonv1.StringMatch {
 	}
 	m := &commonv1.StringMatch{}
 	switch path := deprecated.PathSpecifier.(type) {
-	case *v1.DeprecatedHttpMatcher_Prefix:
+	case *commonv1.DeprecatedHttpMatcher_Prefix:
 		m.MatchType = &commonv1.StringMatch_Prefix{
 			Prefix: path.Prefix,
 		}
-	case *v1.DeprecatedHttpMatcher_Exact:
+	case *commonv1.DeprecatedHttpMatcher_Exact:
 		m.MatchType = &commonv1.StringMatch_Exact{
 			Exact: path.Exact,
 		}
-	case *v1.DeprecatedHttpMatcher_Regex:
+	case *commonv1.DeprecatedHttpMatcher_Regex:
 		m.MatchType = &commonv1.StringMatch_Regex{
 			Regex: path.Regex,
 		}
@@ -54,13 +53,13 @@ func convertUri(deprecated *v1.DeprecatedHttpMatcher) *commonv1.StringMatch {
 	return m
 }
 
-func convertQueryParams(deprecated []*v1.DeprecatedHttpMatcher_QueryParameterMatcher) []*v1.HttpMatcher_QueryParameterMatcher {
-	var converted []*v1.HttpMatcher_QueryParameterMatcher
+func convertQueryParams(deprecated []*commonv1.DeprecatedHttpMatcher_QueryParameterMatcher) []*commonv1.HttpMatcher_QueryParameterMatcher {
+	var converted []*commonv1.HttpMatcher_QueryParameterMatcher
 	for _, match := range deprecated {
 		if match == nil {
 			continue
 		}
-		converted = append(converted, &v1.HttpMatcher_QueryParameterMatcher{
+		converted = append(converted, &commonv1.HttpMatcher_QueryParameterMatcher{
 			Name:  match.Name,
 			Value: match.Value,
 			Regex: match.Regex,

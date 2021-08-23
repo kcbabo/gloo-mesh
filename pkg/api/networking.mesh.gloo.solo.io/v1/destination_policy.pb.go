@@ -617,7 +617,6 @@ func file_github_com_solo_io_gloo_mesh_api_networking_v1_destination_policy_prot
 	if File_github_com_solo_io_gloo_mesh_api_networking_v1_destination_policy_proto != nil {
 		return
 	}
-	file_github_com_solo_io_gloo_mesh_api_networking_v1_request_matchers_proto_init()
 	file_github_com_solo_io_gloo_mesh_api_networking_v1_status_proto_init()
 	file_github_com_solo_io_gloo_mesh_api_networking_v1_weighed_destination_proto_init()
 	if !protoimpl.UnsafeEnabled {

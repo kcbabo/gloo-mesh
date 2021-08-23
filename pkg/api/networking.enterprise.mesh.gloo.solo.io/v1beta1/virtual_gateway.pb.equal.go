@@ -742,6 +742,16 @@ func (m *VirtualGatewaySpec_ConnectionHandler_HttpRoutes_HttpOptions) Equal(that
 		}
 	}
 
+	if h, ok := interface{}(m.GetTransformations()).(equality.Equalizer); ok {
+		if !h.Equal(target.GetTransformations()) {
+			return false
+		}
+	} else {
+		if !proto.Equal(m.GetTransformations(), target.GetTransformations()) {
+			return false
+		}
+	}
+
 	return true
 }
 

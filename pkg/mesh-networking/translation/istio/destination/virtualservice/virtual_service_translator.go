@@ -221,7 +221,7 @@ func requestMatchersEqual(tp1, tp2 *v1.TrafficPolicySpec) bool {
 		)
 }
 
-func httpRequestMatchersEqual(matchers1, matchers2 []*v1.HttpMatcher) bool {
+func httpRequestMatchersEqual(matchers1, matchers2 []*commonv1.HttpMatcher) bool {
 	if len(matchers1) != len(matchers2) {
 		return false
 	}

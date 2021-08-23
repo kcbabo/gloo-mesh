@@ -5,7 +5,7 @@ title: "request_matchers.proto"
 
 ---
 
-## Package : `networking.mesh.gloo.solo.io`
+## Package : `common.mesh.gloo.solo.io`
 
 
 
@@ -18,21 +18,21 @@ title: "request_matchers.proto"
 
 
 ## Table of Contents
-  - [DeprecatedHttpMatcher](#networking.mesh.gloo.solo.io.DeprecatedHttpMatcher)
-  - [DeprecatedHttpMatcher.QueryParameterMatcher](#networking.mesh.gloo.solo.io.DeprecatedHttpMatcher.QueryParameterMatcher)
-  - [HeaderMatcher](#networking.mesh.gloo.solo.io.HeaderMatcher)
-  - [HttpMatcher](#networking.mesh.gloo.solo.io.HttpMatcher)
-  - [HttpMatcher.QueryParameterMatcher](#networking.mesh.gloo.solo.io.HttpMatcher.QueryParameterMatcher)
-  - [StatusCodeMatcher](#networking.mesh.gloo.solo.io.StatusCodeMatcher)
+  - [DeprecatedHttpMatcher](#common.mesh.gloo.solo.io.DeprecatedHttpMatcher)
+  - [DeprecatedHttpMatcher.QueryParameterMatcher](#common.mesh.gloo.solo.io.DeprecatedHttpMatcher.QueryParameterMatcher)
+  - [HeaderMatcher](#common.mesh.gloo.solo.io.HeaderMatcher)
+  - [HttpMatcher](#common.mesh.gloo.solo.io.HttpMatcher)
+  - [HttpMatcher.QueryParameterMatcher](#common.mesh.gloo.solo.io.HttpMatcher.QueryParameterMatcher)
+  - [StatusCodeMatcher](#common.mesh.gloo.solo.io.StatusCodeMatcher)
 
-  - [StatusCodeMatcher.Comparator](#networking.mesh.gloo.solo.io.StatusCodeMatcher.Comparator)
-
-
+  - [StatusCodeMatcher.Comparator](#common.mesh.gloo.solo.io.StatusCodeMatcher.Comparator)
 
 
 
 
-<a name="networking.mesh.gloo.solo.io.DeprecatedHttpMatcher"></a>
+
+
+<a name="common.mesh.gloo.solo.io.DeprecatedHttpMatcher"></a>
 
 ### DeprecatedHttpMatcher
 Specify HTTP request level match criteria. All specified conditions must be satisfied for a match to occur. DEPRECATED: use HttpMatcher
@@ -45,8 +45,8 @@ Specify HTTP request level match criteria. All specified conditions must be sati
   | exact | string |  | If specified, the targeted path must exactly match the value. DEPRECATED. Use uri.exact instead |
   | regex | string |  | If specified, the targeted path must match the regex. DEPRECATED. Use uri.regex instead |
   | uri | [common.mesh.gloo.solo.io.StringMatch]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.common.v1.string_match#common.mesh.gloo.solo.io.StringMatch" >}}) |  | Specify match criteria against the targeted path. |
-  | headers | [][networking.mesh.gloo.solo.io.HeaderMatcher]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.networking.v1.request_matchers#networking.mesh.gloo.solo.io.HeaderMatcher" >}}) | repeated | Specify a set of headers which requests must match in entirety (all headers must match). |
-  | queryParameters | [][networking.mesh.gloo.solo.io.DeprecatedHttpMatcher.QueryParameterMatcher]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.networking.v1.request_matchers#networking.mesh.gloo.solo.io.DeprecatedHttpMatcher.QueryParameterMatcher" >}}) | repeated | Specify a set of URL query parameters which requests must match in entirety (all query params must match). |
+  | headers | [][common.mesh.gloo.solo.io.HeaderMatcher]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.common.v1.request_matchers#common.mesh.gloo.solo.io.HeaderMatcher" >}}) | repeated | Specify a set of headers which requests must match in entirety (all headers must match). |
+  | queryParameters | [][common.mesh.gloo.solo.io.DeprecatedHttpMatcher.QueryParameterMatcher]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.common.v1.request_matchers#common.mesh.gloo.solo.io.DeprecatedHttpMatcher.QueryParameterMatcher" >}}) | repeated | Specify a set of URL query parameters which requests must match in entirety (all query params must match). |
   | method | string |  | Specify an HTTP method to match against. |
   
 
@@ -54,7 +54,7 @@ Specify HTTP request level match criteria. All specified conditions must be sati
 
 
 
-<a name="networking.mesh.gloo.solo.io.DeprecatedHttpMatcher.QueryParameterMatcher"></a>
+<a name="common.mesh.gloo.solo.io.DeprecatedHttpMatcher.QueryParameterMatcher"></a>
 
 ### DeprecatedHttpMatcher.QueryParameterMatcher
 Specify match criteria against the target URL's query parameters.
@@ -71,7 +71,7 @@ Specify match criteria against the target URL's query parameters.
 
 
 
-<a name="networking.mesh.gloo.solo.io.HeaderMatcher"></a>
+<a name="common.mesh.gloo.solo.io.HeaderMatcher"></a>
 
 ### HeaderMatcher
 Describes a matcher against HTTP request headers.
@@ -89,7 +89,7 @@ Describes a matcher against HTTP request headers.
 
 
 
-<a name="networking.mesh.gloo.solo.io.HttpMatcher"></a>
+<a name="common.mesh.gloo.solo.io.HttpMatcher"></a>
 
 ### HttpMatcher
 Specify HTTP request level match criteria. All specified conditions must be satisfied for a match to occur.
@@ -99,8 +99,8 @@ Specify HTTP request level match criteria. All specified conditions must be sati
 | ----- | ---- | ----- | ----------- |
 | name | string |  | The name assigned to a match. The match's name will be concatenated with the parent route's name and will be logged in the access logs for requests matching this route. |
   | uri | [common.mesh.gloo.solo.io.StringMatch]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.common.v1.string_match#common.mesh.gloo.solo.io.StringMatch" >}}) |  | Specify match criteria against the targeted path. |
-  | headers | [][networking.mesh.gloo.solo.io.HeaderMatcher]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.networking.v1.request_matchers#networking.mesh.gloo.solo.io.HeaderMatcher" >}}) | repeated | Specify a set of headers which requests must match in entirety (all headers must match). |
-  | queryParameters | [][networking.mesh.gloo.solo.io.HttpMatcher.QueryParameterMatcher]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.networking.v1.request_matchers#networking.mesh.gloo.solo.io.HttpMatcher.QueryParameterMatcher" >}}) | repeated | Specify a set of URL query parameters which requests must match in entirety (all query params must match). |
+  | headers | [][common.mesh.gloo.solo.io.HeaderMatcher]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.common.v1.request_matchers#common.mesh.gloo.solo.io.HeaderMatcher" >}}) | repeated | Specify a set of headers which requests must match in entirety (all headers must match). |
+  | queryParameters | [][common.mesh.gloo.solo.io.HttpMatcher.QueryParameterMatcher]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.common.v1.request_matchers#common.mesh.gloo.solo.io.HttpMatcher.QueryParameterMatcher" >}}) | repeated | Specify a set of URL query parameters which requests must match in entirety (all query params must match). |
   | method | string |  | Specify an HTTP method to match against. |
   
 
@@ -108,7 +108,7 @@ Specify HTTP request level match criteria. All specified conditions must be sati
 
 
 
-<a name="networking.mesh.gloo.solo.io.HttpMatcher.QueryParameterMatcher"></a>
+<a name="common.mesh.gloo.solo.io.HttpMatcher.QueryParameterMatcher"></a>
 
 ### HttpMatcher.QueryParameterMatcher
 Specify match criteria against the target URL's query parameters.
@@ -125,7 +125,7 @@ Specify match criteria against the target URL's query parameters.
 
 
 
-<a name="networking.mesh.gloo.solo.io.StatusCodeMatcher"></a>
+<a name="common.mesh.gloo.solo.io.StatusCodeMatcher"></a>
 
 ### StatusCodeMatcher
 Describes a matcher against HTTP response status codes.
@@ -134,7 +134,7 @@ Describes a matcher against HTTP response status codes.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | value | uint32 |  | The status code value to match against. |
-  | comparator | [networking.mesh.gloo.solo.io.StatusCodeMatcher.Comparator]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.networking.v1.request_matchers#networking.mesh.gloo.solo.io.StatusCodeMatcher.Comparator" >}}) |  | The comparison type used for matching. |
+  | comparator | [common.mesh.gloo.solo.io.StatusCodeMatcher.Comparator]({{< versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.common.v1.request_matchers#common.mesh.gloo.solo.io.StatusCodeMatcher.Comparator" >}}) |  | The comparison type used for matching. |
   
 
 
@@ -143,7 +143,7 @@ Describes a matcher against HTTP response status codes.
  <!-- end messages -->
 
 
-<a name="networking.mesh.gloo.solo.io.StatusCodeMatcher.Comparator"></a>
+<a name="common.mesh.gloo.solo.io.StatusCodeMatcher.Comparator"></a>
 
 ### StatusCodeMatcher.Comparator
 

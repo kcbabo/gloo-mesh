@@ -7,7 +7,7 @@ import "google/protobuf/wrappers.proto";
 import "github.com/solo-io/skv2/api/core/v1/core.proto";
 import "github.com/solo-io/gloo-mesh/api/networking/v1/traffic_policy.proto";
 import "github.com/solo-io/gloo-mesh/api/networking/v1/weighed_destination.proto";
-import "github.com/solo-io/gloo-mesh/api/networking/v1/request_matchers.proto";
+import "github.com/solo-io/gloo-mesh/api/common/v1/request_matchers.proto";
 
 import "extproto/ext.proto";
 option (extproto.equal_all) = true;
@@ -31,7 +31,7 @@ message Route {
     // Matchers contain parameters for matching requests (i.e., based on HTTP path, headers, etc.).
     // If empty, the route will match all requests (i.e, a single "/" path prefix matcher).
     // For delegated routes, any parent matcher must have a `prefix` path matcher.
-    repeated .networking.mesh.gloo.solo.io.HttpMatcher matchers = 2;
+    repeated .common.mesh.gloo.solo.io.HttpMatcher matchers = 2;
 
     // The Route Action defines what action the proxy should take when a request matches the route.
     oneof action {
