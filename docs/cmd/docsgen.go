@@ -7,7 +7,6 @@ import (
 	"github.com/solo-io/anyvendor/pkg/manager"
 	"github.com/solo-io/gloo-mesh/codegen/anyvendor"
 	"github.com/solo-io/gloo-mesh/docs/docsgen"
-	"github.com/solo-io/gloo-mesh/pkg/meshctl/commands"
 )
 
 func main() {
@@ -27,7 +26,6 @@ func main() {
 			OutputDir: "content/reference/api",
 		},
 		Cli: docsgen.CliOptions{
-			RootCmd:   commands.RootCommand(ctx),
 			OutputDir: "content/reference/cli",
 		},
 		Changelog: docsgen.ChangelogOptions{

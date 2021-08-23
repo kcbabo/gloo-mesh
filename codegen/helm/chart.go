@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/solo-io/gloo-mesh/codegen/io"
-	"github.com/solo-io/gloo-mesh/pkg/common/defaults"
 	"github.com/solo-io/gloo-mesh/pkg/common/version"
 	"github.com/solo-io/skv2/codegen/model"
 	v1 "k8s.io/api/core/v1"
@@ -131,7 +130,7 @@ func discoveryOperator() model.Operator {
 				},
 				Env: []v1.EnvVar{
 					{
-						Name: defaults.PodNamespaceEnv,
+						Name: "DISABLED",
 						ValueFrom: &v1.EnvVarSource{
 							FieldRef: &v1.ObjectFieldSelector{
 								FieldPath: "metadata.namespace",
@@ -147,7 +146,7 @@ func discoveryOperator() model.Operator {
 			Ports: []model.ServicePort{
 				{
 					Name:        "metrics",
-					DefaultPort: int32(defaults.MetricsPort),
+					DefaultPort: 0,
 				},
 			},
 		},
@@ -188,7 +187,7 @@ func NetworkingOperator(name string) model.Operator {
 				},
 				Env: []v1.EnvVar{
 					{
-						Name: defaults.PodNamespaceEnv,
+						Name: "DISABLED",
 						ValueFrom: &v1.EnvVarSource{
 							FieldRef: &v1.ObjectFieldSelector{
 								FieldPath: "metadata.namespace",
@@ -231,7 +230,7 @@ func certAgentOperator() model.Operator {
 				},
 				Env: []v1.EnvVar{
 					{
-						Name: defaults.PodNamespaceEnv,
+						Name: "DISABLED",
 						ValueFrom: &v1.EnvVarSource{
 							FieldRef: &v1.ObjectFieldSelector{
 								FieldPath: "metadata.namespace",
@@ -247,7 +246,7 @@ func certAgentOperator() model.Operator {
 			Ports: []model.ServicePort{
 				{
 					Name:        "metrics",
-					DefaultPort: int32(defaults.MetricsPort),
+					DefaultPort: 0,
 				},
 			},
 		},

@@ -4,7 +4,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	networkingv1 "github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/v1"
 	settingsv1 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
-	"github.com/solo-io/gloo-mesh/pkg/common/defaults"
 )
 
 // The schema for our Helm chart values. Struct members must be public for visibility to skv2 Helm generator.
@@ -40,8 +39,8 @@ func DefaultValues() ChartValues {
 	return ChartValues{
 		GlooMeshOperatorArgs: GlooMeshOperatorArgs{
 			SettingsRef: SettingsRef{
-				Name:      defaults.DefaultSettingsName,
-				Namespace: defaults.DefaultPodNamespace,
+				Name:      "DISABLED",
+				Namespace: "DISABLED",
 			},
 		},
 		Settings: SettingsValues{
@@ -59,7 +58,7 @@ func DefaultValues() ChartValues {
 				Server:  &settingsv1.GrpcServer{},
 			},
 		},
-		DefaultMetricsPort:         defaults.MetricsPort,
+		DefaultMetricsPort:         0,
 		DisallowIntersectingConfig: false,
 		WatchOutputTypes:           true,
 		Verbose:                    false,
