@@ -50,9 +50,19 @@ site-release: site-common generated-docs
 serve-site: site-test
 	HUGO_PARAMS_Version=$(VERSION) hugo --config docs.toml --themesDir themes server -D
 
+.PHONY: serve-site-local
+serve-site-local: prepare-local serve-site
+
+# If building the site locally, the DocsVersion and CodeVersion lines in data/Solo.yaml need to be commented out
+# Be sure to uncomment these lines on push to GH.
+.PHONY: prepare-local
+prepare-local:
+	sed -i'.original' -e 's/^DocsVersion:/#DocsVersion:/' "./data/Solo.yaml"
+	sed -i'.original' -e 's/^CodeVersion:/#CodeVersion:/' "data/Solo.yaml"
+
 .PHONY: clean
 clean:
-	rm -rf ./site ./resources ./site-latest ./site-versioned ./themes ./ci ./gloo-mesh-temp
+	rm -rf ./site ./resources ./site-latest ./site-versioned ./themes ./ci ./gloo-mesh-temp ./data/Solo.yaml.original
 
 
 .PHONY: tagged

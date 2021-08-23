@@ -106,7 +106,7 @@ var _ = Describe("VirtualServiceTranslator", func() {
 									},
 								},
 							},
-							HttpRequestMatchers: []*networkingv1.DeprecatedHttpMatcher{
+							HttpRequestMatchers: []*commonv1.DeprecatedHttpMatcher{
 								{
 									Uri: &commonv1.StringMatch{
 										MatchType: &commonv1.StringMatch_Exact{
@@ -116,7 +116,7 @@ var _ = Describe("VirtualServiceTranslator", func() {
 									Method: "GET",
 								},
 								{
-									Headers: []*networkingv1.HeaderMatcher{
+									Headers: []*commonv1.HeaderMatcher{
 										{
 											Name:        "name3",
 											Value:       "[a-z]+",
@@ -148,7 +148,7 @@ var _ = Describe("VirtualServiceTranslator", func() {
 									},
 								},
 							},
-							HttpRequestMatchers: []*networkingv1.DeprecatedHttpMatcher{
+							HttpRequestMatchers: []*commonv1.DeprecatedHttpMatcher{
 								{
 									Uri: &commonv1.StringMatch{
 										MatchType: &commonv1.StringMatch_Exact{
@@ -158,7 +158,7 @@ var _ = Describe("VirtualServiceTranslator", func() {
 									Method: "GET",
 								},
 								{
-									Headers: []*networkingv1.HeaderMatcher{
+									Headers: []*commonv1.HeaderMatcher{
 										{
 											Name:        "name3",
 											Value:       "[a-z]+",
@@ -534,7 +534,7 @@ var _ = Describe("VirtualServiceTranslator", func() {
 									},
 								},
 							},
-							HttpRequestMatchers: []*networkingv1.DeprecatedHttpMatcher{
+							HttpRequestMatchers: []*commonv1.DeprecatedHttpMatcher{
 								{
 									Uri: &commonv1.StringMatch{
 										MatchType: &commonv1.StringMatch_Exact{
@@ -544,7 +544,7 @@ var _ = Describe("VirtualServiceTranslator", func() {
 									Method: "GET",
 								},
 								{
-									Headers: []*networkingv1.HeaderMatcher{
+									Headers: []*commonv1.HeaderMatcher{
 										{
 											Name:        "name3",
 											Value:       "[a-z]+",
@@ -1140,9 +1140,9 @@ var _ = Describe("VirtualServiceTranslator", func() {
 									},
 								},
 							},
-							HttpRequestMatchers: []*networkingv1.DeprecatedHttpMatcher{
+							HttpRequestMatchers: []*commonv1.DeprecatedHttpMatcher{
 								{
-									Headers: []*networkingv1.HeaderMatcher{
+									Headers: []*commonv1.HeaderMatcher{
 										{
 											Name:  "user-agent",
 											Value: "'.*Firefox.*'",

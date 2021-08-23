@@ -1,0 +1,9 @@
+changelog:
+  - type: NEW_FEATURE
+    issueLink: https://github.com/solo-io/gloo-mesh/issues/1841
+    resolvesIssue: false
+    description: >
+      Adds Transformation API to Gloo Mesh Gateway.
+  - type: NON_USER_FACING
+    description: >
+      Adds make target to correctly build and serve gloo mesh site locally.
