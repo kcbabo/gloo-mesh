@@ -4,6 +4,7 @@ import (
 	discoveryv1 "github.com/solo-io/gloo-mesh/pkg/api/discovery.mesh.gloo.solo.io/v1"
 	"github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/input"
 	networkingv1 "github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/v1"
+	settingsv1 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/utils/hostutils"
 	networkingv1alpha3spec "istio.io/api/networking/v1alpha3"
 )
@@ -89,6 +90,7 @@ type TrafficPolicyDestinationRuleDecorator interface {
 		service *discoveryv1.Destination,
 		output *networkingv1alpha3spec.DestinationRule,
 		registerField RegisterField,
+		peerAuthPolicy *settingsv1.PeerAuthenticationSettings,
 	) error
 }
 

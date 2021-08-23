@@ -128,6 +128,7 @@ func (t *translator) Translate(
 					destination,
 					&destinationRule.Spec,
 					registerField,
+					t.settings.Spec.GetPeerAuth(),
 				); err != nil {
 					reporter.ReportTrafficPolicyToDestination(destination, policy.Ref, eris.Wrapf(err, "%v", decorator.DecoratorName()))
 				}
@@ -215,7 +216,13 @@ func (t *translator) initializeDestinationRule(
 	// Initialize Istio TLS mode with default declared in Settings
 
 	if isDestinationFederated(destination, sourceMeshInstallation) {
-		istioTlsMode, err := tls.MapIstioTlsMode(mtlsDefault.GetIstio().GetTlsMode())
+		var istioTlsMode networkingv1alpha3spec.ClientTLSSettings_TLSmode
+		var err error
+		if t.settings.Spec.PeerAuth.GetEnabled() {
+			istioTlsMode, err = tls.MapIstioTlsModeCheckPeerAuth(mtlsDefault.GetIstio().GetTlsMode(), t.settings.Spec.PeerAuth.GetPeerAuthTlsMode())
+		} else {
+			istioTlsMode, err = tls.MapIstioTlsMode(mtlsDefault.GetIstio().GetTlsMode())
+		}
 		if err != nil {
 			return nil, err
 		}

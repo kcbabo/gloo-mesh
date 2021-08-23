@@ -5,6 +5,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/v1"
+	settingsv1 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/decorators"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/decorators/tls"
 	"istio.io/api/networking/v1alpha3"
@@ -15,6 +16,9 @@ var _ = Describe("TlsDecorator", func() {
 		tlsDecorator decorators.TrafficPolicyDestinationRuleDecorator
 		output       *v1alpha3.DestinationRule
 		ctrl         *gomock.Controller
+		emptyPa      = &settingsv1.PeerAuthenticationSettings{
+			Enabled: false,
+		}
 	)
 
 	BeforeEach(func() {
@@ -52,6 +56,7 @@ var _ = Describe("TlsDecorator", func() {
 			nil,
 			output,
 			registerField,
+			emptyPa,
 		)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(output.TrafficPolicy.Tls).To(Equal(expectedClientTlsSettings))
@@ -69,6 +74,7 @@ var _ = Describe("TlsDecorator", func() {
 			nil,
 			output,
 			registerField,
+			emptyPa,
 		)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(output.TrafficPolicy.Tls).To(BeNil())

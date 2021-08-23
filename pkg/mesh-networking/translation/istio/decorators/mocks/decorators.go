@@ -10,6 +10,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/solo-io/gloo-mesh/pkg/api/discovery.mesh.gloo.solo.io/v1"
 	v10 "github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/v1"
+	v11 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
 	decorators "github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/decorators"
 	v1alpha3 "istio.io/api/networking/v1alpha3"
 )
@@ -163,17 +164,17 @@ func (m *MockTrafficPolicyDestinationRuleDecorator) EXPECT() *MockTrafficPolicyD
 }
 
 // ApplyTrafficPolicyToDestinationRule mocks base method.
-func (m *MockTrafficPolicyDestinationRuleDecorator) ApplyTrafficPolicyToDestinationRule(appliedPolicy *v10.AppliedTrafficPolicy, service *v1.Destination, output *v1alpha3.DestinationRule, registerField decorators.RegisterField) error {
+func (m *MockTrafficPolicyDestinationRuleDecorator) ApplyTrafficPolicyToDestinationRule(appliedPolicy *v10.AppliedTrafficPolicy, service *v1.Destination, output *v1alpha3.DestinationRule, registerField decorators.RegisterField, peerAuthPolicy *v11.PeerAuthenticationSettings) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ApplyTrafficPolicyToDestinationRule", appliedPolicy, service, output, registerField)
+	ret := m.ctrl.Call(m, "ApplyTrafficPolicyToDestinationRule", appliedPolicy, service, output, registerField, peerAuthPolicy)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ApplyTrafficPolicyToDestinationRule indicates an expected call of ApplyTrafficPolicyToDestinationRule.
-func (mr *MockTrafficPolicyDestinationRuleDecoratorMockRecorder) ApplyTrafficPolicyToDestinationRule(appliedPolicy, service, output, registerField interface{}) *gomock.Call {
+func (mr *MockTrafficPolicyDestinationRuleDecoratorMockRecorder) ApplyTrafficPolicyToDestinationRule(appliedPolicy, service, output, registerField, peerAuthPolicy interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyTrafficPolicyToDestinationRule", reflect.TypeOf((*MockTrafficPolicyDestinationRuleDecorator)(nil).ApplyTrafficPolicyToDestinationRule), appliedPolicy, service, output, registerField)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyTrafficPolicyToDestinationRule", reflect.TypeOf((*MockTrafficPolicyDestinationRuleDecorator)(nil).ApplyTrafficPolicyToDestinationRule), appliedPolicy, service, output, registerField, peerAuthPolicy)
 }
 
 // DecoratorName mocks base method.

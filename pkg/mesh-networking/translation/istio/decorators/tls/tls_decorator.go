@@ -40,8 +40,9 @@ func (d *tlsDecorator) ApplyTrafficPolicyToDestinationRule(
 	_ *discoveryv1.Destination,
 	output *networkingv1alpha3spec.DestinationRule,
 	registerField decorators.RegisterField,
+	peerAuthPolicy *settingsv1.PeerAuthenticationSettings,
 ) error {
-	tlsSettings, err := d.translateTlsSettings(appliedPolicy.Spec)
+	tlsSettings, err := d.translateTlsSettings(appliedPolicy.Spec, peerAuthPolicy)
 	if err != nil {
 		return err
 	}
@@ -57,13 +58,23 @@ func (d *tlsDecorator) ApplyTrafficPolicyToDestinationRule(
 
 func (d *tlsDecorator) translateTlsSettings(
 	trafficPolicy *istiov1.TrafficPolicySpec,
+	peerAuthPolicy *settingsv1.PeerAuthenticationSettings,
 ) (*networkingv1alpha3spec.ClientTLSSettings, error) {
 	// If TrafficPolicy doesn't specify mTLS configuration, use global default populated upstream during initialization.
 	istioMtls := trafficPolicy.GetPolicy().GetMtls().GetIstio()
 	if istioMtls == nil {
 		return nil, nil
 	}
-	istioTlsMode, err := MapIstioTlsMode(istioMtls.TlsMode)
+	var istioTlsMode networkingv1alpha3spec.ClientTLSSettings_TLSmode
+	var err error
+	if peerAuthPolicy.GetEnabled() {
+		istioTlsMode, err = MapIstioTlsModeCheckPeerAuth(istioMtls.GetTlsMode(), peerAuthPolicy.GetPeerAuthTlsMode())
+	} else {
+		istioTlsMode, err = MapIstioTlsMode(istioMtls.GetTlsMode())
+	}
+	if err != nil {
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +95,28 @@ func MapIstioTlsMode(tlsMode istiov1.TrafficPolicySpec_Policy_MTLS_Istio_TLSmode
 	default:
 		return 0, eris.Errorf("unrecognized Istio TLS mode %s", tlsMode)
 	}
+}
+
+// exported for use by destination rule translator
+// Requires the peerAuth TLS setting in to check that the two are not incompatible.
+func MapIstioTlsModeCheckPeerAuth(tlsMode istiov1.TrafficPolicySpec_Policy_MTLS_Istio_TLSmode, peerAuthMode settingsv1.PeerAuthenticationSettings_MutualTLS) (networkingv1alpha3spec.ClientTLSSettings_TLSmode, error) {
+	switch tlsMode {
+	case istiov1.TrafficPolicySpec_Policy_MTLS_Istio_DISABLE:
+		if peerAuthMode == settingsv1.PeerAuthenticationSettings_STRICT {
+			return 0, eris.Errorf("Destination Rule TLS policy set to %s, but peerAuthentication policy set to incompatible value %s", tlsMode, peerAuthMode)
+		}
+	case istiov1.TrafficPolicySpec_Policy_MTLS_Istio_SIMPLE:
+		if peerAuthMode == settingsv1.PeerAuthenticationSettings_DISABLE {
+			return 0, eris.Errorf("Destination Rule TLS policy set to %s, but peerAuthentication policy set to incompatible value %s", tlsMode, peerAuthMode)
+		}
+	case istiov1.TrafficPolicySpec_Policy_MTLS_Istio_ISTIO_MUTUAL:
+		if peerAuthMode == settingsv1.PeerAuthenticationSettings_DISABLE {
+			return 0, eris.Errorf("Destination Rule TLS policy set to %s, but peerAuthentication policy set to incompatible value %s", tlsMode, peerAuthMode)
+		}
+	default:
+		return 0, eris.Errorf("unrecognized Istio TLS mode %s", tlsMode)
+	}
+	return MapIstioTlsMode(tlsMode)
 }
 
 func MapIstioTlsModeToPeerAuth(tlsMode settingsv1.PeerAuthenticationSettings_MutualTLS) (v1beta1.PeerAuthentication_MutualTLS_Mode, error) {

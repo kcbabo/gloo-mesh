@@ -4,6 +4,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	discoveryv1 "github.com/solo-io/gloo-mesh/pkg/api/discovery.mesh.gloo.solo.io/v1"
 	v1 "github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/v1"
+	settingsv1 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/decorators"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/utils/gogoutils"
 	networkingv1alpha3spec "istio.io/api/networking/v1alpha3"
@@ -43,6 +44,7 @@ func (d *outlierDetectionDecorator) ApplyTrafficPolicyToDestinationRule(
 	_ *discoveryv1.Destination,
 	output *networkingv1alpha3spec.DestinationRule,
 	registerField decorators.RegisterField,
+	peerAuthPolicy *settingsv1.PeerAuthenticationSettings,
 ) error {
 	if outlierDetection := TranslateOutlierDetection(appliedPolicy.Spec.GetPolicy().GetOutlierDetection()); outlierDetection != nil {
 		if err := registerField(&output.TrafficPolicy.OutlierDetection, outlierDetection); err != nil {

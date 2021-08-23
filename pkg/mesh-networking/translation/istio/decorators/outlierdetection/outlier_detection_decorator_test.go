@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/rotisserie/eris"
 	v1 "github.com/solo-io/gloo-mesh/pkg/api/networking.mesh.gloo.solo.io/v1"
+	settingsv1 "github.com/solo-io/gloo-mesh/pkg/api/settings.mesh.gloo.solo.io/v1"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/decorators"
 	"github.com/solo-io/gloo-mesh/pkg/mesh-networking/translation/istio/decorators/outlierdetection"
 	"github.com/solo-io/go-utils/testutils"
@@ -16,6 +17,9 @@ var _ = Describe("OutlierDetectionDecorator", func() {
 	var (
 		outlierDecorator decorators.TrafficPolicyDestinationRuleDecorator
 		output           *v1alpha3.DestinationRule
+		emptyPa          = &settingsv1.PeerAuthenticationSettings{
+			Enabled: false,
+		}
 	)
 
 	BeforeEach(func() {
@@ -49,6 +53,7 @@ var _ = Describe("OutlierDetectionDecorator", func() {
 			nil,
 			output,
 			registerField,
+			emptyPa,
 		)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(output.TrafficPolicy.OutlierDetection).To(Equal(expectedOutlierDetection))
@@ -73,6 +78,7 @@ var _ = Describe("OutlierDetectionDecorator", func() {
 			nil,
 			output,
 			registerField,
+			emptyPa,
 		)
 		Expect(err).To(testutils.HaveInErrorChain(testErr))
 	})
