@@ -5,7 +5,11 @@ weight: 100
 description: Best practices for upgrading Gloo Mesh
 ---
 
-Gloo Mesh is pre-1.0 and under active development. There may be breaking API changes with every minor version bump.
+{{< notice warning >}}
+This upgrade process is for Gloo Mesh versions less than v1.0.0 up to, but not including, v1.0.0.
+{{< /notice >}}
+
+Gloo Mesh is under active development.
 An "API break" is defined as any change in the structure or behavior of a Gloo Mesh CRD that requires user intervention
 at upgrade time to avoid putting Gloo Mesh into a persistent error state.
 
@@ -82,7 +86,7 @@ and CRDs are updated to a version compatible with the version of Gloo Mesh you a
 [setup guide on registering a cluster]({{% versioned_link_path fromRoot="/setup/register_cluster" %}})
 and be sure to use the same cluster names and contexts that were used at the initial cluster registration time.
 
-8\. Scale the `discovery` deployment to one replica, and wait for all `discovery` resources such as `meshes`, `destinations`,
+8\. Scale the `discovery` deployment to one replica, and wait for all `discovery` resources such as `meshes`, `destinations` (or `traffictargets`),
 and `workloads` to be written to the management cluster. This may take a few minutes, and will ensure that the `networking`
 component has access to all the data it needs to continue processing user-provided network configuration. Discovery is
 complete when the pod no longer outputs a steady stream of logs or when all expected resources can be found on the cluster.
