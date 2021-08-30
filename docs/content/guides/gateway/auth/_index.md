@@ -1,6 +1,6 @@
 ---
 title: Authentication and Authorization
-weight: 30
+weight: 50
 description: An overview of authentication and authorization options with Gloo Mesh Gateway.
 ---
 

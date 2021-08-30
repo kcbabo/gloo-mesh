@@ -179,7 +179,7 @@ helm install gloo-mesh-enterprise gloo-mesh-enterprise/gloo-mesh-enterprise --ku
 --set metricsBackend.prometheus.enabled=false \
 --set rbac-webhook.enabled=false
 --set enterprise-networking.enterpriseNetworking.floatingUserId=true \
---set gloo-mesh-ui.dashboard.floatingUserId.floatingUserId=true \
+--set gloo-mesh-ui.dashboard.floatingUserId=true \
 --set gloo-mesh-ui.redis-dashboard.redisDashboard.floatingUserId=true \
 --set enterprise-networking.prometheus.server.securityContext=false
 ````
