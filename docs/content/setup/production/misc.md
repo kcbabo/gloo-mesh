@@ -15,7 +15,10 @@ Avoid
 * outboundTrafficPolicy REGISTRY_ONLY mode
 * Global Authorization Policy
 
-## EnvoyFilter Naming
+## EnvoyFilter
+
+* Naming
+* Scope down as much as possible
 
 ## Gateways
 
@@ -23,8 +26,10 @@ Avoid
 * Different namespace than `istio-system`
 * Multilple gateways with zone affinity
 
-## Performance
+## Tracing and Telemetry
 
+* Disable if not used
 * Tracing sampling %
+* Disable logging
 
 # Use revisions
