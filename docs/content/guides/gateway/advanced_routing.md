@@ -782,20 +782,23 @@ EOF
 {{< /tab >}}
 {{< /tabs >}}
 
-Now if you try to request the new version endpoints, you will see that you get a `404` from the reviews service as a
-reply. The reason is because the first route table that we created takes precedence due to its higher weight, which
-means the prefix route at `/reviews/v1` is getting matched before it reaches the new exact route `/reviews/v1/version`.
-You could adjust the weight on the second route table to be higher than that of the first, but that will cause the `404`
-route to then short circuit the review service routes. One solution is using a separate route table for the version
-endpoints and `404` endpoint, but there is a better way. Gloo Mesh Gateway routing supports two types of sorting. The
-first and default method is via table weight where routes are kept in the same order that they appear on their table and
-relative to table order. The alternative method is sorting by route specificity where routes are sorted via a heuristic
-that estimates how "specific" a route is and then puts more specific routes before more general ones in order to
-minimize short circuits. Exact match routes are considered more specific than regex match routes, which are considered
-more specific than prefix match routes. Routes of the same match type are than compared based on the length where
-longer matches are more specific. The sorting action is set in the `delegateAction` level and will overwrite any sorting
-done in `delegateAction`s of child `RouteTable`s. You can enable it on the `VirtualHost` to allow the routes of both
-tables to be intermingled.
+Now if you try to send a request to the new version endpoints, you get a `404` response from the reviews service.
+The first route table that you created takes precedence due to its weight of `10`, which means that the prefix route
+`/reviews/v1` is being matched before the request reaches the new exact route `/reviews/v1/version`. You could adjust the
+weight of the second route table to come before the first, but the `404` route will then short-circuit the review service routes.
+One solution is to use a separate route table for the version endpoints and `404` endpoint. However, an easier method
+is to use the secondary type of Gloo Mesh Gateway routing.
+
+Recall that the default type of sorting is by use of table weight, in which routes are kept in the same order that they appear
+on their table and relative to table order. The alternative type of sorting is by route specificity, in which routes are
+sorted according to a heuristic that estimates how specific a route is and orders routes from most to least specific in
+order to minimize short circuits. Exact match routes are considered the most specific, followed by regex match routes,
+followed by prefix match routes. Routes of the same match type are then compared based on length, in which longer
+matches are more specific.
+
+The sorting action is set at the `delegateAction` level, and overwrites any sorting in `delegateAction`s of child
+`RouteTable`s. You can enable the `ROUTE_SPECIFICITY` sorting action on the `VirtualHost` to allow the routes of both
+tables to be sorted together.
 
 {{< tabs >}}
 {{< tab name="YAML File" codelang="yaml" >}}
