@@ -865,8 +865,8 @@ EOF
 {{< /tab >}}
 {{< /tabs >}}
 
-The resulting routes will be sorted such that the version endpoints can be hit as can the service endpoints, and all
-other requests will be caught by the `404` route.
+The resulting routes are sorted such that both the version endpoints and the service endpoints can be matched against, and all
+other requests are matched to the `404` route.
 
 You can learn more about the routing options by looking at the Helm values for
 [routes]({{% versioned_link_path fromRoot="/reference/api/github.com.solo-io.gloo-mesh.api.enterprise.networking.v1beta1.route/" %}}).
