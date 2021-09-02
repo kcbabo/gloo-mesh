@@ -553,9 +553,9 @@ EOF
 {{< /tab >}}
 {{< /tabs >}}
 
-It is important that the second route table comes second in the list of references, otherwise it will short circuit all
-the other routes. You should now be able to request the reviews services endpoints to get the reviews and all other
-random routes should return our custom `404` message.
+It is important that the second route table is listed after the first route table in the list of references to prevent the second route
+table from short-circuiting all other routes. You can now send a request to the reviews services endpoints to get the reviews,
+and all other requests to routes return the custom `404` message.
 
 ### Improving the Sorting Logic
 
