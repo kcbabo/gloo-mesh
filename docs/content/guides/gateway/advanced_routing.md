@@ -630,9 +630,9 @@ EOF
 Requests are now automatically delegated to all `RouteTable`s in the `gloo-mesh` namespace label without any changes to
 the `VirtualHost`. You can use a combination of specific `RouteTable` references and label selectors. However,
 `RouteTable` references take precedence over `RouteTable` selectors, which are sorted alphabetically by namespace and
-then name because Kubernetes does not guarantee a deterministic order when selecting multiple objects. Since the `404`
-route catches all requests to `/reviews` it must come _after_ the service routes, otherwise it will short circuit them.
-You can add weights to the `RouteTable`s in order to guarantee a sort order in situations like this.
+then name because Kubernetes does not guarantee a deterministic order when selecting multiple objects. Because the `404`
+route matches all requests to `/reviews`, the `404` route must come _after_ the service routes to prevent it from short-circuiting them.
+In situations like this, you can add weights to the `RouteTable`s in order to guarantee a sort order.
 
 {{< tabs >}}
 {{< tab name="YAML File" codelang="yaml">}}
