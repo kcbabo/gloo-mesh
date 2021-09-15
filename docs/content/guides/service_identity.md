@@ -2,7 +2,7 @@
 title: "Multicluster Service Identity"
 menuTitle: Multicluster Service Identity
 description: Guidance on using Gloo Mesh to apply consistent policies to services across clusters.
-weight: 10
+weight: 60
 ---
 
 Gloo Mesh was created to simplify the management of multiple service mesh deployments across multiple clusters. One of the key abstractions of Gloo Mesh is the VirtualMesh, essentially the combination of multiple service meshes into a single logical entity. The VirtualMesh enables cross-cluster, secured communication with a common root certificate authority serving to provide trusted mTLS communications.

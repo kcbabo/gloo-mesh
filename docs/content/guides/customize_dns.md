@@ -1,7 +1,7 @@
 ---
 title: Istio DNS for global routing
 menuTitle: Istio DNS for global routing
-weight: 50
+weight: 70
 description: Understanding how to configure Istio DNS for resolvable routing between clusters
 ---
 

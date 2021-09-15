@@ -1,9 +1,10 @@
 ---
 title: Upgrading Gloo Mesh
-menuTitle: Upgrading Gloo Mesh
-weight: 100
-description: Best practices for upgrading Gloo Mesh
+weight: 30
+description: Upgrade the version of Gloo Mesh in your management and remote clusters
 ---
+
+Upgrade the version of Gloo Mesh Open Source in your management and remote clusters.
 
 {{< notice warning >}}
 This upgrade process is for Gloo Mesh versions less than v1.0.0 up to, but not including, v1.0.0.
