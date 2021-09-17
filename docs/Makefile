@@ -18,7 +18,7 @@ IMAGE_REPO := $(IMAGE_REGISTRY)/$(IMAGE_LEAF_NAME)
 ### REPLACE with product name
 PRODUCT_SCOPE := gloo-mesh
 DOCS_VERSION := latest
-SOLO_HUGO_THEME := 41587dc9dc719bd22cedd9803994f756e25f571f
+SOLO_HUGO_THEME := $(shell curl --silent "https://api.github.com/repos/solo-io/hugo-theme-soloio/releases/latest" | jq -esr 'if . == [] then null else .[] | .tag_name end')
 
 #----------------------------------------------------------------------------------
 # Docs
