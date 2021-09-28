@@ -37,6 +37,7 @@ func TestVirtualGateways(t *testing.T) {
 							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
 							FileName:    "https-redirect.yaml",
 							Folder:      "gloo-mesh/virtual-gateway",
+							Skip:        "https://github.com/solo-io/gloo-mesh-enterprise/issues/1360",
 						},
 						{
 							Name:        "single-cluster-gateway",
