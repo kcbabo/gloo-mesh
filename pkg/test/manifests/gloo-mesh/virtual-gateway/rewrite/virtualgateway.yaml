@@ -1,0 +1,60 @@
+apiVersion: networking.mesh.gloo.solo.io/v1
+kind: VirtualMesh
+metadata:
+  name: virtual-mesh
+  namespace: gloo-mesh
+spec:
+  federation:
+    selectors:
+      - { }
+  meshes:
+    - name: istiod-istio-system-cluster-0
+      namespace: gloo-mesh
+    - name: istiod-istio-system-cluster-1
+      namespace: gloo-mesh
+---
+apiVersion: networking.enterprise.mesh.gloo.solo.io/v1beta1
+kind: VirtualGateway
+metadata:
+  name: rewrite
+  namespace: gloo-mesh
+spec:
+  ingressGatewaySelectors:
+  - portName: http2
+    destinationSelectors:
+    - kubeServiceMatcher:
+        labels:
+          istio: ingressgateway
+        namespaces:
+        - istio-system
+  connectionHandlers:
+  - http:
+      routeConfig:
+      - virtualHost:
+          domains:
+          - api.solo.io
+          routes:
+          - matchers:
+            - uri:
+                prefix: /api/frontend
+            name: frontend
+            routeAction:
+              pathRewrite: /frontend
+              destinations:
+              - kubeService:
+                  clusterName: cluster-0
+                  name: frontend
+                  namespace: {{.EchoContext.AppNamespace.Name}}
+                  port: 8090
+          - matchers:
+            - uri:
+                prefix: /api/backend
+            name: backend
+            routeAction:
+              pathRewrite: /backend
+              destinations:
+              - kubeService:
+                  clusterName: cluster-0
+                  name: backend
+                  namespace: {{.EchoContext.AppNamespace.Name}}
+                  port: 8090

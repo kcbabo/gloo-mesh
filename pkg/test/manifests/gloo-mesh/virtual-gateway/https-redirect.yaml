@@ -1,0 +1,88 @@
+apiVersion: networking.mesh.gloo.solo.io/v1
+kind: VirtualMesh
+metadata:
+  name: virtual-mesh
+  namespace: gloo-mesh
+spec:
+  federation:
+    selectors:
+      - { }
+  meshes:
+    - name: istiod-istio-system-cluster-0
+      namespace: gloo-mesh
+    - name: istiod-istio-system-cluster-1
+      namespace: gloo-mesh
+---
+# Virtual Gateway for http port
+apiVersion: networking.enterprise.mesh.gloo.solo.io/v1beta1
+kind: VirtualGateway
+metadata:
+  name: redirect
+  namespace: gloo-mesh
+spec:
+  ingressGatewaySelectors:
+  - portName: http2
+    destinationSelectors:
+    - kubeServiceMatcher:
+        labels:
+          istio: ingressgateway
+        namespaces:
+        - istio-system
+  connectionHandlers:
+  - connectionOptions:
+      httpsRedirect: true
+---
+# Virtual Gateway for https port
+apiVersion: networking.enterprise.mesh.gloo.solo.io/v1beta1
+kind: VirtualGateway
+metadata:
+  name: secure-echo
+  namespace: gloo-mesh
+spec:
+  ingressGatewaySelectors:
+  - portName: https
+    destinationSelectors:
+    - kubeServiceMatcher:
+        labels:
+          istio: ingressgateway
+        namespaces:
+        - istio-system
+  connectionHandlers:
+  - connectionOptions:
+      sslConfig:
+        # Note this secret must be located on the same cluster
+        # in the same namespace as the gateway deployment
+        secretName: echo-certs
+        tlsMode: SIMPLE
+    connectionMatch:
+      serverNames:
+      # This SNI should match the DNS name your cert is using
+      - api.solo.io
+    http:
+      routeConfig:
+      - virtualHost:
+          domains:
+          - api.solo.io
+          routes:
+          - matchers:
+            - uri:
+                prefix: /frontend
+            name: frontend
+            routeAction:
+              destinations:
+              - kubeService:
+                  clusterName: cluster-0
+                  name: frontend
+                  namespace: {{.EchoContext.AppNamespace.Name}}
+                  port: 8090
+          - matchers:
+            - uri:
+                prefix: /backend
+            name: backend
+            routeAction:
+              destinations:
+              - kubeService:
+                  clusterName: cluster-0
+                  name: backend
+                  namespace: {{.EchoContext.AppNamespace.Name}}
+                  port: 8090

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	echo2 "github.com/solo-io/gloo-mesh/pkg/test/apps/echo"
 	"net/http"
 	"testing"
 
@@ -29,6 +30,14 @@ func TestVirtualGateways(t *testing.T) {
 				{
 					Name: "virtual-gateway",
 					Cases: []common.TestCase{
+						{
+							Name:        "secure-gateways",
+							Description: "testing https based routing using virtualgateway",
+							Test:        httpsTest,
+							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
+							FileName:    "https-redirect.yaml",
+							Folder:      "gloo-mesh/virtual-gateway",
+						},
 						{
 							Name:        "single-cluster-gateway",
 							Description: "testing prefix based routing using virtualgateway on a single cluster",
@@ -101,6 +110,54 @@ func TestVirtualGateways(t *testing.T) {
 							FileName:    "prefix-multi-virtualhost-multi-routetable.yaml",
 							Folder:      "gloo-mesh/virtual-gateway/prefix",
 						},
+						{
+							Name:        "rewrite-using-virtualgateway",
+							Description: "testing rewrite based routing using virtualgateway only",
+							Test:        rewriteTest,
+							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
+							FileName:    "virtualgateway.yaml",
+							Folder:      "gloo-mesh/virtual-gateway/rewrite",
+						},
+						{
+							Name:        "rewrite-using-virtualhost",
+							Description: "testing rewrite based routing using virtualhost",
+							Test:        rewriteTest,
+							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
+							FileName:    "virtualhost.yaml",
+							Folder:      "gloo-mesh/virtual-gateway/rewrite",
+						},
+						{
+							Name:        "rewrite-using-routetable",
+							Description: "testing rewrite based routing using routetable",
+							Test:        rewriteTest,
+							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
+							FileName:    "routetable.yaml",
+							Folder:      "gloo-mesh/virtual-gateway/rewrite",
+						},
+						{
+							Name:        "rewrite-using-multi-virtualhost",
+							Description: "testing rewrite based routing using multiple virtual hosts",
+							Test:        rewriteTest,
+							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
+							FileName:    "multi-virtualhost.yaml",
+							Folder:      "gloo-mesh/virtual-gateway/rewrite",
+						},
+						{
+							Name:        "rewrite-using-multi-routetable",
+							Description: "testing rewrite based routing using multiple route tables",
+							Test:        rewriteTest,
+							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
+							FileName:    "multi-routetable.yaml",
+							Folder:      "gloo-mesh/virtual-gateway/rewrite",
+						},
+						{
+							Name:        "rewrite-using-multi-virtualhost-multi-routetable",
+							Description: "testing rewrite based routing using route tables per virtualhost",
+							Test:        rewriteTest,
+							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
+							FileName:    "multi-virtualhost-multi-routetable.yaml",
+							Folder:      "gloo-mesh/virtual-gateway/rewrite",
+						},
 					},
 				},
 			}
@@ -118,6 +175,193 @@ func getMeshForCluster(clusterName string, deploymentCtx *context.DeploymentCont
 		}
 	}
 	return nil
+}
+
+func httpsTest(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
+	cluster := ctx.Clusters()[cluster0Index]
+	// calling the gateway from outside the mesh
+	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("no-mesh").And(echo.InCluster(cluster)))
+
+	frontend := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
+	backend := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("backend").And(echo.InCluster(cluster)))
+
+	apiHost := "api.solo.io"
+	cluster0GatewayAddress, err := getMeshForCluster(cluster.Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	frontendIDValidator := echo.ValidatorFunc(func(responses client.ParsedResponses, _ error) error {
+		for _, r := range responses {
+			if r.Hostname != frontend.WorkloadsOrFail(t)[0].PodName() {
+				return fmt.Errorf("response from pod %s does not match expected %s", r.Hostname, frontend.WorkloadsOrFail(t)[0].PodName())
+			}
+		}
+		return nil
+	})
+	backendIDValidator := echo.ValidatorFunc(func(responses client.ParsedResponses, _ error) error {
+		for _, r := range responses {
+			if r.Hostname != backend.WorkloadsOrFail(t)[0].PodName() {
+				return fmt.Errorf("response from pod %s does not match expected %s", r.Hostname, backend.WorkloadsOrFail(t)[0].PodName())
+			}
+		}
+		return nil
+	})
+
+	// Check for redirect
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster0GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/frontend",
+		Count:     5,
+		Validator: echo.ExpectCode("301"),
+	})
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster0GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/backend",
+		Count:     5,
+		Validator: echo.ExpectCode("301"),
+	})
+
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster0GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/no-route",
+		Count:     5,
+		Validator: echo.ExpectCode("301"),
+	})
+
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "https",
+			ServicePort: 443,
+		},
+		Scheme:  scheme.HTTPS,
+		Address: cluster0GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		CaCert:    echo2.GetEchoCACert(),
+		Method:    http.MethodGet,
+		Path:      "/frontend",
+		Count:     5,
+		Validator: echo.And(echo.ExpectOK(), frontendIDValidator),
+	})
+
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "https",
+			ServicePort: 443,
+		},
+		Scheme:  scheme.HTTPS,
+		Address: cluster0GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/backend",
+		Count:     5,
+		CaCert:    echo2.GetEchoCACert(),
+		Validator: echo.And(echo.ExpectOK(), backendIDValidator),
+	})
+
+	cluster1GatewayAddress, err := getMeshForCluster(ctx.Clusters()[cluster1Index].Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway",
+		"istio-system", "")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
+	// Check for redirect
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster1GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/frontend",
+		Count:     5,
+		Validator: echo.ExpectCode("301"),
+	})
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster1GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/backend",
+		Count:     5,
+		Validator: echo.ExpectCode("301"),
+	})
+
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "https",
+			ServicePort: 443,
+		},
+		Scheme:  scheme.HTTPS,
+		Address: cluster1GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/frontend",
+		Count:     5,
+		CaCert:    echo2.GetEchoCACert(),
+		Validator: echo.And(echo.ExpectOK(), frontendIDValidator),
+	})
+
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "https",
+			ServicePort: 443,
+		},
+		Scheme:  scheme.HTTPS,
+		Address: cluster1GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/backend",
+		Count:     5,
+		CaCert:    echo2.GetEchoCACert(),
+		Validator: echo.And(echo.ExpectOK(), backendIDValidator),
+	})
 }
 
 // only the gateway in cluster-0 is configured to accept traffic
@@ -571,6 +815,205 @@ func prefixTest(ctx resource.Context, t *testing.T, deploymentCtx *context.Deplo
 		},
 		Method:    http.MethodGet,
 		Path:      "/wrong",
+		Count:     5,
+		Validator: echo.ExpectCode("404"),
+	})
+}
+
+func rewriteTest(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
+
+	// should reach the frontend
+	cluster := ctx.Clusters()[cluster0Index]
+	// calling the gateway from outside the mesh
+	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("no-mesh").And(echo.InCluster(cluster)))
+
+	frontend := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("frontend").And(echo.InCluster(cluster)))
+	backend := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("backend").And(echo.InCluster(cluster)))
+
+	apiHost := "api.solo.io"
+	cluster0GatewayAddress, err := getMeshForCluster(cluster.Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	frontendIDValidator := echo.ValidatorFunc(func(responses client.ParsedResponses, _ error) error {
+		for _, r := range responses {
+			if r.Hostname != frontend.WorkloadsOrFail(t)[0].PodName() {
+				return fmt.Errorf("response from pod %s does not match expected %s", r.Hostname, frontend.WorkloadsOrFail(t)[0].PodName())
+			}
+		}
+		return nil
+	})
+	backendIDValidator := echo.ValidatorFunc(func(responses client.ParsedResponses, _ error) error {
+		for _, r := range responses {
+			if r.Hostname != backend.WorkloadsOrFail(t)[0].PodName() {
+				return fmt.Errorf("response from pod %s does not match expected %s", r.Hostname, backend.WorkloadsOrFail(t)[0].PodName())
+			}
+		}
+		return nil
+	})
+
+	pathValidator := func(path string) echo.ValidatorFunc {
+		return func(responses client.ParsedResponses, _ error) error {
+			for _, r := range responses {
+				if r.URL != path {
+					return fmt.Errorf("expected path %s but got %s", path, r.URL)
+				}
+			}
+			return nil
+		}
+	}
+
+	// happy requests from cluster-0
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster0GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/api/frontend",
+		Count:     5,
+		Validator: echo.And(echo.ExpectOK(), frontendIDValidator, pathValidator("/frontend")),
+	})
+
+	// wrong host
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster0GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {"wrong.solo.io"},
+		},
+		Method:    http.MethodGet,
+		Path:      "/api/frontend",
+		Count:     5,
+		Validator: echo.ExpectCode("404"),
+	})
+	// should reach the backend
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster0GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/api/backend",
+		Count:     5,
+		Validator: echo.And(echo.ExpectOK(), backendIDValidator, pathValidator("/backend")),
+	})
+	// invalid host
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster0GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {"wrong.solo.io"},
+		},
+		Method:    http.MethodGet,
+		Path:      "/api/frontend",
+		Count:     5,
+		Validator: echo.ExpectCode("404"),
+	})
+	// invalid path
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster0GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/api/wrong",
+		Count:     5,
+		Validator: echo.ExpectCode("404"),
+	})
+
+	cluster1GatewayAddress, err := getMeshForCluster(ctx.Clusters()[cluster1Index].Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
+	// happy requests from cluster-1
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster1GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/api/frontend",
+		Count:     5,
+		Validator: echo.And(echo.ExpectOK(), frontendIDValidator, pathValidator("/frontend")),
+	})
+
+	// should reach the backend
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster1GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/api/backend",
+		Count:     5,
+		Validator: echo.And(echo.ExpectOK(), backendIDValidator, pathValidator("/backend")),
+	})
+	// invalid host
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster1GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {"wrong.solo.io"},
+		},
+		Method:    http.MethodGet,
+		Path:      "/api/frontend",
+		Count:     5,
+		Validator: echo.ExpectCode("404"),
+	})
+	// invalid path
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster1GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/api/wrong",
 		Count:     5,
 		Validator: echo.ExpectCode("404"),
 	})

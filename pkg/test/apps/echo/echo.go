@@ -31,10 +31,14 @@ func DeployEchos(deploymentCtx *context.DeploymentContext) resource.SetupFn {
 		if err := createNamespaces(ctx, echoCtx); err != nil {
 			return err
 		}
-		if err := generateTLSCertificates(ctx, "echo-certs", echoCtx.AppNamespace); err != nil {
+		// for the gateway cert exposure
+		if err := generateTLSCertificates(ctx, "echo-certs", "istio-system"); err != nil {
 			return err
 		}
-		if err := generateTLSCertificates(ctx, "echo-certs", echoCtx.SubsetNamespace); err != nil {
+		if err := generateTLSCertificates(ctx, "echo-certs", echoCtx.AppNamespace.Name()); err != nil {
+			return err
+		}
+		if err := generateTLSCertificates(ctx, "echo-certs", echoCtx.SubsetNamespace.Name()); err != nil {
 			return err
 		}
 
@@ -103,7 +107,7 @@ func createNamespaces(ctx resource.Context, echoCtx *context.EchoDeploymentConte
 	return nil
 }
 
-func generateTLSCertificates(ctx resource.Context, secretName string, ns namespace.Instance) error {
+func generateTLSCertificates(ctx resource.Context, secretName string, ns string) error {
 	echoCrt, err := certFiles.ReadFile("certs/echo.crt")
 	if err != nil {
 		scopes.Framework.Error(err)
@@ -118,7 +122,7 @@ func generateTLSCertificates(ctx resource.Context, secretName string, ns namespa
 	}
 	for _, c := range ctx.Clusters() {
 		_, err = tlssecret.New(ctx, &tlssecret.Config{
-			Namespace: ns.Name(),
+			Namespace: ns,
 			Name:      secretName,
 			CACrt:     string(echoCA),
 			TLSKey:    string(echoKey),
