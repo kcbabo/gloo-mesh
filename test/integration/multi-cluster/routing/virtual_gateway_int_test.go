@@ -31,13 +31,36 @@ func TestVirtualGateways(t *testing.T) {
 					Name: "virtual-gateway",
 					Cases: []common.TestCase{
 						{
+							Name:        "external-service-virtualgateway",
+							Description: "testing external service based routing using virtual gateway",
+							Test:        externalServiceTest,
+							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
+							FileName:    "virtualgateway.yaml",
+							Folder:      "gloo-mesh/virtual-gateway/external-service",
+						},
+						{
+							Name:        "external-service-virtualhost",
+							Description: "testing external service based routing using virtual host",
+							Test:        externalServiceTest,
+							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
+							FileName:    "virtualhost.yaml",
+							Folder:      "gloo-mesh/virtual-gateway/external-service",
+						},
+						{
+							Name:        "external-service-routetable",
+							Description: "testing external service based routing using routetable",
+							Test:        externalServiceTest,
+							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
+							FileName:    "routetable.yaml",
+							Folder:      "gloo-mesh/virtual-gateway/external-service",
+						},
+						{
 							Name:        "secure-gateways",
 							Description: "testing https based routing using virtualgateway",
 							Test:        httpsTest,
 							Namespace:   deploymentCtx.EchoContext.AppNamespace.Name(),
 							FileName:    "https-redirect.yaml",
 							Folder:      "gloo-mesh/virtual-gateway",
-							Skip:        "https://github.com/solo-io/gloo-mesh-enterprise/issues/1360",
 						},
 						{
 							Name:        "single-cluster-gateway",
@@ -176,6 +199,56 @@ func getMeshForCluster(clusterName string, deploymentCtx *context.DeploymentCont
 		}
 	}
 	return nil
+}
+func externalServiceTest(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
+	cluster := ctx.Clusters()[cluster0Index]
+	// calling the gateway from outside the mesh
+	src := deploymentCtx.EchoContext.Deployments.GetOrFail(t, echo.Service("no-mesh").And(echo.InCluster(cluster)))
+
+	apiHost := "api.solo.io"
+	cluster0GatewayAddress, err := getMeshForCluster(cluster.Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway", "istio-system", "")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster0GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/external",
+		Count:     5,
+		Validator: echo.ExpectOK(),
+	})
+
+	cluster1GatewayAddress, err := getMeshForCluster(ctx.Clusters()[cluster1Index].Name(), deploymentCtx).GetIngressGatewayAddress("istio-ingressgateway",
+		"istio-system", "")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	src.CallOrFail(t, echo.CallOptions{
+		Port: &echo.Port{
+			Protocol:    "http",
+			ServicePort: 80,
+		},
+		Scheme:  scheme.HTTP,
+		Address: cluster1GatewayAddress,
+		Headers: map[string][]string{
+			"Host": {apiHost},
+		},
+		Method:    http.MethodGet,
+		Path:      "/external",
+		Count:     5,
+		CaCert:    echo2.GetEchoCACert(),
+		Validator: echo.ExpectOK(),
+	})
 }
 
 func httpsTest(ctx resource.Context, t *testing.T, deploymentCtx *context.DeploymentContext) {
