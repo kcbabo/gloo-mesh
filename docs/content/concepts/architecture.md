@@ -1,5 +1,5 @@
 ---
-title: "Gloo Mesh Architecture"
+title: "Architecture"
 menuTitle: Architecture
 description: Understanding Gloo Mesh Architecture
 weight: 20
