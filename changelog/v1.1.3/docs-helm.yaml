@@ -1,0 +1,4 @@
+changelog:
+  - type: NON_USER_FACING
+    description: Backports documentation changes for fixing the `meshctl install community` CLI and removing Helm reference documentation.
+    issueLink: https://github.com/solo-io/gloo-mesh/pull/1914
