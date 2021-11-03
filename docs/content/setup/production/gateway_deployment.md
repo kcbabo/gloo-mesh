@@ -244,6 +244,11 @@ spec:
       # needed for annotating istio metrics with cluster
       multiCluster:
         clusterName: production-cluster
+    gateways:
+      istio-ingressgateway:
+        # Enable gateway injection
+        injectionTemplate: gateway
+
 ```
 
 ### Navigate
