@@ -200,7 +200,9 @@ data:
   root-cert.pem: {root CA certificate file}
 ```
 
-In the top-level directory of the Istio installation package, create a directory to hold certificates and keys:
+{{% notice note %}}
+To steps to configure the Istio certificate authority, see the [Istio documentation](https://istio.io/latest/docs/tasks/security/cert-management/plugin-ca-cert/).
+{{% /notice %}}
 
 ```bash
 mkdir -p ~/istio-1.11.4/certs
