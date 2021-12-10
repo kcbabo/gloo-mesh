@@ -187,7 +187,8 @@ See the section on [User Provided Certificates]({{% versioned_link_path fromRoot
 
 ##### User Provided Certificates
 
-A root certificate for a VirtualMesh must be supplied to Gloo Mesh as a Secret formatted as follows:
+For each VirtualMesh, provide a root certificate as a Kubernetes Secret that is formatted as follows. Note that the name/namespace of the provided root certificate cannot be `cacerts/istio-system`, because that is used by Gloo Mesh for carrying out the [certificate signing request (CSR)](https://en.wikipedia.org/wiki/Certificate_signing_request)) procedure
+that unifies the root of trust across Meshes in the VirtualMesh.
 
 ```yaml
 kind: Secret
