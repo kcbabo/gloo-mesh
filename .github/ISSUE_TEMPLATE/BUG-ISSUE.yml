@@ -56,5 +56,4 @@ body:
       label: Additional Context
       placeholder: |
         - Customer or prospect
-        - Gloo Mesh version
         - Kubernetes version
