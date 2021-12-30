@@ -1,4 +1,4 @@
-name: Docs
+name: Docs Issue
 description: Fix our docs or add new information
 labels: ["Type: Docs"]
 body:
